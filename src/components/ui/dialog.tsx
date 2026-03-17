@@ -30,7 +30,7 @@ export function DialogContent({
   className = "",
 }: DialogContentProps) {
   return (
-    <div className={`bg-white rounded-lg shadow-lg ${className}`}>
+    <div className={`bg-white rounded-lg shadow-lg p-6 space-y-4${className}`}>
       {children}
     </div>
   );

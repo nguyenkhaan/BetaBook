@@ -18,6 +18,7 @@ interface HeaderProps {
   onLogout?: () => void;
   currentPage?: string;
   onNavigate?: (page: string) => void;
+  userName: string;
 }
 
 const pageLabels: Record<string, string> = {

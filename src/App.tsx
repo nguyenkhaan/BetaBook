@@ -27,8 +27,8 @@ import { ApprovalManagement } from "./pages/Approval/ApprovalManagement";
 import { MyPage } from "./pages/userprofile/MyPage";
 import { LeaveoffPage, LeaveRequest } from "./pages/leave/LeaveoffPage";
 
-type Role = "admin" | "owner" | "staff";
-
+type Role = "ADMIN" | "EMPLOYEE" | "CUSTOMER";
+                                                                                                                                           
 interface RoutePermission {
    path: string;
    roles: Role[];
@@ -36,42 +36,36 @@ interface RoutePermission {
 
 const MOCK_USERS = [
    {
-      email: "nguyen.vana@company.com",
+      email: "nguyenvana@company.com",
       password: "password",
-      role: "staff" as Role,
+      role: "EMPLOYEE" as Role,
       name: "Nguyễn Văn A",
    },
    {
       email: "admin@betabook.com",
       password: "admin123",
-      role: "admin" as Role,
+      role: "ADMIN" as Role,
       name: "Quản trị hệ thống",
-   },
-   {
-      email: "owner@betabook.com",
-      password: "owner123",
-      role: "owner" as Role,
-      name: "Chủ nhà sách",
    },
 ];
 
 export const routePermissions: RoutePermission[] = [
-   { path: "/dashboard", roles: ["admin", "owner", "staff"] },
-   { path: "/invoice", roles: ["admin", "owner", "staff"] },
-   { path: "/import", roles: ["admin", "owner"] },
-   { path: "/books", roles: ["admin", "owner"] },
-   { path: "/customers", roles: ["admin", "owner", "staff"] },
-   { path: "/receipts", roles: ["admin", "owner", "staff"] },
-   { path: "/promotions", roles: ["admin", "owner"] },
-   { path: "/employees", roles: ["admin", "owner"] },
-   { path: "/reports", roles: ["admin", "owner", "staff"] },
-   { path: "/regulations", roles: ["admin", "owner"] },
-   { path: "/regulation-detail", roles: ["admin", "owner"] },
-   { path: "/employee-profile", roles: ["admin", "owner", "staff"] },
-   { path: "/resignation", roles: ["admin", "owner", "staff"] },
-   { path: "/approval", roles: ["admin", "owner"] },
-   { path: "/leaveoff", roles: ["admin", "owner", "staff"] },
-   { path: "/mypage", roles: ["admin", "owner", "staff"] },
+   { path: "/dashboard", roles: ["ADMIN", "EMPLOYEE"] },
+   { path: "/invoice", roles: ["ADMIN", "EMPLOYEE"] },
+   { path: "/import", roles: ["ADMIN", "EMPLOYEE"] },
+   { path: "/books", roles: ["ADMIN", "EMPLOYEE"] },
+   { path: "/customers", roles: ["ADMIN", "EMPLOYEE"] },
+   { path: "/receipts", roles: ["ADMIN", "EMPLOYEE"] },
+   { path: "/promotions", roles: ["ADMIN", "EMPLOYEE"] },
+   { path: "/employees", roles: ["ADMIN", "EMPLOYEE"] },
+   { path: "/reports", roles: ["ADMIN", "EMPLOYEE"] },
+   { path: "/regulations", roles: ["ADMIN", "EMPLOYEE"] },
+   { path: "/regulation-detail", roles: ["ADMIN", "EMPLOYEE"] },
+   { path: "/employee-profile", roles: ["ADMIN", "EMPLOYEE"] },
+   { path: "/resignation", roles: ["ADMIN", "EMPLOYEE"] },
+   { path: "/approval", roles: ["ADMIN", "EMPLOYEE"] },
+   { path: "/leaveoff", roles: ["ADMIN", "EMPLOYEE"] },
+   { path: "/mypage", roles: ["ADMIN", "EMPLOYEE"] },
 ];
 
 const ProtectedRoute = ({
@@ -92,7 +86,7 @@ const ProtectedRoute = ({
 
 export default function App() {
    const [isAuthenticated, setIsAuthenticated] = useState(false);
-   const [userRole, setUserRole] = useState<Role>("staff");
+   const [userRole, setUserRole] = useState<Role>("EMPLOYEE");
    const [userName, setUserName] = useState("");
    const [showForgotPassword, setShowForgotPassword] = useState(false);
    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);

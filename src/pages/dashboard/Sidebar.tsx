@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 // Định nghĩa kiểu Role khớp với App.tsx
-type Role = "admin" | "owner" | "staff";
+type Role = "ADMIN" | "EMPLOYEE" | "CUSTOMER";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -29,80 +29,67 @@ interface SidebarProps {
 export function Sidebar({ isCollapsed, onToggle, userRole }: SidebarProps) {
   const location = useLocation();
 
-  // Danh sách menu kèm theo quyền truy cập (roles) khớp với routePermissions ở App.tsx
   const menuItems = [
     {
       icon: LayoutGrid,
       label: "Bảng điều khiển",
       path: "/dashboard",
-      roles: ["admin", "owner", "staff"],
+      roles: ["ADMIN", "EMPLOYEE"],
     },
     {
       icon: FileText,
       label: "Hóa đơn",
       path: "/invoice",
-      roles: ["admin", "owner", "staff"],
+      roles: ["ADMIN", "EMPLOYEE"],
     },
-    { icon: Book, label: "Sách", path: "/books", roles: ["admin", "owner"] },
+    { icon: Book, label: "Sách", path: "/books", roles: ["ADMIN", "EMPLOYEE"] },
     {
       icon: Users,
       label: "Khách hàng",
       path: "/customers",
-      roles: ["admin", "owner", "staff"],
+      roles: ["ADMIN", "EMPLOYEE"],
     },
     {
       icon: DollarSign,
       label: "Phiếu thu",
       path: "/receipts",
-      roles: ["admin", "owner", "staff"],
+      roles: ["ADMIN", "EMPLOYEE"],
     },
     {
       icon: FileDown,
       label: "Phiếu nhập",
       path: "/import",
-      roles: ["admin", "owner"],
+      roles: ["ADMIN", "EMPLOYEE"],
     },
     {
       icon: Ticket,
       label: "Khuyến mãi",
       path: "/promotions",
-      roles: ["admin", "owner"],
+      roles: ["ADMIN", "EMPLOYEE"],
     },
     {
       icon: User,
       label: "Nhân viên",
       path: "/employees",
-      roles: ["admin", "owner"],
+      roles: ["ADMIN"],
     },
     {
       icon: UserCircle,
       label: "Hồ sơ cá nhân",
       path: "/employee-profile",
-      roles: ["admin", "owner", "staff"],
-    },
-    {
-      icon: CalendarDays,
-      label: "Nghỉ phép",
-      path: "/leaveoff",
-      roles: ["admin", "owner", "staff"],
-    },
-    {
-      icon: LogOut,
-      label: "Thôi việc",
-      path: "/resignation",
-      roles: ["admin", "owner", "staff"],
+      roles: ["ADMIN", "EMPLOYEE"],
     },
     {
       icon: ClipboardList,
       label: "Báo cáo",
       path: "/reports",
-      roles: ["admin", "owner", "staff"],
+      roles: ["ADMIN", "EMPLOYEE"],
     },
     {
       icon: Settings,
       label: "Quy định",
       path: "/regulations",
-      roles: ["admin", "owner"],
+      roles: ["ADMIN", "EMPLOYEE"],
     },
   ];
 

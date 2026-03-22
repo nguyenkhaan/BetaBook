@@ -1,6 +1,6 @@
 import { Navigate } from "react-router-dom";
 
-type Role = "admin" | "owner" | "staff";
+type Role = "ADMIN" | "EMPLOYEE" | "CUSTOMER";
 
 interface Props {
   children: React.ReactNode;

@@ -162,6 +162,7 @@ export function InvoicePage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [platformFilter, setPlatformFilter] = useState<string>("all");
   const [staffFilter, setStaffFilter] = useState<string>("all");
+  const [priceFilter, setPriceFilter] = useState("all");
   const [formData, setFormData] = useState({
     customer: "",
     date: "",
@@ -186,21 +187,32 @@ export function InvoicePage() {
   const handleResetFilters = () => {
     setSearchTerm("");
     setStatusFilter("all");
-    setPlatformFilter("all");
-    setStaffFilter("all");
+    setPriceFilter("all"); 
+    toast.info("Đã xóa tất cả bộ lọc");
   };
 
   const filteredInvoices = invoices.filter((invoice) => {
-   
     const matchesSearch =
       invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       invoice.customer.toLowerCase().includes(searchTerm.toLowerCase());
 
-  
     const matchesStatus =
       statusFilter === "all" || invoice.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    let matchesPrice = true;
+    const amount = invoice.totalAmount;
+
+    if (priceFilter === "under100") {
+      matchesPrice = amount < 100000;
+    } else if (priceFilter === "100-200") {
+      matchesPrice = amount >= 100000 && amount <= 200000;
+    } else if (priceFilter === "200-500") {
+      matchesPrice = amount > 200000 && amount <= 500000;
+    } else if (priceFilter === "over500") {
+      matchesPrice = amount > 500000;
+    }
+
+    return matchesSearch && matchesStatus && matchesPrice;
   });
 
   const openViewBooks = (invoice: Invoice) => {
@@ -508,17 +520,18 @@ export function InvoicePage() {
           </Select>
         </div>
 
-        {/* Bộ lọc Nền tảng (Giữ nguyên giao diện) */}
-        <div className="w-48">
-          <Select>
+        {/* Bộ lọc Khoảng giá */}
+        <div className="w-70">
+          <Select value={priceFilter} onValueChange={setPriceFilter}>
             <SelectTrigger className="h-10 border-gray-200 text-sm">
-              <SelectValue placeholder="Tất cả nền tảng" />
+              <SelectValue placeholder="Khoảng giá" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tất cả nền tảng</SelectItem>
-              <SelectItem value="shopee">Shopee</SelectItem>
-              <SelectItem value="tiktok">TikTok Shop</SelectItem>
-              <SelectItem value="web">Website</SelectItem>
+              <SelectItem value="Tất cả">Tất cả giá</SelectItem>
+              <SelectItem value="Dưới 100k">Dưới 100k</SelectItem>
+              <SelectItem value="100k-200k">100k - 200k</SelectItem>
+              <SelectItem value="200k-500k">200k - 500k</SelectItem>
+              <SelectItem value="Hơn 500k">Trên 500k</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -547,7 +560,7 @@ export function InvoicePage() {
           </svg>
         </Button>
       </div>
-      
+
       {/* Invoice Table */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <table className="w-full">

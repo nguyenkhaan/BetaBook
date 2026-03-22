@@ -119,7 +119,7 @@ export function Sidebar({ isCollapsed, onToggle, userRole }: SidebarProps) {
     >
       {/* Logo */}
       <div className="flex items-center gap-3 p-6 border-b border-gray-700">
-        <UserCircle size={36} className="text-orange-500" />
+        <UserCircle size={42} className="text-orange-500" />
         {!isCollapsed && (
           <div className="text-orange-500 font-bold text-xl">Beta Book</div>
         )}
@@ -134,7 +134,9 @@ export function Sidebar({ isCollapsed, onToggle, userRole }: SidebarProps) {
             <Link
               key={index}
               to={item.path}
-              className={`flex items-center gap-3 px-4 py-3 mb-1 transition-colors rounded-lg ${
+              className={`flex items-center mb-1 transition-all duration-300 rounded-lg py-3 ${
+                isCollapsed ? "justify-center px-0" : "justify-start px-4 gap-3"
+              } ${
                 isActive
                   ? "bg-orange-500 text-white"
                   : "text-gray-300 hover:bg-gray-700"

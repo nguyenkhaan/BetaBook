@@ -11,6 +11,7 @@ import {
 } from "../../ui/card";
 import { Eye, EyeOff, LogIn, Mail, Lock } from "lucide-react";
 
+import { useNavigate } from "react-router-dom";
 interface LoginPageProps {
   onLogin: (email: string, password: string) => Promise<boolean> | void;
   onForgotPassword: () => void;
@@ -22,6 +23,8 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,13 +151,21 @@ export function LoginPage({ onLogin, onForgotPassword }: LoginPageProps) {
               )}
             </Button>
 
-            <div className="text-center">
+            <div className="flex justify-center gap-4 mt-4">
               <button
                 type="button"
                 className="text-sm text-orange-600 hover:text-orange-700 hover:underline transition-colors"
                 onClick={onForgotPassword}
               >
                 Quên mật khẩu?
+              </button>
+
+              <button
+                type="button"
+                className="text-sm text-orange-600 hover:text-orange-700 hover:underline transition-colors"
+                onClick={onForgotPassword}
+              >
+                Đăng ký tài khoản
               </button>
             </div>
 

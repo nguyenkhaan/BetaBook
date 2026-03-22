@@ -452,13 +452,13 @@ export function DashboardPage({ onNavigate }: DashboardPageProps = {}) {
             </button>
 
             {/* Phiếu nhập */}
-            <button className="group p-4 bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-xl transition-all duration-200 text-center border-2 border-transparent hover:border-purple-300 hover:shadow-lg" onClick={() => setIsImportDialogOpen(true)}>
+            {/* <button className="group p-4 bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-xl transition-all duration-200 text-center border-2 border-transparent hover:border-purple-300 hover:shadow-lg" onClick={() => setIsImportDialogOpen(true)}>
               <div className="w-12 h-12 bg-purple-500 rounded-lg mx-auto mb-3 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Package className="w-6 h-6 text-white" />
               </div>
               <p className="text-sm font-semibold text-gray-900">Phiếu nhập</p>
               <p className="text-xs text-gray-600 mt-1">Nhập hàng</p>
-            </button>
+            </button> */}
 
             {/* Khuyến mãi */}
             <button className="group p-4 bg-gradient-to-br from-pink-50 to-pink-100 hover:from-pink-100 hover:to-pink-200 rounded-xl transition-all duration-200 text-center border-2 border-transparent hover:border-pink-300 hover:shadow-lg" onClick={() => setIsPromotionDialogOpen(true)}>
@@ -469,23 +469,23 @@ export function DashboardPage({ onNavigate }: DashboardPageProps = {}) {
               <p className="text-xs text-gray-600 mt-1">Tạo mới</p>
             </button>
 
-            {/* Thêm nhân viên */}
+            {/* Thêm nhân viên
             <button className="group p-4 bg-gradient-to-br from-cyan-50 to-cyan-100 hover:from-cyan-100 hover:to-cyan-200 rounded-xl transition-all duration-200 text-center border-2 border-transparent hover:border-cyan-300 hover:shadow-lg" onClick={() => setIsEmployeeDialogOpen(true)}>
               <div className="w-12 h-12 bg-cyan-500 rounded-lg mx-auto mb-3 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Users className="w-6 h-6 text-white" />
               </div>
               <p className="text-sm font-semibold text-gray-900">Nhân viên</p>
               <p className="text-xs text-gray-600 mt-1">Thêm mới</p>
-            </button>
+            </button> */}
 
-            {/* Thêm quy định */}
+            {/* Thêm quy định
             <button className="group p-4 bg-gradient-to-br from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200 rounded-xl transition-all duration-200 text-center border-2 border-transparent hover:border-amber-300 hover:shadow-lg" onClick={() => setIsRegulationDialogOpen(true)}>
               <div className="w-12 h-12 bg-amber-500 rounded-lg mx-auto mb-3 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Settings className="w-6 h-6 text-white" />
               </div>
               <p className="text-sm font-semibold text-gray-900">Quy định</p>
               <p className="text-xs text-gray-600 mt-1">Tạo mới</p>
-            </button>
+            </button> */}
 
             {/* Xem báo cáo */}
             <button className="group p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 rounded-xl transition-all duration-200 text-center border-2 border-transparent hover:border-indigo-300 hover:shadow-lg" onClick={() => onNavigate && onNavigate('reports')}>

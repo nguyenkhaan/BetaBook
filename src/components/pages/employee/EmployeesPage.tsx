@@ -234,13 +234,20 @@ export function EmployeesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-[1400px] mx-auto space-y-6 p-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quản lý nhân viên</h1>
-          <p className="text-gray-600 mt-1">Quản lý thông tin nhân viên của Beta Book</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Quản lý nhân viên
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Quản lý thông tin nhân viên của Beta Book
+          </p>
         </div>
-        <Button className="bg-orange-500 hover:bg-orange-600" onClick={() => setIsCreateDialogOpen(true)}>
+        <Button
+          className="bg-orange-500 hover:bg-orange-600"
+          onClick={() => setIsCreateDialogOpen(true)}
+        >
           <Plus className="w-4 h-4" />
           Thêm nhân viên
         </Button>
@@ -266,7 +273,9 @@ export function EmployeesPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm">Tổng nhân viên</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{employees.length}</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">
+                {employees.length}
+              </p>
             </div>
             <User className="w-10 h-10 text-orange-500" />
           </div>
@@ -276,7 +285,7 @@ export function EmployeesPage() {
             <div>
               <p className="text-gray-600 text-sm">Đang làm việc</p>
               <p className="text-2xl font-bold text-green-600 mt-1">
-                {employees.filter((e) => e.status === 'Đang làm việc').length}
+                {employees.filter((e) => e.status === "Đang làm việc").length}
               </p>
             </div>
             <User className="w-10 h-10 text-green-500" />
@@ -287,7 +296,7 @@ export function EmployeesPage() {
             <div>
               <p className="text-gray-600 text-sm">Nghỉ phép</p>
               <p className="text-2xl font-bold text-yellow-600 mt-1">
-                {employees.filter((e) => e.status === 'Nghỉ phép').length}
+                {employees.filter((e) => e.status === "Nghỉ phép").length}
               </p>
             </div>
             <User className="w-10 h-10 text-yellow-500" />
@@ -298,7 +307,10 @@ export function EmployeesPage() {
             <div>
               <p className="text-gray-600 text-sm">Tổng lương</p>
               <p className="text-2xl font-bold text-gray-900 mt-1">
-                {(employees.reduce((sum, e) => sum + e.salary, 0) / 1000000).toFixed(1)}M
+                {(
+                  employees.reduce((sum, e) => sum + e.salary, 0) / 1000000
+                ).toFixed(1)}
+                M
               </p>
             </div>
             <User className="w-10 h-10 text-blue-500" />
@@ -308,7 +320,7 @@ export function EmployeesPage() {
 
       {/* Employees Table */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <table className="w-full">
+        <table className="w-full table-fixed">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -341,7 +353,9 @@ export function EmployeesPage() {
             {filteredEmployees.map((emp) => (
               <tr key={emp.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-orange-600">{emp.employeeCode}</div>
+                  <div className="text-sm font-medium text-orange-600">
+                    {emp.employeeCode}
+                  </div>
                   <div className="text-sm text-gray-900">{emp.name}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -366,25 +380,43 @@ export function EmployeesPage() {
                   {formatDate(emp.joinDate)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {emp.salary.toLocaleString('vi-VN')}đ
+                  {emp.salary.toLocaleString("vi-VN")}đ
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(emp.status)}`}>
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(emp.status)}`}
+                  >
                     {emp.status}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleViewEmployee(emp)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleViewEmployee(emp)}
+                    >
                       <Eye className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleEditEmployeeOpen(emp)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditEmployeeOpen(emp)}
+                    >
                       <Edit className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDeleteEmployeeOpen(emp)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteEmployeeOpen(emp)}
+                    >
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDownloadEmployee(emp)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDownloadEmployee(emp)}
+                    >
                       <Download className="w-4 h-4 text-blue-500" />
                     </Button>
                   </div>
@@ -400,16 +432,25 @@ export function EmployeesPage() {
         <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Thêm nhân viên mới</DialogTitle>
-            <DialogDescription>Nhập thông tin nhân viên mới vào hệ thống</DialogDescription>
+            <DialogDescription>
+              Nhập thông tin nhân viên mới vào hệ thống
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-5 py-4">
             {/* Mã nhân viên */}
             <div className="space-y-2">
-              <Label htmlFor="employeeCode" className="text-sm font-medium">Mã nhân viên</Label>
+              <Label htmlFor="employeeCode" className="text-sm font-medium">
+                Mã nhân viên
+              </Label>
               <Input
                 id="employeeCode"
-                value={formData.employeeCode || `NV${String(employees.length + 1).padStart(3, '0')}`}
-                onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
+                value={
+                  formData.employeeCode ||
+                  `NV${String(employees.length + 1).padStart(3, "0")}`
+                }
+                onChange={(e) =>
+                  setFormData({ ...formData, employeeCode: e.target.value })
+                }
                 className="bg-gray-50"
                 placeholder="Tự động tạo"
                 readOnly
@@ -418,35 +459,49 @@ export function EmployeesPage() {
 
             {/* Thông tin cá nhân */}
             <div className="space-y-4 pt-2 border-t">
-              <h4 className="text-sm font-semibold text-gray-700">Thông tin cá nhân</h4>
-              
+              <h4 className="text-sm font-semibold text-gray-700">
+                Thông tin cá nhân
+              </h4>
+
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium">Tên nhân viên</Label>
+                <Label htmlFor="name" className="text-sm font-medium">
+                  Tên nhân viên
+                </Label>
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   placeholder="Nhập tên nhân viên"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                <Label htmlFor="email" className="text-sm font-medium">
+                  Email
+                </Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   placeholder="example@company.com"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-sm font-medium">Số điện thoại</Label>
+                <Label htmlFor="phone" className="text-sm font-medium">
+                  Số điện thoại
+                </Label>
                 <Input
                   id="phone"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
                   placeholder="0901234567"
                 />
               </div>
@@ -454,54 +509,82 @@ export function EmployeesPage() {
 
             {/* Thông tin công việc */}
             <div className="space-y-4 pt-2 border-t">
-              <h4 className="text-sm font-semibold text-gray-700">Thông tin công việc</h4>
-              
+              <h4 className="text-sm font-semibold text-gray-700">
+                Thông tin công việc
+              </h4>
+
               <div className="space-y-2">
-                <Label htmlFor="position" className="text-sm font-medium">Chức vụ</Label>
+                <Label htmlFor="position" className="text-sm font-medium">
+                  Chức vụ
+                </Label>
                 <Input
                   id="position"
                   value={formData.position}
-                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, position: e.target.value })
+                  }
                   placeholder="VD: Nhân viên bán hàng"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="department" className="text-sm font-medium">Phòng ban</Label>
+                <Label htmlFor="department" className="text-sm font-medium">
+                  Phòng ban
+                </Label>
                 <Input
                   id="department"
                   value={formData.department}
-                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, department: e.target.value })
+                  }
                   placeholder="VD: Bán hàng"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="joinDate" className="text-sm font-medium">Ngày vào làm</Label>
+                <Label htmlFor="joinDate" className="text-sm font-medium">
+                  Ngày vào làm
+                </Label>
                 <Input
                   id="joinDate"
                   type="date"
                   value={formData.joinDate}
-                  onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, joinDate: e.target.value })
+                  }
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="salary" className="text-sm font-medium">Lương (VNĐ)</Label>
+                <Label htmlFor="salary" className="text-sm font-medium">
+                  Lương (VNĐ)
+                </Label>
                 <Input
                   id="salary"
                   type="number"
                   value={formData.salary}
-                  onChange={(e) => setFormData({ ...formData, salary: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      salary: parseInt(e.target.value) || 0,
+                    })
+                  }
                   placeholder="10000000"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="status" className="text-sm font-medium">Trạng thái</Label>
+                <Label htmlFor="status" className="text-sm font-medium">
+                  Trạng thái
+                </Label>
                 <Select
                   value={formData.status}
-                  onValueChange={(value) => setFormData({ ...formData, status: value as Employee['status'] })}
+                  onValueChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      status: value as Employee["status"],
+                    })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Chọn trạng thái" />
@@ -516,10 +599,21 @@ export function EmployeesPage() {
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={() => { setIsCreateDialogOpen(false); resetFormData(); }}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsCreateDialogOpen(false);
+                resetFormData();
+              }}
+            >
               Hủy bỏ
             </Button>
-            <Button type="button" onClick={handleCreateEmployee} className="bg-orange-500 hover:bg-orange-600">
+            <Button
+              type="button"
+              onClick={handleCreateEmployee}
+              className="bg-orange-500 hover:bg-orange-600"
+            >
               Thêm nhân viên
             </Button>
           </DialogFooter>
@@ -536,7 +630,9 @@ export function EmployeesPage() {
           <div className="grid gap-5 py-4">
             {/* Mã nhân viên */}
             <div className="space-y-2">
-              <Label htmlFor="editEmployeeCode" className="text-sm font-medium">Mã nhân viên</Label>
+              <Label htmlFor="editEmployeeCode" className="text-sm font-medium">
+                Mã nhân viên
+              </Label>
               <Input
                 id="editEmployeeCode"
                 value={formData.employeeCode}
@@ -547,35 +643,49 @@ export function EmployeesPage() {
 
             {/* Thông tin cá nhân */}
             <div className="space-y-4 pt-2 border-t">
-              <h4 className="text-sm font-semibold text-gray-700">Thông tin cá nhân</h4>
-              
+              <h4 className="text-sm font-semibold text-gray-700">
+                Thông tin cá nhân
+              </h4>
+
               <div className="space-y-2">
-                <Label htmlFor="editName" className="text-sm font-medium">Tên nhân viên</Label>
+                <Label htmlFor="editName" className="text-sm font-medium">
+                  Tên nhân viên
+                </Label>
                 <Input
                   id="editName"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   placeholder="Nhập tên nhân viên"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="editEmail" className="text-sm font-medium">Email</Label>
+                <Label htmlFor="editEmail" className="text-sm font-medium">
+                  Email
+                </Label>
                 <Input
                   id="editEmail"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   placeholder="example@company.com"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="editPhone" className="text-sm font-medium">Số điện thoại</Label>
+                <Label htmlFor="editPhone" className="text-sm font-medium">
+                  Số điện thoại
+                </Label>
                 <Input
                   id="editPhone"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
                   placeholder="0901234567"
                 />
               </div>
@@ -583,54 +693,82 @@ export function EmployeesPage() {
 
             {/* Thông tin công việc */}
             <div className="space-y-4 pt-2 border-t">
-              <h4 className="text-sm font-semibold text-gray-700">Thông tin công việc</h4>
-              
+              <h4 className="text-sm font-semibold text-gray-700">
+                Thông tin công việc
+              </h4>
+
               <div className="space-y-2">
-                <Label htmlFor="editPosition" className="text-sm font-medium">Chức vụ</Label>
+                <Label htmlFor="editPosition" className="text-sm font-medium">
+                  Chức vụ
+                </Label>
                 <Input
                   id="editPosition"
                   value={formData.position}
-                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, position: e.target.value })
+                  }
                   placeholder="VD: Nhân viên bán hàng"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="editDepartment" className="text-sm font-medium">Phòng ban</Label>
+                <Label htmlFor="editDepartment" className="text-sm font-medium">
+                  Phòng ban
+                </Label>
                 <Input
                   id="editDepartment"
                   value={formData.department}
-                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, department: e.target.value })
+                  }
                   placeholder="VD: Bán hàng"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="editJoinDate" className="text-sm font-medium">Ngày vào làm</Label>
+                <Label htmlFor="editJoinDate" className="text-sm font-medium">
+                  Ngày vào làm
+                </Label>
                 <Input
                   id="editJoinDate"
                   type="date"
                   value={formData.joinDate}
-                  onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, joinDate: e.target.value })
+                  }
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="editSalary" className="text-sm font-medium">Lương (VNĐ)</Label>
+                <Label htmlFor="editSalary" className="text-sm font-medium">
+                  Lương (VNĐ)
+                </Label>
                 <Input
                   id="editSalary"
                   type="number"
                   value={formData.salary}
-                  onChange={(e) => setFormData({ ...formData, salary: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      salary: parseInt(e.target.value) || 0,
+                    })
+                  }
                   placeholder="10000000"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="editStatus" className="text-sm font-medium">Trạng thái</Label>
+                <Label htmlFor="editStatus" className="text-sm font-medium">
+                  Trạng thái
+                </Label>
                 <Select
                   value={formData.status}
-                  onValueChange={(value) => setFormData({ ...formData, status: value as Employee['status'] })}
+                  onValueChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      status: value as Employee["status"],
+                    })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Chọn trạng thái" />
@@ -645,10 +783,18 @@ export function EmployeesPage() {
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsEditDialogOpen(false)}
+            >
               Hủy bỏ
             </Button>
-            <Button type="button" onClick={handleEditEmployee} className="bg-orange-500 hover:bg-orange-600">
+            <Button
+              type="button"
+              onClick={handleEditEmployee}
+              className="bg-orange-500 hover:bg-orange-600"
+            >
               Cập nhật
             </Button>
           </DialogFooter>
@@ -660,34 +806,50 @@ export function EmployeesPage() {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Chi tiết nhân viên</DialogTitle>
-            <DialogDescription>Thông tin chi tiết về nhân viên</DialogDescription>
+            <DialogDescription>
+              Thông tin chi tiết về nhân viên
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-500">Mã nhân viên</Label>
-              <div className="text-lg font-semibold text-orange-600">{selectedEmployee?.employeeCode}</div>
+              <Label className="text-sm font-medium text-gray-500">
+                Mã nhân viên
+              </Label>
+              <div className="text-lg font-semibold text-orange-600">
+                {selectedEmployee?.employeeCode}
+              </div>
             </div>
 
             <div className="border-t pt-4 space-y-3">
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Tên nhân viên:</span>
-                <span className="text-sm font-medium">{selectedEmployee?.name}</span>
+                <span className="text-sm font-medium">
+                  {selectedEmployee?.name}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Email:</span>
-                <span className="text-sm font-medium">{selectedEmployee?.email}</span>
+                <span className="text-sm font-medium">
+                  {selectedEmployee?.email}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Số điện thoại:</span>
-                <span className="text-sm font-medium">{selectedEmployee?.phone}</span>
+                <span className="text-sm font-medium">
+                  {selectedEmployee?.phone}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Chức vụ:</span>
-                <span className="text-sm font-medium">{selectedEmployee?.position}</span>
+                <span className="text-sm font-medium">
+                  {selectedEmployee?.position}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Phòng ban:</span>
-                <span className="text-sm font-medium">{selectedEmployee?.department}</span>
+                <span className="text-sm font-medium">
+                  {selectedEmployee?.department}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Ngày vào làm:</span>
@@ -698,24 +860,32 @@ export function EmployeesPage() {
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Lương:</span>
                 <span className="text-sm font-semibold text-orange-600">
-                  {selectedEmployee?.salary.toLocaleString('vi-VN')}đ
+                  {selectedEmployee?.salary.toLocaleString("vi-VN")}đ
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Trạng thái:</span>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${selectedEmployee && getStatusColor(selectedEmployee.status)}`}>
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-medium ${selectedEmployee && getStatusColor(selectedEmployee.status)}`}
+                >
                   {selectedEmployee?.status}
                 </span>
               </div>
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsViewDialogOpen(false)}
+            >
               Đóng
             </Button>
             <Button
               type="button"
-              onClick={() => selectedEmployee && handleDownloadEmployee(selectedEmployee)}
+              onClick={() =>
+                selectedEmployee && handleDownloadEmployee(selectedEmployee)
+              }
               className="bg-blue-500 hover:bg-blue-600"
             >
               <Download className="w-4 h-4 mr-2" />
@@ -730,29 +900,45 @@ export function EmployeesPage() {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Xóa nhân viên</DialogTitle>
-            <DialogDescription>Bạn có chắc chắn muốn xóa nhân viên này khỏi hệ thống?</DialogDescription>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa nhân viên này khỏi hệ thống?
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Mã nhân viên:</span>
-                <span className="text-sm font-semibold text-red-600">{selectedEmployee?.employeeCode}</span>
+                <span className="text-sm font-semibold text-red-600">
+                  {selectedEmployee?.employeeCode}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Tên:</span>
-                <span className="text-sm font-medium">{selectedEmployee?.name}</span>
+                <span className="text-sm font-medium">
+                  {selectedEmployee?.name}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Chức vụ:</span>
-                <span className="text-sm font-medium">{selectedEmployee?.position}</span>
+                <span className="text-sm font-medium">
+                  {selectedEmployee?.position}
+                </span>
               </div>
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
               Hủy bỏ
             </Button>
-            <Button type="button" onClick={handleDeleteEmployee} className="bg-red-500 hover:bg-red-600">
+            <Button
+              type="button"
+              onClick={handleDeleteEmployee}
+              className="bg-red-500 hover:bg-red-600"
+            >
               Xóa nhân viên
             </Button>
           </DialogFooter>

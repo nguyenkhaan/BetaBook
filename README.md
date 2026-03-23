@@ -1,4 +1,4 @@
-# BetaBook (NhaSach)
+# Utahime Bookstore 
 
 ![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)
 ![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)
@@ -190,10 +190,6 @@ npm run format
 
 Lint checks are run via commit hooks (`lint-staged` + `eslint`), and will run on changed files when committing.
 
-## 10. Additional Notes
+## 10. Commit Convetions Note 
 
-- API base URL and auth tokens are likely configured in `src/api/api.ts` and `src/services/auth.service.ts`.
-- If you integrate with a backend, match response models with `src/interfaces` and `src/base/constants`.
-- Use the component set in `src/components/ui` to keep UI consistency.
-- Adjust theme system in `src/components` and `global.css` as needed.
-
+![](https://capgo.app/conventional_commits.webp)

@@ -2,7 +2,12 @@
     "name": "NhaSach",
     "version": "0.1.0",
     "private": true,
+    "lint-staged": {
+        "*.{jsx,js,ts,tsx}": "eslint --max-warnings=0"
+    },
+    "type": "module",
     "dependencies": {
+        "@eslint/js": "^10.0.1",
         "@radix-ui/react-accordion": "^1.2.3",
         "@radix-ui/react-alert-dialog": "^1.1.6",
         "@radix-ui/react-aspect-ratio": "^1.1.2",
@@ -34,6 +39,7 @@
         "cmdk": "^1.1.1",
         "cookies-js": "^1.2.3",
         "embla-carousel-react": "^8.6.0",
+        "eslint": "^10.1.0",
         "input-otp": "^1.4.2",
         "js-cookie": "^3.0.5",
         "lucide-react": "^0.487.0",
@@ -52,15 +58,26 @@
         "vaul": "^1.1.2"
     },
     "devDependencies": {
+        "@commitlint/cli": "^20.5.0",
+        "@commitlint/config-conventional": "^20.5.0",
         "@types/node": "^20.10.0",
         "@types/react": "^19.2.14",
         "@types/react-dom": "^19.2.3",
+        "@typescript-eslint/eslint-plugin": "^8.57.1",
+        "@typescript-eslint/parser": "^8.57.1",
         "@vitejs/plugin-react-swc": "^3.10.2",
+        "eslint-plugin-react-hooks": "^7.0.1",
+        "eslint-plugin-react-refresh": "^0.5.2",
+        "globals": "^17.4.0",
+        "husky": "^9.1.7",
+        "lint-staged": "^16.4.0",
+        "typescript-eslint": "^8.57.1",
         "vite": "6.3.5"
     },
     "scripts": {
         "dev": "vite",
         "build": "vite build",
-        "format": "prettier . --write"
+        "format": "prettier . --write",
+        "prepare": "husky"
     }
 }

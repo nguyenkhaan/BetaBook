@@ -29,22 +29,20 @@ import {
     DollarSign,
     ShoppingCart,
     Users,
-    Package,
     FileText,
     BookOpen,
     UserPlus,
     Tag,
     BarChart3,
     Receipt,
-    Settings,
     Plus,
     Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface DashboardPageProps {
-    onNavigate?: (page: string) => void;
-}
+// interface DashboardPageProps {
+//     onNavigate?: (page: string) => void;
+// }
 
 // Mock discount codes for invoice
 const mockDiscountCodes = [
@@ -72,9 +70,7 @@ const mockDiscountCodes = [
 ];
 
 export function DashboardPage() {
-    const onNavigate = (x : string) => {
-
-    }
+    const onNavigate = (x: string) => {console.log(x)};
     const stats = [
         {
             title: 'Tổng doanh thu',
@@ -679,7 +675,7 @@ export function DashboardPage() {
                 </CardContent>
             </Card>
 
-            {/* CREATE INVOICE DIALOG */}
+            {/* CREATE INVOICE DIALOG - Tạo hóa đơn */}
             <Dialog
                 open={isInvoiceDialogOpen}
                 onOpenChange={setIsInvoiceDialogOpen}
@@ -694,7 +690,7 @@ export function DashboardPage() {
                     <div className="grid gap-3 py-3">
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="customer" className="text-sm">
-                                Khách hàng
+                                Mã khách hàng
                             </Label>
                             <Input
                                 id="customer"
@@ -706,7 +702,7 @@ export function DashboardPage() {
                                     })
                                 }
                                 className="col-span-3"
-                                placeholder="Nhập tên khách hàng"
+                                placeholder="Nhập mã khách hàng"
                             />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
@@ -743,7 +739,7 @@ export function DashboardPage() {
                                                     Tên sách
                                                 </th>
                                                 <th className="text-left py-1 px-2 text-xs font-medium text-gray-500">
-                                                    SL
+                                                    Số lượng
                                                 </th>
                                                 <th className="text-left py-1 px-2 text-xs font-medium text-gray-500">
                                                     Giá
@@ -1326,9 +1322,30 @@ export function DashboardPage() {
                             >
                                 Số phiếu thu
                             </Label>
+
                             <Input
                                 id="receiptNumber"
                                 value={receiptFormData.receiptNumber || 'PT001'}
+                                onChange={(e) =>
+                                    setReceiptFormData({
+                                        ...receiptFormData,
+                                        receiptNumber: e.target.value,
+                                    })
+                                }
+                                className="bg-gray-50"
+                                placeholder="Tự động tạo"
+                                readOnly
+                            />
+
+                            <Label
+                                htmlFor="receiptNumber"
+                                className="text-sm font-medium"
+                            >
+                                Mã hóa đơn
+                            </Label>
+                            <Input
+                                id="receiptNumber"
+                                value={receiptFormData.receiptNumber || 'HD001'}
                                 onChange={(e) =>
                                     setReceiptFormData({
                                         ...receiptFormData,
@@ -1352,7 +1369,7 @@ export function DashboardPage() {
                                     htmlFor="customerName"
                                     className="text-sm font-medium"
                                 >
-                                    Tên khách hàng
+                                    Mã khách hàng
                                 </Label>
                                 <Input
                                     id="customerName"
@@ -1363,7 +1380,7 @@ export function DashboardPage() {
                                             customerName: e.target.value,
                                         })
                                     }
-                                    placeholder="Nhập tên khách hàng"
+                                    placeholder="Nhập mã khách hàng"
                                 />
                             </div>
                         </div>
@@ -1697,7 +1714,7 @@ export function DashboardPage() {
                                     htmlFor="createdBy"
                                     className="text-sm font-medium"
                                 >
-                                    Người tạo
+                                    Mã nhân viên
                                 </Label>
                                 <Input
                                     id="createdBy"

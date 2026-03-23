@@ -32,10 +32,10 @@ interface Regulation {
     updatedBy: string;
 }
 
-interface RegulationsPageProps {
-    onNavigate: (page: string) => void;
-    onSelectRegulation: (regulation: Regulation) => void;
-}
+// interface RegulationsPageProps {
+//     onNavigate: (page: string) => void;
+//     onSelectRegulation: (regulation: Regulation) => void;
+// }
 
 const mockRegulations: Regulation[] = [
     {
@@ -466,6 +466,23 @@ export function RegulationsPage() {
                                         })
                                     }
                                     placeholder="VD: Quy định về giờ làm việc"
+                                />
+                                <Label
+                                    htmlFor="title"
+                                    className="text-sm font-medium"
+                                >
+                                    Mã người tạo
+                                </Label>
+                                <Input
+                                    id="title"
+                                    value={formData.title}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            title: e.target.value,
+                                        })
+                                    }
+                                    placeholder="VD: NV001"
                                 />
                             </div>
 

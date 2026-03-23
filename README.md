@@ -1,18 +1,21 @@
+# Bookstore Backend
 
-# Bookstore Backend 
-- This Frontend build by Figma. You can visit it: 
+- This Frontend build by Figma. You can visit it:
 
-## Running the code 
+## Running the code
 
-### Install Dependencies 
+### Install Dependencies
 
-**Using npm**: 
+**Using npm**:
+
 ```
-npm install 
-``` 
-**Using bun** 
+npm install
 ```
-bun install 
-``` 
 
-### Go 
+**Using bun**
+
+```
+bun install
+```
+
+### Go

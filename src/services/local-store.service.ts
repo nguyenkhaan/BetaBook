@@ -1,6 +1,16 @@
 export class LocalStorageService {
-    static saveKey(key: string, value: string) {
-        localStorage.setItem(key, value);
+    static saveValue(key : string , value : any) 
+    {
+        try 
+        {
+            const data = JSON.stringify(value) 
+            localStorage.setItem(key , data) 
+            return true 
+        } 
+        catch (err) 
+        {
+            return false 
+        }
     }
     static getValue(key: string) {
         const value = localStorage.getItem(key);

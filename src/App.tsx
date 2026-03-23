@@ -21,11 +21,9 @@ import { ImportPage } from './pages/import/ImportPage';
 import { PromotionsPage } from './pages/promotion/PromotionsPage';
 import { EmployeesPage } from './pages/employee/EmployeesPage';
 import { ReportsPage } from './pages/report/ReportsPage';
-import { RegulationDetailPage } from './pages/regulation/RegulationDetailPage';
 import { EmployeeProfile } from './pages/employee/EmployeeProfile';
 import { MyPage } from './pages/userprofile/MyPage';
 import { Role } from './bases/constants/app.constants';
-import { checkLogin } from './utilis/checkLogin';
 import { routePermission } from './routes/route.permission';
 import { DashboardLayout } from './layouts/DashboardLayouts';
 
@@ -47,7 +45,6 @@ export default function App() {
                   {Object.entries(routePermission).map(([path, roles]) => {
                      const routePath =
                            path === 'importPage' ? '/import' : `/${path}`;
-                           console.log(routePath) 
                      return (
                            <Route
                               key={path}
@@ -81,8 +78,8 @@ export default function App() {
                                                       return <RegulationsPage />;
                                                 case 'eProfile':
                                                       return <EmployeeProfile />;
-                                                case 'profile': 
-                                                      return <MyPage /> 
+                                                // case 'profile': 
+                                                //       return <MyPage /> 
                                                 default:
                                                       return (
                                                          <div>Page not found</div>

@@ -1,19 +1,21 @@
 import Cookies from 'js-cookie';
+import { TokenType } from '../bases/enums/jwt.enum';
+import { ACCESS_LIVE_TIME, REFRESH_LIVE_TIME } from '../bases/constants/jwt.constants';
 export class CookiesService {
-    static saveCookies(key: string, value: string, options?: any) {
-        Cookies.set(key, value, {
-            ...(options && options),
-        });
-    }
-    static getCookie(key: string): string | undefined {
-        const value = Cookies.get(key);
-        if (!value) return undefined;
-        try {
-            const js = JSON.parse(value);
-            return js; //Try to parse the json object
-        } catch {
-            return value;
-        }
+    static saveToken(token : string , type : TokenType) 
+    {
+        const ti : number = ((type == TokenType.ACCESS_TOKEN)? ACCESS_LIVE_TIME : REFRESH_LIVE_TIME) 
+        Cookies.set(type.toString() , token , {
+            expires : ti, 
+            path : '/', 
+            secure : true, 
+            sameSite : 'Strict'
+        })
+    } 
+    static getToken(type : TokenType) 
+    {
+        const token = Cookies.get(type.toString()) 
+        return token 
     }
 
     static removeCookie(key: string) {

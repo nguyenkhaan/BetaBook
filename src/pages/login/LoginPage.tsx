@@ -15,12 +15,13 @@ import {
 import { Eye, EyeOff, LogIn, Mail, Lock } from 'lucide-react';
 
 import { useNavigate } from 'react-router-dom';
-import { checkLogin } from '../../utilis/checkLogin';
+import { TokenType } from '../../bases/enums/jwt.enum';
+import toast from 'react-hot-toast'
 
 export function LoginPage() {
     const navigate = useNavigate();
     useEffect(() => {
-        if (checkLogin()) {
+        if (AuthService.checkLogin()) {
             navigate('/dashboard', { replace: true }); 
         }
     }, [navigate]);
@@ -42,15 +43,18 @@ export function LoginPage() {
             const responseData = await AuthService.login(email, password);
             const { accessToken, refreshToken } = responseData;
             //Call api to get personal information
-            CookiesService.saveCookies('accessToken', accessToken);
-            CookiesService.saveCookies('refreshToken', refreshToken);
-            console.log(accessToken);
+            CookiesService.saveToken(accessToken , TokenType.ACCESS_TOKEN) 
+            CookiesService.saveToken(refreshToken , TokenType.REFRESH_TOKEN)
+            //Calling me for get information 
             const me = await AuthService.me(accessToken);
             //Luu tru me vao ben trong local-storage
-            LocalStorageService.saveKey('me', JSON.stringify(me));
-            navigate('/dashboard');
-        } catch (err: any) {
-            const status = err.response.status;
+            const result = LocalStorageService.saveValue('me' , me) 
+            if (result)
+                navigate('/dashboard');
+            else 
+                toast.error("Error during resolve. Please try again later") 
+        } 
+        catch (err: any) {
             const message = err.response.data.message;
             setError(message || 'Error. Try agin later');
         } finally {
@@ -75,10 +79,10 @@ export function LoginPage() {
 
                     <div className="text-center space-y-2">
                         <CardTitle className="text-2xl">
-                            Chào mừng trở lại
+                            Welcome Back 
                         </CardTitle>
                         <CardDescription className="text-base">
-                            Đăng nhập để truy cập hệ thống quản lý nhà sách
+                            Login to continue 
                         </CardDescription>
                     </div>
                 </CardHeader>
@@ -87,7 +91,7 @@ export function LoginPage() {
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-2">
                             <Label htmlFor="email" className="text-gray-700">
-                                Địa chỉ Email
+                                Your email 
                             </Label>
                             <div className="relative">
                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -106,7 +110,7 @@ export function LoginPage() {
 
                         <div className="space-y-2">
                             <Label htmlFor="password" className="text-gray-700">
-                                Mật khẩu
+                                Password 
                             </Label>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -155,19 +159,19 @@ export function LoginPage() {
                             {isLoading ? (
                                 <div className="flex items-center gap-2">
                                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    <span>Đang đăng nhập...</span>
+                                    <span>Signing In...</span>
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-2">
                                     <LogIn className="w-5 h-5" />
-                                    <span>Đăng nhập</span>
+                                    <span>Sign In</span>
                                 </div>
                             )}
                         </Button>
 
                         <div className="pt-4 border-t border-gray-100">
                             <p className="text-xs text-gray-500 text-center mb-2">
-                                Thông tin đăng nhập mẫu:
+                                Sample Account (Tour employee):
                             </p>
                             <div className="bg-gray-50 rounded-lg p-3 space-y-1">
                                 <p className="text-xs text-gray-600">
@@ -176,7 +180,7 @@ export function LoginPage() {
                                 </p>
                                 <p className="text-xs text-gray-600">
                                     <span className="font-medium">
-                                        Mật khẩu:
+                                        Password:
                                     </span>{' '}
                                     password
                                 </p>

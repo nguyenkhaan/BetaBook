@@ -1,8 +1,10 @@
 // src/components/ProtectedRoute.tsx
-import { Navigate } from 'react-router-dom';
-import { CookiesService } from '../services/cookies.service';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { LocalStorageService } from '../services/local-store.service';
 import type { Role } from '../bases/constants/app.constants';
+import { useEffect } from 'react';
+import { checkLogin } from '../utilis/checkLogin';
+import { AuthService } from '../services/auth.service';
 
 interface Props {
     children: React.ReactNode;
@@ -10,13 +12,12 @@ interface Props {
 }
 
 export const ProtectedRoute = ({ children, neededRoles }: Props) => {
-    const accessToken = CookiesService.getCookie('accessToken');
-    const refreshToken = CookiesService.getCookie('refreshToken');
-
-
-    if (!accessToken || !refreshToken) {
-        return <Navigate to="/" replace />;
-    }
+    const navigate = useNavigate() 
+    useEffect(() => {
+        const result = AuthService.checkLogin() 
+        if (!result) 
+            navigate('/') 
+    }, [])
 
 
     const me = LocalStorageService.getValue('me');

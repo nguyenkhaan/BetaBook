@@ -16,13 +16,13 @@ import { Eye, EyeOff, LogIn, Mail, Lock } from 'lucide-react';
 
 import { useNavigate } from 'react-router-dom';
 import { TokenType } from '../../bases/enums/jwt.enum';
-import toast from 'react-hot-toast'
+import toast from 'react-hot-toast';
 
 export function LoginPage() {
     const navigate = useNavigate();
     useEffect(() => {
         if (AuthService.checkLogin()) {
-            navigate('/dashboard', { replace: true }); 
+            navigate('/dashboard', { replace: true });
         }
     }, [navigate]);
     const [email, setEmail] = useState('');
@@ -43,18 +43,15 @@ export function LoginPage() {
             const responseData = await AuthService.login(email, password);
             const { accessToken, refreshToken } = responseData;
             //Call api to get personal information
-            CookiesService.saveToken(accessToken , TokenType.ACCESS_TOKEN) 
-            CookiesService.saveToken(refreshToken , TokenType.REFRESH_TOKEN)
-            //Calling me for get information 
+            CookiesService.saveToken(accessToken, TokenType.ACCESS_TOKEN);
+            CookiesService.saveToken(refreshToken, TokenType.REFRESH_TOKEN);
+            //Calling me for get information
             const me = await AuthService.me(accessToken);
             //Luu tru me vao ben trong local-storage
-            const result = LocalStorageService.saveValue('me' , me) 
-            if (result)
-                navigate('/dashboard');
-            else 
-                toast.error("Error during resolve. Please try again later") 
-        } 
-        catch (err: any) {
+            const result = LocalStorageService.saveValue('me', me);
+            if (result) navigate('/dashboard');
+            else toast.error('Error during resolve. Please try again later');
+        } catch (err: any) {
             const message = err.response.data.message;
             setError(message || 'Error. Try agin later');
         } finally {
@@ -78,11 +75,9 @@ export function LoginPage() {
                     </div>
 
                     <div className="text-center space-y-2">
-                        <CardTitle className="text-2xl">
-                            Welcome Back 
-                        </CardTitle>
+                        <CardTitle className="text-2xl">Welcome Back</CardTitle>
                         <CardDescription className="text-base">
-                            Login to continue 
+                            Login to continue
                         </CardDescription>
                     </div>
                 </CardHeader>
@@ -91,7 +86,7 @@ export function LoginPage() {
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-2">
                             <Label htmlFor="email" className="text-gray-700">
-                                Email 
+                                Email
                             </Label>
                             <div className="relative">
                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -110,7 +105,7 @@ export function LoginPage() {
 
                         <div className="space-y-2">
                             <Label htmlFor="password" className="text-gray-700">
-                                Password 
+                                Password
                             </Label>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />

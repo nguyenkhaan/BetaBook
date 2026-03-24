@@ -1,4 +1,4 @@
-# Utahime Bookstore 
+# Utahime Bookstore
 
 ![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)
 ![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)
@@ -35,27 +35,27 @@ BetaBook is a modern web-based bookstore/HR dashboard intended for enterprise op
 ## 3. Tech Stack
 
 - Frontend
-  - React 18
-  - TypeScript
-  - Vite
-  - React Router DOM
-  - Radix UI components
-  - Tailwind CSS (via custom styles and utility classes)
-  - Recharts (data visualization)
-  - React Hook Form
-  - Axios for API calls
-  - Sonner toast notifications
+    - React 18
+    - TypeScript
+    - Vite
+    - React Router DOM
+    - Radix UI components
+    - Tailwind CSS (via custom styles and utility classes)
+    - Recharts (data visualization)
+    - React Hook Form
+    - Axios for API calls
+    - Sonner toast notifications
 
 - Tooling
-  - ESLint
-  - Prettier
-  - Husky + lint-staged + commitlint
-  - Bun/NPM package lock
+    - ESLint
+    - Prettier
+    - Husky + lint-staged + commitlint
+    - Bun/NPM package lock
 
 - Others
-  - Cookies + local storage services
-  - Dark/light themes with next-themes
-  - Command palette via cmdk
+    - Cookies + local storage services
+    - Dark/light themes with next-themes
+    - Command palette via cmdk
 
 > Note: No backend source is in this repository, API layer is implied through `src/api/api.ts` and `src/services/*.ts`.
 
@@ -190,6 +190,6 @@ npm run format
 
 Lint checks are run via commit hooks (`lint-staged` + `eslint`), and will run on changed files when committing.
 
-## 10. Commit Convetions Note 
+## 10. Commit Convetions Note
 
 ![](https://capgo.app/conventional_commits.webp)

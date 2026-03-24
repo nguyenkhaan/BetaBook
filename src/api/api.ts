@@ -7,48 +7,41 @@ const publicApi = axios.create({
     timeout: 10000,
 });
 const privateApi = axios.create({
-    baseURL : 'http://localhost:4000/api', 
-    timeout : 10000
-})
+    baseURL: 'http://localhost:4000/api',
+    timeout: 10000,
+});
 
 publicApi.interceptors.response.use(
-    (response) => response.data, 
+    (response) => response.data,
     (error) => {
-        const status=  error.response.status 
-        if (status === 401) 
-        {
-            console.log("Invalid session. Please login again") 
-            //Call something to say user they should login again 
-        } 
-        return Promise.reject(error) 
-
-    }
-)
+        const status = error.response.status;
+        if (status === 401) {
+            console.log('Invalid session. Please login again');
+            //Call something to say user they should login again
+        }
+        return Promise.reject(error);
+    },
+);
 privateApi.interceptors.request.use(
     (config) => {
-        const token = CookiesService.getToken(TokenType.ACCESS_TOKEN) 
-        if (token && config['headers']) 
-        {
+        const token = CookiesService.getToken(TokenType.ACCESS_TOKEN);
+        if (token && config['headers']) {
             {
-                config.headers['Authorization'] = `Bearer ${token}`
-            } 
-        } 
-        return config 
-    }, 
-    (error) => Promise.reject(error) 
-)
-privateApi.interceptors.response.use(
-    (response) => response.data, 
-    (error) => {
-        const status = error.response.status 
-        if (status === 401) 
-        {
-            console.log("Invalid Session. Please login again") 
+                config.headers['Authorization'] = `Bearer ${token}`;
+            }
         }
-        return Promise.reject(error) 
-    }
-)
-export {
-    publicApi, 
-    privateApi 
-}
+        return config;
+    },
+    (error) => Promise.reject(error),
+);
+privateApi.interceptors.response.use(
+    (response) => response.data,
+    (error) => {
+        const status = error.response.status;
+        if (status === 401) {
+            console.log('Invalid Session. Please login again');
+        }
+        return Promise.reject(error);
+    },
+);
+export { publicApi, privateApi };

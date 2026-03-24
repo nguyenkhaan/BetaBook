@@ -16,7 +16,6 @@ import {
 } from 'lucide-react';
 import { routePermission } from '../../routes/route.permission';
 import { Role } from '../../bases/constants/app.constants';
-import { LocalStorageService } from '../../services/local-store.service';
 interface SidebarProps {
     isCollapsed: boolean;
     onToggle: () => void;
@@ -81,7 +80,7 @@ const menuItems: MenuItem[] = [
     //     path: '/profile',
     //     roles: routePermission.profile,
     // },
-      {
+    {
         icon: UserCircle,
         label: 'Hồ sơ cá nhân',
         path: '/eProfile',

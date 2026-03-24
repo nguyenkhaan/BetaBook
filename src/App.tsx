@@ -1,13 +1,8 @@
-import { useEffect, useState } from 'react';
 import {
-    BrowserRouter,
     Routes,
     Route,
-    Navigate,
-    useNavigate,
-    useLocation,
 } from 'react-router-dom';
-import { Toaster, toast } from 'sonner';
+import { Toaster } from 'sonner';
 
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { RegulationsPage } from './pages/regulation/RegulationsPage';
@@ -22,78 +17,74 @@ import { PromotionsPage } from './pages/promotion/PromotionsPage';
 import { EmployeesPage } from './pages/employee/EmployeesPage';
 import { ReportsPage } from './pages/report/ReportsPage';
 import { EmployeeProfile } from './pages/employee/EmployeeProfile';
-import { MyPage } from './pages/userprofile/MyPage';
-import { Role } from './bases/constants/app.constants';
 import { routePermission } from './routes/route.permission';
 import { DashboardLayout } from './layouts/DashboardLayouts';
 
 export default function App() {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [userRole, setUserRole] = useState<Role>('EMPLOYEE');
-    const [userName, setUserName] = useState('');
-    const [showForgotPassword, setShowForgotPassword] = useState(false);
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
-    const navigate = useNavigate();
-    const location = useLocation();
+    // const [isAuthenticated, setIsAuthenticated] = useState(false);
+    // const [userRole, setUserRole] = useState<Role>('EMPLOYEE');
+    // const [userName, setUserName] = useState('');
+    // const [showForgotPassword, setShowForgotPassword] = useState(false);
+    // const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+    // const navigate = useNavigate();
+    // const location = useLocation();
     return (
         <>
             <Toaster position="top-right" richColors />
 
             <Routes>
                 <Route path="/" element={<LoginPage />} />
-                
-                  {Object.entries(routePermission).map(([path, roles]) => {
-                     const routePath =
-                           path === 'importPage' ? '/import' : `/${path}`;
-                     return (
-                           <Route
-                              key={path}
-                              path={routePath}
-                              
-                              element={
-                                 <ProtectedRoute neededRoles={roles}>
+
+                {Object.entries(routePermission).map(([path, roles]) => {
+                    const routePath =
+                        path === 'importPage' ? '/import' : `/${path}`;
+                    return (
+                        <Route
+                            key={path}
+                            path={routePath}
+                            element={
+                                <ProtectedRoute neededRoles={roles}>
                                     <DashboardLayout>
-
-                                          {(() => {
-                                             switch (path) {
+                                        {(() => {
+                                            switch (path) {
                                                 case 'dashboard':
-                                                      return <DashboardPage />;
+                                                    return <DashboardPage />;
                                                 case 'invoice':
-                                                      return <InvoicePage />;
+                                                    return <InvoicePage />;
                                                 case 'books':
-                                                      return <BooksPage />;
+                                                    return <BooksPage />;
                                                 case 'customers':
-                                                      return <CustomersPage />;
+                                                    return <CustomersPage />;
                                                 case 'receipts':
-                                                      return <ReceiptsPage />;
+                                                    return <ReceiptsPage />;
                                                 case 'importPage':
-                                                      return <ImportPage />;
+                                                    return <ImportPage />;
                                                 case 'promotions':
-                                                      return <PromotionsPage />;
+                                                    return <PromotionsPage />;
                                                 case 'employees':
-                                                      return <EmployeesPage />;
+                                                    return <EmployeesPage />;
                                                 case 'reports':
-                                                      return <ReportsPage />;
+                                                    return <ReportsPage />;
                                                 case 'regulations':
-                                                      return <RegulationsPage />;
+                                                    return <RegulationsPage />;
                                                 case 'eProfile':
-                                                      return <EmployeeProfile />;
-                                                // case 'profile': 
-                                                //       return <MyPage /> 
+                                                    return <EmployeeProfile />;
+                                                // case 'profile':
+                                                //       return <MyPage />
                                                 default:
-                                                      return (
-                                                         <div>Page not found</div>
-                                                      );
-                                             }
-                                          })()}
+                                                    return (
+                                                        <div>
+                                                            Page not found
+                                                        </div>
+                                                    );
+                                            }
+                                        })()}
                                     </DashboardLayout>
-                                 </ProtectedRoute>
-                              }
-                           />
-                     );
-                  })}
-
-
+                                </ProtectedRoute>
+                            }
+                        />
+                    );
+                })}
             </Routes>
         </>
     );

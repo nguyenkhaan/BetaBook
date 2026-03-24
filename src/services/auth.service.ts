@@ -1,4 +1,4 @@
-import {privateApi, publicApi} from '../api/api';
+import { privateApi, publicApi } from '../api/api';
 import { TokenType } from '../bases/enums/jwt.enum';
 import { CookiesService } from './cookies.service';
 import { LocalStorageService } from './local-store.service';
@@ -18,8 +18,8 @@ export class AuthService {
         );
         return responseData.data;
     }
-    static async me(token: string) {
-        const responseData = await privateApi.get('auth/me') 
+    static async me() {
+        const responseData = await privateApi.get('auth/me');
         return responseData.data;
     }
     static checkLogin() {

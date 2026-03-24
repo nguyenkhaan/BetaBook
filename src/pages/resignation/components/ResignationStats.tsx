@@ -1,5 +1,5 @@
-import { Resignation } from './ResignationDashboard';
-import { Card } from '../../components/ui/card';
+import { Resignation } from '../ResignationDashboard';
+import { Card } from '../../../components/ui/card';
 
 interface ResignationStatsProps {
     resignations: Resignation[];

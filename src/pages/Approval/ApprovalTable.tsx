@@ -2,13 +2,10 @@ import { Resignation } from '../resignation/ResignationDashboard';
 import {
     Table,
     TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
 } from '../../components/ui/table';
-import { Check, X, FileText } from 'lucide-react';
-import { Button } from '../../components/ui/button';
+import { ApprovalTableHeader } from './components/ApprovalTableHeader';
+import { ApprovalTableRow } from './components/ApprovalTableRow';
+
 interface ApprovalTableProps {
     resignations: Resignation[];
     onApprove: (id: number) => void;
@@ -33,93 +30,18 @@ export function ApprovalTable({
             </div>
 
             <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead className="w-12 text-center"></TableHead>
-                        <TableHead>Tên nhân viên</TableHead>
-                        <TableHead className="text-center">Vị trí</TableHead>
-                        <TableHead className="text-center">Phòng ban</TableHead>
-                        <TableHead className="text-center">
-                            Ngày nộp đơn
-                        </TableHead>
-                        <TableHead className="text-center">
-                            Số ngày nghỉ
-                        </TableHead>
-                        <TableHead className="text-center">Chi tiết</TableHead>
-                        {showActions && (
-                            <TableHead className="text-center">
-                                Hành động
-                            </TableHead>
-                        )}
-                    </TableRow>
-                </TableHeader>
+                <ApprovalTableHeader showActions={showActions} />
                 <TableBody>
                     {resignations.map((resignation, index) => (
-                        <TableRow key={resignation.id}>
-                            <TableCell className="text-center">
-                                {index + 1}
-                            </TableCell>
-                            <TableCell>{resignation.employeeName}</TableCell>
-                            <TableCell className="text-center">
-                                {resignation.position}
-                            </TableCell>
-                            <TableCell className="text-center">
-                                {resignation.department}
-                            </TableCell>
-                            <TableCell className="text-center">
-                                {resignation.submissionDate}
-                            </TableCell>
-                            <TableCell className="text-center">
-                                {resignation.daysTakenOff} ngày
-                            </TableCell>
-                            <TableCell className="text-center">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => onViewDetail(resignation.id)}
-                                    className="flex items-center gap-1 mx-auto"
-                                    title="Xem chi tiết"
-                                >
-                                    <FileText className="w-4 h-4" />
-                                    Xem
-                                </Button>
-                            </TableCell>
-                            {showActions && (
-                                <TableCell className="text-center">
-                                    <div className="flex justify-center gap-2">
-                                        {resignation.status ===
-                                            'Đang xử lý' && (
-                                            <>
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        onApprove(
-                                                            resignation.id,
-                                                        )
-                                                    }
-                                                    className="bg-green-500 hover:bg-green-600 text-white"
-                                                    title="Chấp nhận yêu cầu"
-                                                >
-                                                    <Check className="w-4 h-4 mr-1" />
-                                                    Chấp nhận
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        onDeny(resignation.id)
-                                                    }
-                                                    className="bg-red-500 hover:bg-red-600 text-white"
-                                                    title="Từ chối yêu cầu"
-                                                >
-                                                    <X className="w-4 h-4 mr-1" />
-                                                    Từ chối
-                                                </Button>
-                                            </>
-                                        )}
-                                    </div>
-                                </TableCell>
-                            )}
-                        </TableRow>
+                        <ApprovalTableRow
+                            key={resignation.id}
+                            resignation={resignation}
+                            index={index}
+                            onApprove={onApprove}
+                            onDeny={onDeny}
+                            onViewDetail={onViewDetail}
+                            showActions={showActions}
+                        />
                     ))}
                 </TableBody>
             </Table>

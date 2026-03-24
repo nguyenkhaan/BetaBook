@@ -4,6 +4,7 @@ import { ApprovalTable } from './ApprovalTable';
 import { RejectionDialog } from '../RejectionDialog';
 import { ResignationDetailDialog } from '../resignation/ResignationDetailDialog';
 import { ResignationStats } from '../resignation/ResignationStats';
+import { ApprovalHeader } from './components/ApprovalHeader';
 
 interface ApprovalManagementProps {
     resignations: Resignation[];
@@ -63,10 +64,7 @@ export function ApprovalManagement({
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <h1 className="text-gray-900">Quản lý phê duyệt</h1>
-            </div>
+            <ApprovalHeader />
 
             {/* Stats */}
             <ResignationStats resignations={resignations} />

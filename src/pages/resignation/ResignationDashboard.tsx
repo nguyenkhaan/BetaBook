@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '../../components/ui/button';
-import { ResignationDialog } from './ResignationDialog';
-import { ResignationStats } from './ResignationStats';
-import { ResignationTable } from './ResignationTable';
+import { ResignationDialog } from './components/ResignationDialog';
+import { ResignationStats } from './components/ResignationStats';
+import { ResignationTable } from './components/ResignationTable';
 
 export interface Resignation {
     id: number;
@@ -21,6 +21,8 @@ interface ResignationDashboardProps {
     resignations: Resignation[];
     onAddResignation: (resignation: Resignation) => void;
 }
+
+import { ResignationHeader } from './components/ResignationHeader';
 
 export function ResignationDashboard({
     resignations,
@@ -53,17 +55,7 @@ export function ResignationDashboard({
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <h1 className="text-gray-900">Nghỉ việc</h1>
-                <Button
-                    onClick={() => setIsDialogOpen(true)}
-                    className="bg-orange-500 hover:bg-orange-600 text-white"
-                >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Tạo đơn xin nghỉ việc
-                </Button>
-            </div>
+            <ResignationHeader onNewResignation={() => setIsDialogOpen(true)} />
 
             {/* Stats */}
             <ResignationStats resignations={resignations} />

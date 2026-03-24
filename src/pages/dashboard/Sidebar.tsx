@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import {
     LayoutGrid,
     FileText,
@@ -13,9 +13,13 @@ import {
     ChevronLeft,
     ChevronRight,
     UserCircle,
+    LucideIcon,
 } from 'lucide-react';
 import { routePermission } from '../../routes/route.permission';
 import { Role } from '../../bases/constants/app.constants';
+import { SidebarLogo } from './components/SidebarLogo';
+import { SidebarItem } from './components/SidebarItem';
+
 interface SidebarProps {
     isCollapsed: boolean;
     onToggle: () => void;
@@ -23,7 +27,7 @@ interface SidebarProps {
 }
 
 interface MenuItem {
-    icon: any;
+    icon: LucideIcon;
     label: string;
     path: string;
     roles: Role[];
@@ -74,12 +78,6 @@ const menuItems: MenuItem[] = [
         path: '/employees',
         roles: routePermission.employees,
     },
-    // {
-    //     icon: UserCircle,
-    //     label: 'Hồ sơ cá nhân',
-    //     path: '/profile',
-    //     roles: routePermission.profile,
-    // },
     {
         icon: UserCircle,
         label: 'Hồ sơ cá nhân',
@@ -112,40 +110,20 @@ export function Sidebar({ isCollapsed, onToggle, userRoles }: SidebarProps) {
                 isCollapsed ? 'w-16' : 'w-64'
             }`}
         >
-            {/* Logo */}
-            <div className="flex items-center gap-3 p-6 border-b border-gray-700">
-                <UserCircle size={42} className="text-orange-500" />
-                {!isCollapsed && (
-                    <div className="text-orange-500 font-bold text-xl">
-                        Beta Book
-                    </div>
-                )}
-            </div>
+            <SidebarLogo isCollapsed={isCollapsed} />
 
             {/* Menu */}
             <nav className="mt-4 px-3 overflow-y-auto max-h-[calc(100vh-140px)]">
-                {filteredMenu.map((item, index) => {
-                    const isActive = location.pathname.startsWith(item.path);
-
-                    return (
-                        <Link
-                            key={index}
-                            to={item.path}
-                            className={`flex items-center mb-1 transition-all duration-300 rounded-lg py-3 ${
-                                isCollapsed
-                                    ? 'justify-center px-0'
-                                    : 'justify-start px-4 gap-3'
-                            } ${isActive ? 'bg-orange-500 text-white' : 'text-gray-300 hover:bg-gray-700'}`}
-                        >
-                            <item.icon className="w-5 h-5 flex-shrink-0" />
-                            {!isCollapsed && (
-                                <span className="text-sm font-medium">
-                                    {item.label}
-                                </span>
-                            )}
-                        </Link>
-                    );
-                })}
+                {filteredMenu.map((item, index) => (
+                    <SidebarItem
+                        key={index}
+                        icon={item.icon}
+                        label={item.label}
+                        path={item.path}
+                        isActive={location.pathname.startsWith(item.path)}
+                        isCollapsed={isCollapsed}
+                    />
+                ))}
             </nav>
 
             {/* Toggle Button */}

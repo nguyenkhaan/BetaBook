@@ -1,0 +1,94 @@
+import { Edit, Trash2, ShoppingCart } from 'lucide-react';
+import { Button } from '../../../components/ui/button';
+import { Invoice } from '../InvoicePage';
+
+interface InvoiceTableRowProps {
+    invoice: Invoice;
+    onEdit: (invoice: Invoice) => void;
+    onDelete: (invoice: Invoice) => void;
+    onViewBooks: (invoice: Invoice) => void;
+    getStatusColor: (status: Invoice['status']) => string;
+}
+
+export function InvoiceTableRow({
+    invoice,
+    onEdit,
+    onDelete,
+    onViewBooks,
+    getStatusColor,
+}: InvoiceTableRowProps) {
+    return (
+        <tr className="hover:bg-gray-50">
+            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                {invoice.invoiceNumber}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {invoice.customer}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                {invoice.date}
+            </td>
+            <td className="px-6 py-4 text-sm text-gray-600">
+                <div className="max-w-xs">
+                    {invoice.books.map((book, idx) => (
+                        <div key={idx} className="text-xs">
+                            • {book.title} ({book.quantity})
+                        </div>
+                    ))}
+                </div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                {invoice.discountCode ? (
+                    <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-medium">
+                        {invoice.discountCode}
+                    </span>
+                ) : (
+                    <span className="text-gray-400">-</span>
+                )}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                {invoice.items}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                {invoice.totalAmount.toLocaleString('vi-VN')}đ
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <span
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                        invoice.status,
+                    )}`}
+                >
+                    {invoice.status}
+                </span>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                <div className="flex gap-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onEdit(invoice)}
+                        title="Chỉnh sửa"
+                    >
+                        <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onDelete(invoice)}
+                        title="Xóa"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onViewBooks(invoice)}
+                        title="Xem danh sách sách"
+                    >
+                        <ShoppingCart className="w-4 h-4" />
+                    </Button>
+                </div>
+            </td>
+        </tr>
+    );
+}

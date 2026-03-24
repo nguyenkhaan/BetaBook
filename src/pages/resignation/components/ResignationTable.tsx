@@ -1,4 +1,4 @@
-import { Resignation } from './ResignationDashboard';
+import { Resignation } from '../ResignationDashboard';
 import {
     Table,
     TableBody,
@@ -6,28 +6,17 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from '../../components/ui/table';
-import { Badge } from '../../components/ui/badge';
-import { Button } from '../../components/ui/button';
+} from '../../../components/ui/table';
+import { Badge } from '../../../components/ui/badge';
+import { Button } from '../../../components/ui/button';
 
 interface ResignationTableProps {
     resignations: Resignation[];
 }
 
-export function ResignationTable({ resignations }: ResignationTableProps) {
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'Đang xử lý':
-                return 'bg-blue-100 text-blue-800 hover:bg-blue-100';
-            case 'Chấp nhận':
-                return 'bg-green-100 text-green-800 hover:bg-green-100';
-            case 'Từ chối':
-                return 'bg-red-100 text-red-800 hover:bg-red-100';
-            default:
-                return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
-        }
-    };
+import { ResignationTableRow } from './ResignationTableRow';
 
+export function ResignationTable({ resignations }: ResignationTableProps) {
     return (
         <div className="bg-white rounded-lg border border-gray-200">
             <div className="p-4 border-b border-gray-200">
@@ -49,31 +38,11 @@ export function ResignationTable({ resignations }: ResignationTableProps) {
                 </TableHeader>
                 <TableBody>
                     {resignations.map((resignation, index) => (
-                        <TableRow key={resignation.id}>
-                            <TableCell>{index + 1}</TableCell>
-                            <TableCell>{resignation.employeeName}</TableCell>
-                            <TableCell>{resignation.position}</TableCell>
-                            <TableCell>{resignation.department}</TableCell>
-                            <TableCell>{resignation.submissionDate}</TableCell>
-                            <TableCell>
-                                {resignation.daysTakenOff} ngày
-                            </TableCell>
-                            <TableCell>
-                                <Badge
-                                    className={getStatusColor(
-                                        resignation.status,
-                                    )}
-                                >
-                                    {resignation.status}
-                                </Badge>
-                            </TableCell>
-                            <TableCell>
-                                {resignation.status === 'Chấp nhận' ||
-                                resignation.status === 'Từ chối'
-                                    ? resignation.approver
-                                    : ''}
-                            </TableCell>
-                        </TableRow>
+                        <ResignationTableRow
+                            key={resignation.id}
+                            resignation={resignation}
+                            index={index}
+                        />
                     ))}
                 </TableBody>
             </Table>

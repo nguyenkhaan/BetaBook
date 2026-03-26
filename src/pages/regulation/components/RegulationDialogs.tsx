@@ -17,6 +17,9 @@ import {
     SelectValue,
 } from "../../../components/ui/select";
 import { Regulation } from "../RegulationsPage";
+import { useEffect } from 'react';
+import axios from 'axios';
+
 
 interface RegulationDialogsProps {
     isCreateDialogOpen: boolean;
@@ -36,6 +39,30 @@ interface RegulationDialogsProps {
 }
 
 const RegulationDialogs = ({ isCreateDialogOpen, setIsCreateDialogOpen, isEditDialogOpen, setIsEditDialogOpen, isDeleteDialogOpen, setIsDeleteDialogOpen, formData, setFormData, handleCreateRegulation, handleEditRegulation, handleDeleteRegulation, resetFormData, selectedRegulation, categories }: RegulationDialogsProps) => {
+    useEffect(() => {
+        if (!formData.employeeId) return;
+
+        const fetchEmployee = async () => {
+            try {
+                const res = await axios.get(
+                    `http://localhost:8080/api/employees/${formData.employeeId}`,
+                );
+
+                setFormData((prev: any) => ({
+                    ...prev,
+                    employeeName: res.data.name,
+                }));
+            } catch (err) {
+                setFormData((prev: any) => ({
+                    ...prev,
+                    employeeName: 'Không tìm thấy',
+                }));
+            }
+        };
+
+        fetchEmployee();
+    }, [formData.employeeId]);
+    
     return (
         <>
             {/* Create Regulation Dialog */}
@@ -75,22 +102,33 @@ const RegulationDialogs = ({ isCreateDialogOpen, setIsCreateDialogOpen, isEditDi
                                     }
                                     placeholder="VD: Quy định về giờ làm việc"
                                 />
+                                {/* Mã nhân viên */}
                                 <Label
-                                    htmlFor="title"
+                                    htmlFor="employeeId"
                                     className="text-sm font-medium"
                                 >
                                     Mã người tạo
                                 </Label>
                                 <Input
-                                    id="title"
-                                    value={formData.title}
+                                    id="employeeId"
+                                    value={formData.employeeId || ''}
                                     onChange={(e) =>
                                         setFormData({
                                             ...formData,
-                                            title: e.target.value,
+                                            employeeId: e.target.value,
                                         })
                                     }
                                     placeholder="VD: NV001"
+                                />
+
+                                {/* Tên nhân viên (read-only) */}
+                                <Label className="text-sm font-medium">
+                                    Tên nhân viên
+                                </Label>
+                                <Input
+                                    value={formData.employeeName || ''}
+                                    readOnly
+                                    className="bg-gray-100 cursor-not-allowed"
                                 />
                             </div>
 
@@ -115,7 +153,17 @@ const RegulationDialogs = ({ isCreateDialogOpen, setIsCreateDialogOpen, isEditDi
                                             <SelectValue placeholder="Chọn danh mục" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {categories.map(cat => cat !== 'Tất cả' && <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                                            {categories.map(
+                                                (cat) =>
+                                                    cat !== 'Tất cả' && (
+                                                        <SelectItem
+                                                            key={cat}
+                                                            value={cat}
+                                                        >
+                                                            {cat}
+                                                        </SelectItem>
+                                                    ),
+                                            )}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -309,7 +357,17 @@ const RegulationDialogs = ({ isCreateDialogOpen, setIsCreateDialogOpen, isEditDi
                                             <SelectValue placeholder="Chọn danh mục" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {categories.map(cat => cat !== 'Tất cả' && <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                                            {categories.map(
+                                                (cat) =>
+                                                    cat !== 'Tất cả' && (
+                                                        <SelectItem
+                                                            key={cat}
+                                                            value={cat}
+                                                        >
+                                                            {cat}
+                                                        </SelectItem>
+                                                    ),
+                                            )}
                                         </SelectContent>
                                     </Select>
                                 </div>

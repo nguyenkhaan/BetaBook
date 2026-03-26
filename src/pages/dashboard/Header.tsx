@@ -20,9 +20,7 @@ const pageLabels: Record<string, string> = {
     reports: 'Báo cáo',
     regulations: 'Quy định',
     'regulation-detail': 'Chi tiết quy định',
-    resignation: 'Nghỉ việc',
     approval: 'Quản lý phê duyệt',
-    leaveoff: 'Quản lý nghỉ phép',
     mypage: 'Trang của tôi',
     'employee-profile': 'Trang cá nhân',
 };

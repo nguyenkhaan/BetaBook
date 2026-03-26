@@ -17,6 +17,7 @@ import { PromotionsPage } from './pages/promotion/PromotionsPage';
 import { EmployeesPage } from './pages/employee/EmployeesPage';
 import { ReportsPage } from './pages/report/ReportsPage';
 import { EmployeeProfile } from './pages/employee/EmployeeProfile';
+import { BookstoreDemoPage } from './pages/BookstoreDemoPage';
 import { routePermission } from './routes/route.permission';
 import { DashboardLayout } from './layouts/DashboardLayouts';
 
@@ -34,6 +35,8 @@ export default function App() {
 
             <Routes>
                 <Route path="/" element={<LoginPage />} />
+
+                <Route path="/bookstore-demo" element={<BookstoreDemoPage />} />
 
                 {Object.entries(routePermission).map(([path, roles]) => {
                     const routePath =

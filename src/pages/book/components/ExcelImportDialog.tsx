@@ -25,11 +25,32 @@ export function ExcelImportDialog({
     setSelectedFile,
     handleFileChange,
 }: ExcelImportDialogProps) {
+    const [employeeCode, setEmployeeCode] = React.useState('');
+    const [employeeName, setEmployeeName] = React.useState('');
+
+    const handleEmployeeChange = async (
+        e: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+        const code = e.target.value;
+        setEmployeeCode(code);
+
+        if (!code) {
+            setEmployeeName('');
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/employees/${code}`);
+            if (!res.ok) throw new Error();
+
+            const data = await res.json();
+            setEmployeeName(data.name);
+        } catch (error) {
+            setEmployeeName('Không tìm thấy nhân viên');
+        }
+    };
     return (
-        <Dialog
-            open={isExcelDialogOpen}
-            onOpenChange={setIsExcelDialogOpen}
-        >
+        <Dialog open={isExcelDialogOpen} onOpenChange={setIsExcelDialogOpen}>
             <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-none shadow-2xl">
                 <div className="bg-orange-50/50 p-6 border-b border-orange-100">
                     <DialogTitle>
@@ -39,6 +60,33 @@ export function ExcelImportDialog({
                     <DialogDescription>
                         Tải lên file danh sách sách để nhập kho hàng loạt.
                     </DialogDescription>
+                </div>
+
+                <div className="space-y-3">
+                    <div>
+                        <label className="text-sm font-medium text-gray-700">
+                            Mã người nhập
+                        </label>
+                        <input
+                            type="text"
+                            value={employeeCode}
+                            onChange={handleEmployeeChange}
+                            placeholder="Nhập mã nhân viên..."
+                            className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="text-xs text-gray-400">
+                            Tên người nhập
+                        </label>
+                        <input
+                            type="text"
+                            value={employeeName}
+                            readOnly
+                            className="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-gray-600"
+                        />
+                    </div>
                 </div>
 
                 <div className="p-6 space-y-6">

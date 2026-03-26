@@ -45,6 +45,34 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
     submitLabel,
     isEdit = false,
 }) => {
+    const [searchSupplier, setSearchSupplier] = React.useState('');
+    const [showDropdown, setShowDropdown] = React.useState(false);
+    const [suppliers, setSuppliers] = React.useState<string[]>([]);
+    const [loading, setLoading] = React.useState(false);
+
+    React.useEffect(() => {
+        const delay = setTimeout(() => {
+            if (searchSupplier.trim() === '') {
+                setSuppliers([]);
+                return;
+            }
+
+            setLoading(true);
+
+            fetch(`/api/suppliers?keyword=${searchSupplier}`)
+                .then((res) => res.json())
+                .then((data) => {
+                    setSuppliers(data); 
+                })
+                .catch(() => {
+                    setSuppliers([]);
+                })
+                .finally(() => setLoading(false));
+        }, 300); 
+
+        return () => clearTimeout(delay);
+    }, [searchSupplier]);
+
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
@@ -54,7 +82,10 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
                 </DialogHeader>
                 <div className="grid gap-5 py-4">
                     <div className="space-y-2">
-                        <Label htmlFor={`${isEdit ? 'edit-' : ''}importNumber`} className="text-sm font-medium">
+                        <Label
+                            htmlFor={`${isEdit ? 'edit-' : ''}importNumber`}
+                            className="text-sm font-medium"
+                        >
                             Số phiếu nhập
                         </Label>
                         <Input
@@ -72,26 +103,53 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
                         />
                     </div>
 
-                    <div className="space-y-4 pt-2 border-t">
-                        <h4 className="text-sm font-semibold text-gray-700">
-                            Thông tin nhà cung cấp
-                        </h4>
-                        <div className="space-y-2">
-                            <Label htmlFor={`${isEdit ? 'edit-' : ''}supplier`} className="text-sm font-medium">
-                                Nhà cung cấp
-                            </Label>
-                            <Input
-                                id={`${isEdit ? 'edit-' : ''}supplier`}
-                                value={formData.supplier}
-                                onChange={(e) =>
-                                    setFormData({
-                                        ...formData,
-                                        supplier: e.target.value,
-                                    })
-                                }
-                                placeholder="Nhập tên nhà cung cấp"
-                            />
-                        </div>
+                    <div className="space-y-2 relative">
+                        <Label className="text-sm font-medium">
+                            Nhà cung cấp
+                        </Label>
+
+                        <Input
+                            value={searchSupplier}
+                            onChange={(e) => {
+                                setSearchSupplier(e.target.value);
+                                setShowDropdown(true);
+                            }}
+                            placeholder="Nhập tên nhà cung cấp"
+                        />
+
+                        {showDropdown && (
+                            <div className="absolute z-50 w-full bg-white border rounded-md shadow-md max-h-40 overflow-y-auto">
+                                {loading && (
+                                    <div className="px-3 py-2 text-gray-500">
+                                        Đang tìm...
+                                    </div>
+                                )}
+
+                                {!loading && suppliers.length === 0 && (
+                                    <div className="px-3 py-2 text-gray-500">
+                                        Không tìm thấy
+                                    </div>
+                                )}
+
+                                {!loading &&
+                                    suppliers.map((supplier, index) => (
+                                        <div
+                                            key={index}
+                                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                                            onClick={() => {
+                                                setFormData({
+                                                    ...formData,
+                                                    supplier: supplier,
+                                                });
+                                                setSearchSupplier(supplier);
+                                                setShowDropdown(false);
+                                            }}
+                                        >
+                                            {supplier}
+                                        </div>
+                                    ))}
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-4 pt-2 border-t">
@@ -100,7 +158,10 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
                         </h4>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor={`${isEdit ? 'edit-' : ''}date`} className="text-sm font-medium">
+                                <Label
+                                    htmlFor={`${isEdit ? 'edit-' : ''}date`}
+                                    className="text-sm font-medium"
+                                >
                                     Ngày nhập
                                 </Label>
                                 <Input
@@ -116,7 +177,10 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor={`${isEdit ? 'edit-' : ''}time`} className="text-sm font-medium">
+                                <Label
+                                    htmlFor={`${isEdit ? 'edit-' : ''}time`}
+                                    className="text-sm font-medium"
+                                >
                                     Giờ nhập
                                 </Label>
                                 <Input
@@ -134,7 +198,10 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor={`${isEdit ? 'edit-' : ''}totalItems`} className="text-sm font-medium">
+                            <Label
+                                htmlFor={`${isEdit ? 'edit-' : ''}totalItems`}
+                                className="text-sm font-medium"
+                            >
                                 Số lượng
                             </Label>
                             <Input
@@ -144,7 +211,8 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
                                 onChange={(e) =>
                                     setFormData({
                                         ...formData,
-                                        totalItems: parseInt(e.target.value) || 0,
+                                        totalItems:
+                                            parseInt(e.target.value) || 0,
                                     })
                                 }
                                 placeholder="0"
@@ -152,7 +220,10 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor={`${isEdit ? 'edit-' : ''}totalAmount`} className="text-sm font-medium">
+                            <Label
+                                htmlFor={`${isEdit ? 'edit-' : ''}totalAmount`}
+                                className="text-sm font-medium"
+                            >
                                 Tổng tiền (VNĐ)
                             </Label>
                             <Input
@@ -162,15 +233,20 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
                                 onChange={(e) =>
                                     setFormData({
                                         ...formData,
-                                        totalAmount: parseInt(e.target.value) || 0,
+                                        totalAmount:
+                                            parseInt(e.target.value) || 0,
                                     })
                                 }
                                 placeholder="0"
                             />
                         </div>
+                        
 
                         <div className="space-y-2">
-                            <Label htmlFor={`${isEdit ? 'edit-' : ''}createdBy`} className="text-sm font-medium">
+                            <Label
+                                htmlFor={`${isEdit ? 'edit-' : ''}createdBy`}
+                                className="text-sm font-medium"
+                            >
                                 Người tạo
                             </Label>
                             <Input
@@ -187,7 +263,10 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor={`${isEdit ? 'edit-' : ''}status`} className="text-sm font-medium">
+                            <Label
+                                htmlFor={`${isEdit ? 'edit-' : ''}status`}
+                                className="text-sm font-medium"
+                            >
                                 Trạng thái
                             </Label>
                             <Select
@@ -203,15 +282,24 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
                                     <SelectValue placeholder="Chọn trạng thái" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Hoàn thành">Hoàn thành</SelectItem>
-                                    <SelectItem value="Đang xử lý">Đang xử lý</SelectItem>
-                                    <SelectItem value="Đã hủy">Đã hủy</SelectItem>
+                                    <SelectItem value="Hoàn thành">
+                                        Hoàn thành
+                                    </SelectItem>
+                                    <SelectItem value="Đang xử lý">
+                                        Đang xử lý
+                                    </SelectItem>
+                                    <SelectItem value="Đã hủy">
+                                        Đã hủy
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor={`${isEdit ? 'edit-' : ''}note`} className="text-sm font-medium">
+                            <Label
+                                htmlFor={`${isEdit ? 'edit-' : ''}note`}
+                                className="text-sm font-medium"
+                            >
                                 Ghi chú
                             </Label>
                             <Input

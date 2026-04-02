@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { toast } from 'sonner';
@@ -6,234 +6,148 @@ import { PromotionStats } from './components/PromotionStats';
 import { PromotionFilterBar } from './components/PromotionFilterBar';
 import { PromotionTable } from './components/PromotionTable';
 import { PromotionDialogs } from './components/PromotionDialogs';
-
-export interface Promotion {
-    id: number;
-    code: string;
-    name: string;
-    discount: number;
-    type: 'Phần trăm' | 'Số tiền';
-    startDate: string;
-    endDate: string;
-    status: 'Đang áp dụng' | 'Sắp diễn ra' | 'Đã kết thúc';
-    usedCount: number;
-    maxUses: number;
-    description?: string;
-}
-
-const mockPromotions: Promotion[] = [
-    {
-        id: 1,
-        code: 'BOOK2026',
-        name: 'Giảm giá đầu năm',
-        discount: 20,
-        type: 'Phần trăm',
-        startDate: '2026-03-01',
-        endDate: '2026-03-31',
-        status: 'Đang áp dụng',
-        usedCount: 45,
-        maxUses: 100,
-        description: 'Chương trình giảm giá đặc biệt chào mừng năm mới',
-    },
-    {
-        id: 2,
-        code: 'NEWCUSTOMER',
-        name: 'Khách hàng mới',
-        discount: 50000,
-        type: 'Số tiền',
-        startDate: '2026-01-01',
-        endDate: '2026-12-31',
-        status: 'Đang áp dụng',
-        usedCount: 23,
-        maxUses: 200,
-        description: 'Ưu đãi dành riêng cho khách hàng mới',
-    },
-    {
-        id: 3,
-        code: 'BESTSELLER',
-        name: 'Sách bán chạy',
-        discount: 15,
-        type: 'Phần trăm',
-        startDate: '2026-03-15',
-        endDate: '2026-04-15',
-        status: 'Sắp diễn ra',
-        usedCount: 0,
-        maxUses: 150,
-        description: 'Giảm giá các đầu sách bán chạy nhất',
-    },
-    {
-        id: 4,
-        code: 'WINTER2025',
-        name: 'Khuyến mãi mùa đông',
-        discount: 30,
-        type: 'Phần trăm',
-        startDate: '2025-12-01',
-        endDate: '2026-02-28',
-        status: 'Đã kết thúc',
-        usedCount: 98,
-        maxUses: 100,
-        description: 'Chương trình khuyến mãi mùa đông',
-    },
-    {
-        id: 5,
-        code: 'STUDENT2026',
-        name: 'Ưu đãi sinh viên',
-        discount: 25,
-        type: 'Phần trăm',
-        startDate: '2026-03-01',
-        endDate: '2026-06-30',
-        status: 'Đang áp dụng',
-        usedCount: 67,
-        maxUses: 300,
-        description: 'Giảm giá dành cho sinh viên',
-    },
-];
+import {
+    PromotionService,
+    Voucher,
+    VoucherData,
+} from '../../services/promotion.service';
 
 export function PromotionsPage() {
-    const [promotions, setPromotions] = useState<Promotion[]>(mockPromotions);
+    const [vouchers, setVouchers] = useState<Voucher[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [selectedPromotion, setSelectedPromotion] =
-        useState<Promotion | null>(null);
-    const [formData, setFormData] = useState({
-        code: '',
-        name: '',
-        discount: 0,
-        type: 'Phần trăm' as Promotion['type'],
-        startDate: new Date().toISOString().split('T')[0],
-        endDate: new Date().toISOString().split('T')[0],
-        status: 'Đang áp dụng' as Promotion['status'],
-        usedCount: 0,
-        maxUses: 100,
-        description: '',
-    });
 
-    const filteredPromotions = promotions.filter(
-        (promo) =>
-            promo.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            promo.name.toLowerCase().includes(searchTerm.toLowerCase()),
+    const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(
+        null,
     );
 
-    const getStatusColor = (status: Promotion['status']) => {
+    const initialFormData: VoucherData = {
+        name: '',
+        eventName: '',
+        sale: 0,
+        type: 'PERCENTAGE',
+        quantity: 100,
+        expiresAt: new Date().toISOString().split('T')[0],
+        status: 'APPLYING',
+    };
+
+    const [formData, setFormData] = useState<VoucherData>(initialFormData);
+
+    const loadVouchers = useCallback(async () => {
+        try {
+            setLoading(true);
+            const data = await PromotionService.getAllVoucher();
+            setVouchers(data);
+        } catch (error) {
+            toast.error('Không thể tải danh sách khuyến mãi');
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadVouchers();
+    }, [loadVouchers]);
+
+    const filteredVouchers = vouchers.filter(
+        (v) =>
+            v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            v.eventName.toLowerCase().includes(searchTerm.toLowerCase()),
+    );
+
+    const getStatusColor = (status: any) => {
         switch (status) {
-            case 'Đang áp dụng':
+            case 'APPLYING':
                 return 'bg-green-100 text-green-800';
-            case 'Sắp diễn ra':
-                return 'bg-blue-100 text-blue-800';
-            case 'Đã kết thúc':
+            case 'DISABLE':
                 return 'bg-gray-100 text-gray-800';
+            case 'EXPIRED':
+                return 'bg-red-100 text-red-800';
+            default:
+                return 'bg-blue-100 text-blue-800';
         }
     };
 
-    const handleCreatePromotion = () => {
-        const newPromotion: Promotion = {
-            id: promotions.length + 1,
-            code: formData.code,
-            name: formData.name,
-            discount: formData.discount,
-            type: formData.type,
-            startDate: formData.startDate,
-            endDate: formData.endDate,
-            status: formData.status,
-            usedCount: formData.usedCount,
-            maxUses: formData.maxUses,
-            description: formData.description,
-        };
-        setPromotions([...promotions, newPromotion]);
-        setIsCreateDialogOpen(false);
-        resetFormData();
-        toast.success('Khuyến mãi đã được tạo thành công!');
-    };
-
-    const handleEditPromotion = () => {
-        if (selectedPromotion) {
-            const updatedPromotion: Promotion = {
-                ...selectedPromotion,
-                code: formData.code,
-                name: formData.name,
-                discount: formData.discount,
-                type: formData.type,
-                startDate: formData.startDate,
-                endDate: formData.endDate,
-                status: formData.status,
-                usedCount: formData.usedCount,
-                maxUses: formData.maxUses,
-                description: formData.description,
-            };
-            setPromotions(
-                promotions.map((promo) =>
-                    promo.id === selectedPromotion.id
-                        ? updatedPromotion
-                        : promo,
-                ),
-            );
-            setIsEditDialogOpen(false);
-            toast.success('Khuyến mãi đã được cập nhật thành công!');
+    const handleCreatePromotion = async () => {
+        try {
+            await PromotionService.createVoucher(formData);
+            toast.success('Khuyến mãi đã được tạo thành công!');
+            setIsCreateDialogOpen(false);
+            loadVouchers();
+        } catch (error) {
+            toast.error('Xảy ra lỗi khi tạo khuyến mãi');
         }
     };
 
-    const handleDeletePromotion = () => {
-        if (selectedPromotion) {
-            setPromotions(
-                promotions.filter((promo) => promo.id !== selectedPromotion.id),
-            );
-            setIsDeleteDialogOpen(false);
-            toast.success('Khuyến mãi đã được xóa thành công!');
+    const handleEditPromotion = async () => {
+        if (selectedVoucher) {
+            try {
+                await PromotionService.updateVoucher(
+                    selectedVoucher.id,
+                    formData,
+                );
+                toast.success('Cập nhật thành công!');
+                setIsEditDialogOpen(false);
+                loadVouchers();
+            } catch (error) {
+                toast.error('Lỗi khi cập nhật');
+            }
         }
     };
 
-    const handleDownloadPromotion = (promotion: Promotion) => {
-        toast.success(`Đang tải khuyến mãi ${promotion.code}...`);
+    const handleDeletePromotion = async () => {
+        if (selectedVoucher) {
+            try {
+                await PromotionService.deleteVoucher(selectedVoucher.id);
+                toast.success('Đã xóa khuyến mãi');
+                setIsDeleteDialogOpen(false);
+                loadVouchers();
+            } catch (error) {
+                toast.error('Lỗi khi xóa');
+            }
+        }
     };
 
-    const handleViewPromotion = (promotion: Promotion) => {
-        setSelectedPromotion(promotion);
+    const handleDownloadPromotion = (voucher: any) => {
+        toast.success(`Đang tải khuyến mãi ${voucher.name}...`);
+    };
+
+    const handleViewPromotion = (voucher: any) => {
+        setSelectedVoucher(voucher);
         setIsViewDialogOpen(true);
     };
 
-    const handleEditPromotionOpen = (promotion: Promotion) => {
-        setSelectedPromotion(promotion);
+    const handleEditPromotionOpen = (voucher: any) => {
+        setSelectedVoucher(voucher);
         setFormData({
-            code: promotion.code,
-            name: promotion.name,
-            discount: promotion.discount,
-            type: promotion.type,
-            startDate: promotion.startDate,
-            endDate: promotion.endDate,
-            status: promotion.status,
-            usedCount: promotion.usedCount,
-            maxUses: promotion.maxUses,
-            description: promotion.description || '',
+            name: voucher.name,
+            eventName: voucher.eventName,
+            sale: voucher.sale,
+            type: voucher.type,
+            quantity: voucher.quantity,
+            expiresAt: new Date(voucher.expiresAt).toISOString().split('T')[0],
+            status: voucher.status,
         });
         setIsEditDialogOpen(true);
     };
 
-    const handleDeletePromotionOpen = (promotion: Promotion) => {
-        setSelectedPromotion(promotion);
+    const handleDeletePromotionOpen = (voucher: any) => {
+        setSelectedVoucher(voucher);
         setIsDeleteDialogOpen(true);
     };
 
-    const resetFormData = () => {
-        setFormData({
-            code: '',
-            name: '',
-            discount: 0,
-            type: 'Phần trăm',
-            startDate: new Date().toISOString().split('T')[0],
-            endDate: new Date().toISOString().split('T')[0],
-            status: 'Đang áp dụng',
-            usedCount: 0,
-            maxUses: 100,
-            description: '',
-        });
-    };
+    const resetFormData = () => setFormData(initialFormData);
 
-    const formatDate = (date: string) => {
-        const [year, month, day] = date.split('-');
-        return `${day}/${month}/${year}`;
+    const formatDate = (dateString: string) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN');
     };
 
     return (
@@ -254,7 +168,7 @@ export function PromotionsPage() {
                         setIsCreateDialogOpen(true);
                     }}
                 >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4 h-4 mr-2" />
                     Tạo khuyến mãi
                 </Button>
             </div>
@@ -264,10 +178,10 @@ export function PromotionsPage() {
                 onSearchChange={setSearchTerm}
             />
 
-            <PromotionStats promotions={promotions} />
+            <PromotionStats promotions={vouchers as any} />
 
             <PromotionTable
-                promotions={filteredPromotions}
+                promotions={filteredVouchers as any}
                 onView={handleViewPromotion}
                 onEdit={handleEditPromotionOpen}
                 onDelete={handleDeletePromotionOpen}
@@ -285,7 +199,7 @@ export function PromotionsPage() {
                 setIsViewDialogOpen={setIsViewDialogOpen}
                 isDeleteDialogOpen={isDeleteDialogOpen}
                 setIsDeleteDialogOpen={setIsDeleteDialogOpen}
-                selectedPromotion={selectedPromotion}
+                selectedPromotion={selectedVoucher as any}
                 formData={formData}
                 setFormData={setFormData}
                 handleCreatePromotion={handleCreatePromotion}

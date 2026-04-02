@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     User,
     Plus,
@@ -29,6 +29,8 @@ import {
     SelectValue,
 } from '../../components/ui/select';
 import { toast } from 'sonner';
+import { EmployeesService, Employees } from '../../services/employees.service';
+import { mockEmployees } from '../employee/EmployeeData';
 
 import { useParams } from 'react-router-dom';
 
@@ -43,85 +45,25 @@ export const EmployeeProfile = () => {
     );
 };
 
-interface Employee {
+// Sửa lại Interface này để khớp với Employees từ Service
+export interface Employee {
     id: number;
-    employeeCode: string;
+    employeeCode: string; // Map từ 'code' của Backend
     name: string;
     email: string;
     phone: string;
-    position: string;
-    department: string;
+    position: string;     // Map từ 'positionName'
+    department: string;   // Map từ 'departmentName'
     joinDate: string;
     status: 'Đang làm việc' | 'Nghỉ phép' | 'Đã nghỉ việc';
     salary: number;
 }
 
-const mockEmployees: Employee[] = [
-    {
-        id: 1,
-        employeeCode: 'NV001',
-        name: 'A Nguyen Van',
-        email: 'nguyen.vana@company.com',
-        phone: '0901234567',
-        position: 'Quản lý cửa hàng',
-        department: 'Quản lý',
-        joinDate: '2024-01-01',
-        status: 'Đang làm việc',
-        salary: 15000000,
-    },
-    {
-        id: 2,
-        employeeCode: 'NV002',
-        name: 'Nguyễn Vũ Linh',
-        email: 'nguyen.vulinh@company.com',
-        phone: '0912345678',
-        position: 'Nhân viên bán hàng',
-        department: 'Bán hàng',
-        joinDate: '2024-02-15',
-        status: 'Đang làm việc',
-        salary: 10000000,
-    },
-    {
-        id: 3,
-        employeeCode: 'NV003',
-        name: 'Trần Thị B',
-        email: 'tran.thib@company.com',
-        phone: '0923456789',
-        position: 'Kế toán',
-        department: 'Tài chính',
-        joinDate: '2024-03-10',
-        status: 'Đang làm việc',
-        salary: 12000000,
-    },
-    {
-        id: 4,
-        employeeCode: 'NV004',
-        name: 'Lê Văn C',
-        email: 'le.vanc@company.com',
-        phone: '0934567890',
-        position: 'Thủ kho',
-        department: 'Kho vận',
-        joinDate: '2024-04-20',
-        status: 'Nghỉ phép',
-        salary: 9000000,
-    },
-    {
-        id: 5,
-        employeeCode: 'NV005',
-        name: 'Phạm Minh D',
-        email: 'pham.minhd@company.com',
-        phone: '0945678901',
-        position: 'Nhân viên bán hàng',
-        department: 'Bán hàng',
-        joinDate: '2024-05-05',
-        status: 'Đang làm việc',
-        salary: 10000000,
-    },
-];
-
 export function EmployeesPage() {
-    const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
+    const [employees, setEmployees] = useState<Employee[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    //UI state
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -140,6 +82,36 @@ export function EmployeesPage() {
         salary: 0,
         status: 'Đang làm việc' as Employee['status'],
     });
+
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const data = await EmployeesService.getAllEmployees();
+
+            const mappedData: Employee[] = data.map((emp: any) => ({
+                id: emp.id,
+                employeeCode: emp.code, 
+                name: emp.name || emp.email.split('@')[0],
+                email: emp.email,
+                phone: emp.phone || 'N/A',
+                position: emp.positionName || 'N/A',
+                department: emp.departmentName || 'N/A', 
+                joinDate: new Date().toISOString().split('T')[0], 
+                salary: 0, 
+                status: 'Đang làm việc',
+            }));
+
+            setEmployees(mappedData);
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Không thể tải dữ liệu');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
 
     const filteredEmployees = employees.filter(
         (emp) =>

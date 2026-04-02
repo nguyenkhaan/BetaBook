@@ -34,7 +34,7 @@ export default function App() {
             <Toaster position="top-right" richColors />
 
             <Routes>
-                <Route path="/" element={<LoginPage />} />
+                <Route path="/" element={<RegulationsPage />} />
 
                 <Route path="/bookstore-demo" element={<BookstoreDemoPage />} />
 

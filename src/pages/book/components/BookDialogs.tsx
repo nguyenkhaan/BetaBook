@@ -50,7 +50,9 @@ export function BookDialogs({
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle>Thêm sách mới</DialogTitle>
+                        <DialogTitle>
+                            Thêm sách mới
+                        </DialogTitle>
                         <DialogDescription>
                             Thêm thông tin sách mới vào kho của bạn.
                         </DialogDescription>

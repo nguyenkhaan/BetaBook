@@ -1,238 +1,361 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { Sidebar, SidebarProvider } from '../../components/ui/sidebar';
+import { RegulationCard } from '../regulation/RegulationCard';
+import {
+    EditRegulationDialog,
+    RegulationData,
+} from '../regulation/components/RegulationCardEdit';
+import { Search, Plus, Settings, Mail, Phone } from 'lucide-react';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
 import { toast } from 'sonner';
-import RegulationHeader from './components/RegulationHeader';
-import FilterBar from './components/FilterBar';
-import Statistic from './components/Statistic';
-import RegulationList from './components/RegulationList';
-import RegulationDialogs from './components/RegulationDialogs';
+import { Toaster } from '../../components/ui/sonner';
 
+// Định nghĩa Interface chuẩn cho toàn bộ trang
 export interface Regulation {
     id: number;
     title: string;
-    category: string;
     description: string;
-    content: string;
+    status: 'active' | 'draft' | 'inactive';
+    category:
+        | 'nhan-su'
+        | 'ban-hang'
+        | 'kho-van'
+        | 'dich-vu-khach-hang'
+        | 'tai-chinh'
+        | 'an-toan';
     effectiveDate: string;
-    status: 'Đang áp dụng' | 'Sắp có hiệu lực' | 'Đã hết hiệu lực';
-    lastUpdated: string;
-    updatedBy: string;
+    updatedDate: string;
+    author: string;
+    data: RegulationData;
 }
 
-const mockRegulations: Regulation[] = [
-    {
-        id: 1,
-        title: 'Quy định về giờ làm việc',
-        category: 'Nhân sự',
-        description:
-            'Quy định về thời gian làm việc, giờ nghỉ trưa và nghỉ phép của nhân viên',
-        content: `1. Giờ làm việc:\n- Thời gian làm việc: 8:00 - 17:00 các ngày từ thứ 2 đến thứ 6\n- Nghỉ trưa: 12:00 - 13:00\n- Thứ 7: 8:00 - 12:00 (tùy theo phân công)\n\n2. Chấm công:\n- Nhân viên phải chấm công khi đến và khi về\n- Muộn quá 15 phút sẽ bị trừ 0.5 ngày công\n- Nghỉ không phép sẽ bị trừ 1 ngày công\n\n3. Nghỉ phép:\n- Nhân viên được nghỉ 12 ngày phép/năm\n- Phải xin phép trước 1 ngày\n- Nghỉ đột xuất phải có lý do chính đáng\n\n4. Làm thêm giờ:\n- Được tính công 1.5 lần vào ngày thường\n- Được tính công 2.0 lần vào ngày lễ/tết\n- Phải được quản lý phê duyệt trước`,
-        effectiveDate: '2026-01-01',
-        status: 'Đang áp dụng',
-        lastUpdated: '2026-01-15',
-        updatedBy: 'A Nguyen Van',
-    },
-    {
-        id: 2,
-        title: 'Chính sách giảm giá sách',
-        category: 'Bán hàng',
-        description:
-            'Quy định về các mức giảm giá, điều kiện áp dụng và thời gian khuyến mãi',
-        content: `1. Các mức giảm giá:\n- Sách mới phát hành: Không giảm giá trong 3 tháng đầu\n- Sách bán chậm: Giảm 10-20% sau 6 tháng\n- Sách cũ: Giảm 30-50% sau 1 năm\n\n2. Chương trình khuyến mãi:\n- Mua 3 tặng 1: Áp dụng cho sách cùng thể loại\n- Giảm giá theo hạng thành viên:\n  + Đồng: Không giảm\n  + Bạc: Giảm 5%\n  + Vàng: Giảm 10%\n  + Kim cương: Giảm 15%\n\n3. Thời gian khuyến mãi:\n- Black Friday: Giảm 20-40%\n- Tết Nguyên Đán: Giảm 15-30%\n- Ngày Sách Việt Nam: Giảm 20%\n\n4. Điều kiện:\n- Không áp dụng đồng thời nhiều chương trình\n- Sách đặc biệt không được giảm giá\n- Chỉ áp dụng cho sách còn hàng`,
-        effectiveDate: '2026-02-01',
-        status: 'Đang áp dụng',
-        lastUpdated: '2026-01-28',
-        updatedBy: 'A Nguyen Van',
-    },
-    {
-        id: 3,
-        title: 'Quy trình nhập hàng',
-        category: 'Kho vận',
-        description: 'Quy trình kiểm tra, nhập kho và quản lý hàng hóa mới',
-        content: `1. Quy trình đặt hàng:\n- Kiểm tra tồn kho hiện tại\n- Lập đơn đặt hàng gửi nhà cung cấp\n- Xác nhận đơn hàng và thời gian giao\n\n2. Quy trình nhận hàng:\n- Kiểm tra số lượng theo đơn hàng\n- Kiểm tra chất lượng sách (bìa, trang, in ấn)\n- Báo cáo sai lệch nếu có\n\n3. Quy trình nhập kho:\n- Gắn mã barcode cho từng cuốn sách\n- Cập nhật hệ thống quản lý kho\n- Sắp xếp sách vào kệ theo danh mục\n\n4. Báo cáo:\n- Lập biên bản nhập kho\n- Cập nhật số liệu tồn kho\n- Gửi báo cáo cho quản lý`,
-        effectiveDate: '2026-03-15',
-        status: 'Sắp có hiệu lực',
-        lastUpdated: '2026-03-01',
-        updatedBy: 'Nguyễn Vũ Linh',
-    },
-    {
-        id: 4,
-        title: 'Chính sách đổi trả hàng',
-        category: 'Dịch vụ khách hàng',
-        description:
-            'Quy định về điều kiện, thời hạn và quy trình đổi trả sách',
-        content: `1. Điều kiện đổi trả:\n- Sách còn nguyên vẹn, không rách, không bẩn\n- Còn tem, nhãn mác đầy đủ\n- Có hóa đơn mua hàng\n- Trong thời hạn 7 ngày kể từ ngày mua\n\n2. Các trường hợp được đổi:\n- Sách bị lỗi in ấn, thiếu trang\n- Sách bị hư hại trong quá trình vận chuyển\n- Giao nhầm sách\n\n3. Các trường hợp được trả:\n- Sách có lỗi từ nhà xuất bản\n- Không đúng như mô tả\n\n4. Quy trình xử lý:\n- Khách hàng mang sách và hóa đơn đến cửa hàng\n- Nhân viên kiểm tra điều kiện đổi trả\n- Xử lý đổi sách mới hoặc hoàn tiền\n- Cập nhật vào hệ thống\n\n5. Lưu ý:\n- Không áp dụng cho sách giảm giá trên 50%\n- Sách đặt riêng không được đổi trả\n- Phí vận chuyển (nếu có) không được hoàn lại`,
-        effectiveDate: '2026-01-01',
-        status: 'Đang áp dụng',
-        lastUpdated: '2026-02-10',
-        updatedBy: 'A Nguyen Van',
-    },
-    {
-        id: 5,
-        title: 'Quy định về tồn kho tối thiểu',
-        category: 'Kho vận',
-        description:
-            'Mức tồn kho tối thiểu cho từng loại sách và quy trình đặt hàng bổ sung',
-        content: `1. Mức tồn kho tối thiểu:\n- Sách giáo khoa: 100 cuốn/đầu sách\n- Sách thiếu nhi: 50 cuốn/đầu sách\n- Văn học: 30 cuốn/đầu sách\n- Sách chuyên ngành: 20 cuốn/đầu sách\n\n2. Kiểm tra tồn kho:\n- Kiểm tra hàng tuần\n- Báo cáo sách dưới mức tối thiểu\n- Lập kế hoạch đặt hàng\n\n3. Đặt hàng bổ sung:\n- Đặt hàng khi sách dưới 50% mức tối thiểu\n- Số lượng đặt = Mức tối thiểu x 2\n- Ưu tiên sách bán chạy`,
-        effectiveDate: '2025-12-01',
-        status: 'Đã hết hiệu lực',
-        lastUpdated: '2025-12-01',
-        updatedBy: 'A Nguyen Van',
-    },
-];
-
 export function RegulationsPage() {
-    const [regulations, setRegulations] =
-        useState<Regulation[]>(mockRegulations);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState<string>('Tất cả');
-    const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [selectedRegulation, setSelectedRegulation] =
-        useState<Regulation | null>(null);
-    const [formData, setFormData] = useState({
-        title: '',
-        category: 'Nhân sự',
-        description: '',
-        content: '',
-        effectiveDate: new Date().toISOString().split('T')[0],
-        status: 'Đang áp dụng' as Regulation['status'],
-        updatedBy: 'A Nguyen Van',
-    });
+    const [regulations, setRegulations] = useState<Regulation[]>([
+        {
+            id: 1,
+            title: 'QĐ1 - Quy định bán hàng',
+            description:
+                'Chỉ bán cho khách hàng không nợ quá 1.000.000đ. Số lượng nhập tối thiểu và lượng tồn tối thiểu trước khi nhập.',
+            status: 'active',
+            category: 'ban-hang',
+            effectiveDate: '01/01/2026',
+            updatedDate: '15/01/2026',
+            author: 'A Nguyen Van',
+            data: {
+                id: 1,
+                maxDebt: 1000000,
+                minImportQuantity: 150,
+                minStockBeforeImport: 50,
+                enabled: true,
+            },
+        },
+        {
+            id: 2,
+            title: 'QĐ2 - Quy định nợ và tồn kho',
+            description:
+                'Quy định về tiền nợ tối đa của khách hàng và lượng tồn tối thiểu sau khi bán.',
+            status: 'active',
+            category: 'kho-van',
+            effectiveDate: '01/02/2026',
+            updatedDate: '20/02/2026',
+            author: 'A Nguyen Van',
+            data: {
+                id: 2,
+                maxDebt: 2000000,
+                minStockAfterSale: 20,
+                enabled: true,
+            },
+        },
+        {
+            id: 3,
+            title: 'QĐ3 - Quy định nhập hàng',
+            description:
+                'Chỉ nhập các đầu sách có số lượng tồn ít hơn 300. Số lượng nhập ít nhất là 200. Lượng tồn tối đa sau khi nhập là 500.',
+            status: 'active',
+            category: 'kho-van',
+            effectiveDate: '01/03/2026',
+            updatedDate: '25/03/2026',
+            author: 'A Nguyen Van',
+            data: {
+                id: 3,
+                maxStockForImport: 300,
+                minImportQuantity: 200,
+                maxStockAfterImport: 500,
+                enabled: true,
+            },
+        },
+        {
+            id: 4,
+            title: 'QĐ4 - Chính sách giảm giá sách cũ',
+            description:
+                'Áp dụng giảm giá 10-30% cho các đầu sách đã phát hành quá 12 tháng và tồn kho trên 100 cuốn.',
+            status: 'active',
+            category: 'ban-hang',
+            effectiveDate: '15/02/2026',
+            updatedDate: '28/02/2026',
+            author: 'B Tran Thi',
+            data: { id: 4, enabled: true },
+        },
+        {
+            id: 5,
+            title: 'QĐ5 - Quy định hoa hồng nhân viên bán hàng',
+            description:
+                'Nhân viên bán hàng được hưởng 2% hoa hồng trên doanh thu bán hàng hàng tháng.',
+            status: 'active',
+            category: 'nhan-su',
+            effectiveDate: '01/01/2026',
+            updatedDate: '10/03/2026',
+            author: 'C Le Van',
+            data: { id: 5, enabled: true },
+        },
+        {
+            id: 6,
+            title: 'QĐ6 - Quy định giờ làm việc và nghỉ phép',
+            description:
+                'Giờ làm việc: 8h-17h từ thứ 2 đến thứ 6. Nhân viên được hưởng 12 ngày phép năm.',
+            status: 'draft',
+            category: 'nhan-su',
+            effectiveDate: '01/04/2026',
+            updatedDate: '20/03/2026',
+            author: 'C Le Van',
+            data: { id: 6, enabled: false },
+        },
+    ]);
 
-    const categories = [
-        'Tất cả',
-        'Nhân sự',
-        'Bán hàng',
-        'Kho vận',
-        'Dịch vụ khách hàng',
-        'Tài chính',
-        'An toàn',
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeFilter, setActiveFilter] = useState('tat-ca');
+    const [editingRegulation, setEditingRegulation] =
+        useState<RegulationData | null>(null);
+    const [dialogOpen, setDialogOpen] = useState(false);
+
+    const filterOptions = [
+        { id: 'tat-ca', label: 'Tất cả' },
+        { id: 'nhan-su', label: 'Nhân sự' },
+        { id: 'ban-hang', label: 'Bán hàng' },
+        { id: 'kho-van', label: 'Kho vận' },
+        { id: 'dich-vu-khach-hang', label: 'Dịch vụ khách hàng' },
+        { id: 'tai-chinh', label: 'Tài chính' },
+        { id: 'an-toan', label: 'An toàn' },
     ];
 
-    const filteredRegulations = regulations.filter((reg) => {
-        const matchesSearch =
-            reg.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            reg.description.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesCategory =
-            selectedCategory === 'Tất cả' || reg.category === selectedCategory;
-        return matchesSearch && matchesCategory;
-    });
+    const stats = [
+        {
+            label: 'Tổng quy định',
+            value: regulations.length,
+            color: 'text-[#f97316]',
+            icon: Settings,
+        },
+        {
+            label: 'Đang áp dụng',
+            value: regulations.filter((r) => r.status === 'active').length,
+            color: 'text-green-600',
+            icon: Settings,
+        },
+        {
+            label: 'Sắp có hiệu lực',
+            value: regulations.filter((r) => r.status === 'draft').length,
+            color: 'text-blue-600',
+            icon: Settings,
+        },
+        {
+            label: 'Đã hết hiệu lực',
+            value: regulations.filter((r) => r.status === 'inactive').length,
+            color: 'text-gray-600',
+            icon: Settings,
+        },
+    ];
 
-    const handleCreateRegulation = () => {
-        const newRegulation: Regulation = {
-            id: regulations.length + 1,
-            title: formData.title,
-            category: formData.category,
-            description: formData.description,
-            content: formData.content,
-            effectiveDate: formData.effectiveDate,
-            status: formData.status,
-            lastUpdated: new Date().toISOString().split('T')[0],
-            updatedBy: formData.updatedBy,
-        };
-        setRegulations([...regulations, newRegulation]);
-        setIsCreateDialogOpen(false);
-        resetFormData();
-        toast.success('Quy định đã được thêm thành công!');
-    };
-
-    const handleEditRegulation = () => {
-        if (selectedRegulation) {
-            const updatedRegulation: Regulation = {
-                ...selectedRegulation,
-                title: formData.title,
-                category: formData.category,
-                description: formData.description,
-                content: formData.content,
-                effectiveDate: formData.effectiveDate,
-                status: formData.status,
-                lastUpdated: new Date().toISOString().split('T')[0],
-                updatedBy: formData.updatedBy,
-            };
-            setRegulations(
-                regulations.map((reg) =>
-                    reg.id === selectedRegulation.id ? updatedRegulation : reg,
-                ),
-            );
-            setIsEditDialogOpen(false);
-            toast.success('Quy định đã được cập nhật thành công!');
+    const handleEdit = (id: number) => {
+        const regulation = regulations.find((r) => r.id === id);
+        if (regulation) {
+            setEditingRegulation(regulation.data);
+            setDialogOpen(true);
         }
     };
 
-    const handleDeleteRegulation = () => {
-        if (selectedRegulation) {
-            setRegulations(
-                regulations.filter((reg) => reg.id !== selectedRegulation.id),
-            );
-            setIsDeleteDialogOpen(false);
-            toast.success('Quy định đã được xóa thành công!');
+    const handleSave = (data: RegulationData) => {
+        setRegulations((prev) =>
+            prev.map((reg) =>
+                reg.id === data.id
+                    ? {
+                          ...reg,
+                          data,
+                          updatedDate: new Date().toLocaleDateString('vi-VN'),
+                      }
+                    : reg,
+            ),
+        );
+        toast.success('Cập nhật quy định thành công!');
+    };
+
+    const handleDelete = (id: number) => {
+        setRegulations((prev) => prev.filter((r) => r.id !== id));
+        toast.info(`Đã xóa quy định thành công`);
+    };
+
+    const handleView = (id: number) => {
+        const regulation = regulations.find((r) => r.id === id);
+        if (regulation) {
+            toast.info(`Xem chi tiết: ${regulation.title}`);
         }
     };
 
-    const handleEditRegulationOpen = (regulation: Regulation) => {
-        setSelectedRegulation(regulation);
-        setFormData({
-            title: regulation.title,
-            category: regulation.category,
-            description: regulation.description,
-            content: regulation.content,
-            effectiveDate: regulation.effectiveDate,
-            status: regulation.status,
-            updatedBy: regulation.updatedBy,
-        });
-        setIsEditDialogOpen(true);
-    };
-
-    const handleDeleteRegulationOpen = (regulation: Regulation) => {
-        setSelectedRegulation(regulation);
-        setIsDeleteDialogOpen(true);
-    };
-
-    const resetFormData = () => {
-        setFormData({
-            title: '',
-            category: 'Nhân sự',
-            description: '',
-            content: '',
-            effectiveDate: new Date().toISOString().split('T')[0],
-            status: 'Đang áp dụng',
-            updatedBy: 'A Nguyen Van',
-        });
-    };
+    const filteredRegulations = regulations
+        .filter(
+            (reg) =>
+                reg.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                reg.description
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase()),
+        )
+        .filter(
+            (reg) => activeFilter === 'tat-ca' || reg.category === activeFilter,
+        );
 
     return (
-        <div className="space-y-6">
-            <RegulationHeader onAdd={() => setIsCreateDialogOpen(true)} />
-            <FilterBar
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                categories={categories}
-                selectedCategory={selectedCategory}
-                setSelectedCategory={setSelectedCategory}
-            />
-            <Statistic regulations={regulations} />
-            <RegulationList
-                regulations={filteredRegulations}
-                onEdit={handleEditRegulationOpen}
-                onDelete={handleDeleteRegulationOpen}
-            />
-            <RegulationDialogs
-                isCreateDialogOpen={isCreateDialogOpen}
-                setIsCreateDialogOpen={setIsCreateDialogOpen}
-                isEditDialogOpen={isEditDialogOpen}
-                setIsEditDialogOpen={setIsEditDialogOpen}
-                isDeleteDialogOpen={isDeleteDialogOpen}
-                setIsDeleteDialogOpen={setIsDeleteDialogOpen}
-                formData={formData}
-                setFormData={setFormData}
-                handleCreateRegulation={handleCreateRegulation}
-                handleEditRegulation={handleEditRegulation}
-                handleDeleteRegulation={handleDeleteRegulation}
-                resetFormData={resetFormData}
-                selectedRegulation={selectedRegulation}
-                categories={categories}
-            />
-        </div>
+        <SidebarProvider>
+            <div className="flex min-h-screen bg-gray-50 w-full">
+                <Sidebar activeItem="quy-dinh" />
+
+                <div className="flex-1 flex flex-col">
+                    {/* Header */}
+                    <header className="bg-white border-b border-gray-200 px-8 py-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <span>Trang chủ</span>
+                                <span>›</span>
+                                <span className="font-medium text-gray-900">
+                                    Quy định
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2 text-right">
+                                    <div className="text-sm font-semibold text-gray-900">
+                                        A Nguyen Van
+                                    </div>
+                                    <div className="text-xs text-gray-500 font-mono">
+                                        23520660@gm.uit.edu.vn
+                                    </div>
+                                </div>
+                                <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold shadow-sm">
+                                    A
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Main Content */}
+                    <main className="flex-1 p-8">
+                        <div className="max-w-7xl mx-auto">
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+                                        Quản lý quy định
+                                    </h1>
+                                    <p className="text-gray-500 mt-1">
+                                        Thiết lập các chính sách vận hành của hệ
+                                        thống Beta Book
+                                    </p>
+                                </div>
+                                <Button className="bg-[#f97316] hover:bg-[#ea580c] text-white shadow-md transition-all active:scale-95">
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Thêm quy định
+                                </Button>
+                            </div>
+
+                            {/* Search & Filters */}
+                            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-8">
+                                <div className="relative mb-6">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                                    <Input
+                                        placeholder="Tìm kiếm nhanh tiêu đề hoặc mô tả quy định..."
+                                        value={searchQuery}
+                                        onChange={(e) =>
+                                            setSearchQuery(e.target.value)
+                                        }
+                                        className="pl-12 py-7 text-lg border-gray-200 focus:ring-orange-500 focus:border-orange-500"
+                                    />
+                                </div>
+
+                                <div className="flex gap-2 flex-wrap">
+                                    {filterOptions.map((option) => (
+                                        <button
+                                            key={option.id}
+                                            onClick={() =>
+                                                setActiveFilter(option.id)
+                                            }
+                                            className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all ${
+                                                activeFilter === option.id
+                                                    ? 'bg-[#f97316] text-white shadow-lg shadow-orange-200'
+                                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                            }`}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Statistics */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                                {stats.map((stat, index) => (
+                                    <div
+                                        key={index}
+                                        className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+                                                    {stat.label}
+                                                </p>
+                                                <p
+                                                    className={`text-3xl font-bold mt-1 ${stat.color}`}
+                                                >
+                                                    {stat.value}
+                                                </p>
+                                            </div>
+                                            <stat.icon
+                                                className={`w-10 h-10 ${stat.color} opacity-20`}
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Cards List */}
+                            <div className="grid grid-cols-1 gap-4">
+                                {filteredRegulations.map((regulation) => (
+                                    <RegulationCard
+                                        key={regulation.id}
+                                        title={regulation.title}
+                                        description={regulation.description}
+                                        status={regulation.status}
+                                        effectiveDate={regulation.effectiveDate}
+                                        updatedDate={regulation.updatedDate}
+                                        author={regulation.author}
+                                        enabled={regulation.data?.enabled}
+                                        onEdit={() => handleEdit(regulation.id)}
+                                        onDelete={() =>
+                                            handleDelete(regulation.id)
+                                        }
+                                        onView={() => handleView(regulation.id)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    </main>
+                </div>
+
+                <EditRegulationDialog
+                    key={editingRegulation?.id || 'new'}
+                    open={dialogOpen}
+                    onOpenChange={setDialogOpen}
+                    regulation={editingRegulation}
+                    onSave={handleSave}
+                />
+                <Toaster position="top-right" />
+            </div>
+        </SidebarProvider>
     );
 }

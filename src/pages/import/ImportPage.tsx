@@ -10,8 +10,9 @@ import { ImportTable } from './components/ImportTable';
 import { ImportFormDialog } from './components/ImportFormDialog';
 import { ImportViewDialog } from './components/ImportViewDialog';
 import { ImportDeleteDialog } from './components/ImportDeleteDialog';
+import { mockImports } from '../import/ImportData';
 
-interface ImportOrder {
+export interface ImportOrder {
     id: number;
     importNumber: string;
     supplier: string;
@@ -24,68 +25,6 @@ interface ImportOrder {
     note?: string;
 }
 
-const mockImports: ImportOrder[] = [
-    {
-        id: 1,
-        importNumber: 'PN001',
-        supplier: 'NXB Tổng Hợp',
-        date: '2026-02-25',
-        time: '09:00',
-        totalAmount: 15000000,
-        totalItems: 150,
-        status: 'Hoàn thành',
-        createdBy: 'A Nguyen Van',
-        note: 'Nhập sách văn học',
-    },
-    {
-        id: 2,
-        importNumber: 'PN002',
-        supplier: 'NXB Văn Học',
-        date: '2026-02-28',
-        time: '10:30',
-        totalAmount: 8500000,
-        totalItems: 85,
-        status: 'Hoàn thành',
-        createdBy: 'A Nguyen Van',
-        note: 'Nhập sách thiếu nhi',
-    },
-    {
-        id: 3,
-        importNumber: 'PN003',
-        supplier: 'NXB Tri Thức',
-        date: '2026-03-01',
-        time: '14:15',
-        totalAmount: 12000000,
-        totalItems: 100,
-        status: 'Đang xử lý',
-        createdBy: 'Nguyễn Vũ Linh',
-        note: 'Nhập sách giáo khoa',
-    },
-    {
-        id: 4,
-        importNumber: 'PN004',
-        supplier: 'NXB Thế Giới',
-        date: '2026-03-03',
-        time: '11:45',
-        totalAmount: 6500000,
-        totalItems: 60,
-        status: 'Đang xử lý',
-        createdBy: 'A Nguyen Van',
-        note: 'Nhập sách ngoại ngữ',
-    },
-    {
-        id: 5,
-        importNumber: 'PN005',
-        supplier: 'NXB Kim Đồng',
-        date: '2026-03-05',
-        time: '08:30',
-        totalAmount: 9200000,
-        totalItems: 92,
-        status: 'Hoàn thành',
-        createdBy: 'A Nguyen Van',
-        note: 'Nhập truyện tranh',
-    },
-];
 
 export function ImportPage() {
     const [imports, setImports] = useState<ImportOrder[]>(mockImports);
@@ -233,7 +172,7 @@ export function ImportPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">
-                        Quản lý phiếu nhập
+                        Quản lý phiếu nhập hàng
                     </h1>
                     <p className="text-gray-600 mt-1">
                         Quản lý nhập hàng của Beta Book

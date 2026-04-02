@@ -42,8 +42,8 @@ export function RejectionDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle className="text-gray-900">
-                        Từ chối yêu cầu nghỉ việc
+                    <DialogTitle>
+                        <div className="text-red-600">Từ chối hóa đơn</div>
                     </DialogTitle>
                 </DialogHeader>
 

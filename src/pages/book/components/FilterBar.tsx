@@ -12,7 +12,10 @@ interface FilterBarProps {
     searchTerm: string;
     setSearchTerm: (value: string) => void;
     selectedCategory: string;
+    selectedPriceRange: string;
+    setSelectedPriceRange: (value: string) => void;
     setSelectedCategory: (value: string) => void;
+    handleResetFilters: () => void;
 }
 
 export function FilterBar({

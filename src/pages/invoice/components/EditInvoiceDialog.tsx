@@ -61,7 +61,7 @@ export function EditInvoiceDialog({
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label>Số hóa đơn</Label>
                         <Input
-                            value={selectedInvoice.invoiceNumber}
+                            value={selectedInvoice.code}
                             readOnly
                             className="col-span-3 bg-gray-50"
                         />

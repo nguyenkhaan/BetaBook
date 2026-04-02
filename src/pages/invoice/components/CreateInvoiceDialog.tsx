@@ -38,6 +38,7 @@ interface CreateInvoiceDialogProps {
         quantity: number;
         price: number;
     };
+
     setNewBook: (data: any) => void;
     onAddBook: () => void;
     onRemoveBook: (index: number) => void;

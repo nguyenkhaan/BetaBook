@@ -44,7 +44,7 @@ export function DeleteInvoiceDialog({
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label>Số hóa đơn</Label>
                         <Input
-                            value={selectedInvoice.invoiceNumber}
+                            value={selectedInvoice.code}
                             readOnly
                             className="col-span-3"
                         />
@@ -76,7 +76,7 @@ export function DeleteInvoiceDialog({
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label>Tổng tiền</Label>
                         <Input
-                            value={`${selectedInvoice.totalAmount.toLocaleString('vi-VN')}đ`}
+                            value={`${selectedInvoice.cost.toLocaleString('vi-VN')}đ`}
                             readOnly
                             className="col-span-3"
                         />

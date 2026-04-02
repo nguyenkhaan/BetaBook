@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, FileText } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { toast } from 'sonner';
@@ -7,79 +7,26 @@ import { FilterBar } from './components/FilterBar';
 import { BookTable } from './components/BookTable';
 import { BookDialogs } from './components/BookDialogs';
 import { ExcelImportDialog } from './components/ExcelImportDialog';
-
+import { mockBooks } from './BookData';
+import { BookService } from '../../services/book.service';
 export interface BookItem {
     id: number;
-    bookCode: string;
+    code: string;
     title: string;
-    author: string;
     category: string;
-    price: number;
-    stock: number;
-    publisher: string;
+    cost: number;
+    coverImage?: string;
+    publishers?: any[];
     year: number;
+    stock?: number;
+    authors?: any[];
 }
 
-const mockBooks: BookItem[] = [
-    {
-        id: 1,
-        bookCode: 'BK001',
-        title: 'Đắc Nhân Tâm',
-        author: 'Dale Carnegie',
-        category: 'Kỹ năng sống',
-        price: 120000,
-        stock: 45,
-        publisher: 'NXB Tổng Hợp',
-        year: 2024,
-    },
-    {
-        id: 2,
-        bookCode: 'BK002',
-        title: 'Nhà Giả Kim',
-        author: 'Paulo Coelho',
-        category: 'Tiểu thuyết',
-        price: 95000,
-        stock: 32,
-        publisher: 'NXB Văn Học',
-        year: 2023,
-    },
-    {
-        id: 3,
-        bookCode: 'BK003',
-        title: 'Sapiens: Lược Sử Loài Người',
-        author: 'Yuval Noah Harari',
-        category: 'Lịch sử',
-        price: 180000,
-        stock: 28,
-        publisher: 'NXB Tri Thức',
-        year: 2024,
-    },
-    {
-        id: 4,
-        bookCode: 'BK004',
-        title: 'Atomic Habits',
-        author: 'James Clear',
-        category: 'Kỹ năng sống',
-        price: 150000,
-        stock: 52,
-        publisher: 'NXB Thế Giới',
-        year: 2024,
-    },
-    {
-        id: 5,
-        bookCode: 'BK005',
-        title: 'Tuổi Trẻ Đáng Giá Bao Nhiêu',
-        author: 'Rosie Nguyễn',
-        category: 'Kỹ năng sống',
-        price: 85000,
-        stock: 67,
-        publisher: 'NXB Hội Nhà Văn',
-        year: 2023,
-    },
-];
-
 export function BooksPage() {
-    const [books, setBooks] = useState<BookItem[]>(mockBooks);
+    const [books, setBooks] = useState<BookItem[]>([]);
+    const [statistics, setStatistics] = useState<any>(null);
+    const [loading,setLoading] = useState(true);
+
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -92,22 +39,41 @@ export function BooksPage() {
     const [selectedPriceRange, setSelectedPriceRange] = useState('');
 
     const [formData, setFormData] = useState({
-        bookCode: '',
+        code: '',
         title: '',
-        author: '',
         category: '',
-        publisher: '',
-        price: '',
+        cost: '',
         stock: '',
-        year: '2026',
+        year: new Date().getFullYear().toString(),
+        authorIds: [] as number[],
+        publisherIds: [] as number[],
     });
+
+    const fetchData = async () =>{
+        try{
+            setLoading(true);
+            const [booksData,statsData] = await Promise.all([
+                BookService.getAllBook(),
+                BookService.getStatistics()
+            ]);
+            setBooks(booksData);
+            setStatistics(statsData);
+        }
+        catch (error){
+            toast.error('Không thể tải dữ liệu từ máy chủ');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
 
     const filteredBooks = books.filter((book) => {
         const matchesSearch =
             book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            book.category.toLowerCase().includes(searchTerm.toLowerCase());
-
+            book.code.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory =
             selectedCategory === '' ||
             selectedCategory === 'Tất cả' ||
@@ -115,13 +81,13 @@ export function BooksPage() {
 
         let matchesPrice = true;
         if (selectedPriceRange === '<100.000') {
-            matchesPrice = book.price < 100000;
+            matchesPrice = book.cost < 100000;
         } else if (selectedPriceRange === '100.000 - 200.000') {
-            matchesPrice = book.price >= 100000 && book.price <= 200000;
+            matchesPrice = book.cost >= 100000 && book.cost <= 200000;
         } else if (selectedPriceRange === '200.000 - 500.000') {
-            matchesPrice = book.price > 200000 && book.price <= 500000;
+            matchesPrice = book.cost > 200000 && book.cost <= 500000;
         } else if (selectedPriceRange === 'Hơn 500.000') {
-            matchesPrice = book.price > 500000;
+            matchesPrice = book.cost > 500000;
         }
 
         return matchesSearch && matchesCategory && matchesPrice;
@@ -141,76 +107,82 @@ export function BooksPage() {
         }
     };
 
-    const handleAddBook = () => {
-        const newBook: BookItem = {
-            id: books.length + 1,
-            bookCode:
-                formData.bookCode ||
-                'BK' + (books.length + 1).toString().padStart(3, '0'),
-            title: formData.title,
-            author: formData.author,
-            category: formData.category,
-            publisher: formData.publisher,
-            price: parseInt(formData.price),
-            stock: parseInt(formData.stock),
-            year: parseInt(formData.year),
-        };
-        setBooks([...books, newBook]);
-        setIsAddDialogOpen(false);
-        setFormData({
-            bookCode: '',
-            title: '',
-            author: '',
-            category: '',
-            publisher: '',
-            price: '',
-            stock: '',
-            year: '2026',
-        });
-        toast.success('Đã thêm sách mới thành công!');
+    const handleAddBook = async (file?: File) => {
+        try {
+            const payload = {
+                ...formData,
+                cost: Number(formData.cost),
+                stock: Number(formData.stock),
+                year: Number(formData.year),
+                // authorIds và publisherIds cần được lấy từ UI đa chọn nếu có
+            };
+            await BookService.createBook(payload, file);
+            toast.success('Đã thêm sách mới thành công!');
+            setIsAddDialogOpen(false);
+            fetchData();
+            setFormData({
+                code: '',
+                title: '',
+                category: '',
+                cost: '',
+                stock: '',
+                year: '2026',
+                authorIds: [],
+                publisherIds: [],
+            });
+        } catch (error) {
+            toast.error('Lỗi khi thêm sách mới');
+        }
     };
 
-    const handleEditBook = () => {
+    const handleEditBook = async  (file?: File) => {
         if (!selectedBook) return;
-        const updatedBooks = books.map((book) =>
-            book.id === selectedBook.id
-                ? {
-                      ...book,
-                      title: formData.title,
-                      author: formData.author,
-                      category: formData.category,
-                      publisher: formData.publisher,
-                      price: parseInt(formData.price),
-                      stock: parseInt(formData.stock),
-                      year: parseInt(formData.year),
-                  }
-                : book,
-        );
-        setBooks(updatedBooks);
+       try{
+        await BookService.updateBook(selectedBook.id, formData, file);
+        toast.success('Cập nhật thành công');
         setIsEditDialogOpen(false);
-        setSelectedBook(null);
-        toast.success('Đã cập nhật thông tin sách thành công!');
+        fetchData();
+       }
+       catch(error){
+        toast.error('Lỗi xuất hiện khi cập nhật');
+       }
     };
 
-    const handleDeleteBook = () => {
-        if (!selectedBook) return;
-        setBooks(books.filter((book) => book.id !== selectedBook.id));
+    const handleDeleteBook = async () => {
+       if(!selectedBook) return;
+       try{
+        await BookService.deleteBook(selectedBook.id);
+        toast.success('Đã xoá sách thành công!');
         setIsDeleteDialogOpen(false);
-        setSelectedBook(null);
-        toast.success('Đã xóa sách thành công!');
+        fetchData();
+       } catch(error){
+        toast.error('Có lỗi xuất hiện khi xoá');
+       }
     };
+
+    const handleImportExcel = async () =>{
+        if(!selectedFile) return;
+        try{
+            await BookService.importExcel(selectedFile);
+            toast.success('Thêm danh sách bằng file excel thành công');
+            setIsExcelDialogOpen(false);
+            fetchData();
+        } catch(error){
+            toast.error('Lỗi khi thêm danh sách bằng file excel');
+        }
+    }
 
     const openEditDialog = (book: BookItem) => {
         setSelectedBook(book);
         setFormData({
-            bookCode: book.bookCode,
+            code: book.code,
             title: book.title,
-            author: book.author,
             category: book.category,
-            publisher: book.publisher,
-            price: book.price.toString(),
-            stock: book.stock.toString(),
+            cost: book.cost.toString(),
+            stock: (book.stock || 0).toString(),
             year: book.year.toString(),
+            authorIds: book.authors?.map((a) => a.authorId) || [],
+            publisherIds: book.publishers?.map((p) => p.publisherId) || [],
         });
         setIsEditDialogOpen(true);
     };
@@ -224,6 +196,9 @@ export function BooksPage() {
         setSelectedBook(book);
         setIsViewDialogOpen(true);
     };
+
+     if (loading) return <div>Đang tải dữ liệu...</div>;
+
 
     return (
         <div className="space-y-6">
@@ -256,14 +231,12 @@ export function BooksPage() {
                 </div>
             </div>
 
+            {/* Sử dụng dữ liệu thống kê từ Backend */}
             <Statistic
-                totalBooks={books.length}
-                totalStock={books.reduce((sum, book) => sum + book.stock, 0)}
-                inventoryValue={books.reduce(
-                    (sum, book) => sum + book.price * book.stock,
-                    0,
-                )}
-                lowStockBooks={books.filter((b) => b.stock < 30).length}
+                totalBooks={statistics?.totalBookTitle || books.length}
+                totalStock={statistics?.totalQuantity || 0}
+                inventoryValue={statistics?.totalStockValue || 0}
+                lowStockBooks={statistics?.outOfStocks || 0}
             />
 
             <FilterBar
@@ -306,6 +279,7 @@ export function BooksPage() {
                 selectedFile={selectedFile}
                 setSelectedFile={setSelectedFile}
                 handleFileChange={handleFileChange}
+                onImport={handleImportExcel}
             />
         </div>
     );

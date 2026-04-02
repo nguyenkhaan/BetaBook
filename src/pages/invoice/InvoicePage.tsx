@@ -1,4 +1,4 @@
-import { useState } from 'react';
+
 import { toast } from 'sonner';
 import { InvoiceHeader } from './components/InvoiceHeader';
 import { InvoiceStats } from './components/InvoiceStats';
@@ -8,9 +8,17 @@ import { ViewInvoiceDialog } from './components/ViewInvoiceDialog';
 import { CreateInvoiceDialog } from './components/CreateInvoiceDialog';
 import { EditInvoiceDialog } from './components/EditInvoiceDialog';
 import { DeleteInvoiceDialog } from './components/DeleteInvoiceDialog';
+import { mockDiscountCodes, mockInvoices } from '../invoice/InvoiceData';
+
+import {
+    InvoiceService,
+    CreateInvoiceDto,
+} from '../../services/invoice.service';
+import { useState, useEffect } from 'react';
 
 export interface InvoiceBook {
     title: string;
+    bookid: number;
     quantity: number;
     price: number;
 }
@@ -25,10 +33,10 @@ export interface DiscountCode {
 
 export interface Invoice {
     id: number;
-    invoiceNumber: string;
+    code: string;
     customer: string;
     date: string;
-    totalAmount: number;
+    cost: number;
     status: 'Đã thanh toán' | 'Chưa thanh toán' | 'Quá hạn';
     items: number;
     books: InvoiceBook[];
@@ -36,104 +44,11 @@ export interface Invoice {
     discountAmount?: number;
 }
 
-const mockDiscountCodes: DiscountCode[] = [
-    {
-        id: '1',
-        code: 'SUMMER2026',
-        description: 'Giảm 10% - Khuyến mãi mùa hè',
-        type: 'percentage',
-        value: 10,
-    },
-    {
-        id: '2',
-        code: 'NEWCUSTOMER',
-        description: 'Giảm 50,000đ - Khách hàng mới',
-        type: 'fixed',
-        value: 50000,
-    },
-    {
-        id: '3',
-        code: 'VIP20',
-        description: 'Giảm 20% - Khách hàng VIP',
-        type: 'percentage',
-        value: 20,
-    },
-    {
-        id: '4',
-        code: 'FREESHIP',
-        description: 'Giảm 30,000đ - Miễn phí ship',
-        type: 'fixed',
-        value: 30000,
-    },
-    {
-        id: '5',
-        code: 'MEGA50',
-        description: 'Giảm 50% - Siêu khuyến mãi',
-        type: 'percentage',
-        value: 50,
-    },
-];
-
-const mockInvoices: Invoice[] = [
-    {
-        id: 1,
-        invoiceNumber: 'HD001',
-        customer: 'Nguyễn Văn A',
-        date: '01/03/2026',
-        totalAmount: 350000,
-        status: 'Đã thanh toán',
-        items: 3,
-        books: [
-            { title: 'Sách A', quantity: 1, price: 100000 },
-            { title: 'Sách B', quantity: 2, price: 125000 },
-        ],
-    },
-    {
-        id: 2,
-        invoiceNumber: 'HD002',
-        customer: 'Trần Thị B',
-        date: '02/03/2026',
-        totalAmount: 520000,
-        status: 'Đã thanh toán',
-        items: 5,
-        books: [
-            { title: 'Sách C', quantity: 1, price: 100000 },
-            { title: 'Sách D', quantity: 2, price: 125000 },
-            { title: 'Sách E', quantity: 2, price: 195000 },
-        ],
-    },
-    {
-        id: 3,
-        invoiceNumber: 'HD003',
-        customer: 'Lê Văn C',
-        date: '03/03/2026',
-        totalAmount: 280000,
-        status: 'Chưa thanh toán',
-        items: 2,
-        books: [
-            { title: 'Sách F', quantity: 1, price: 100000 },
-            { title: 'Sách G', quantity: 1, price: 180000 },
-        ],
-    },
-    {
-        id: 4,
-        invoiceNumber: 'HD004',
-        customer: 'Phạm Thị D',
-        date: '04/03/2026',
-        totalAmount: 420000,
-        status: 'Quá hạn',
-        items: 4,
-        books: [
-            { title: 'Sách H', quantity: 1, price: 100000 },
-            { title: 'Sách I', quantity: 1, price: 125000 },
-            { title: 'Sách J', quantity: 1, price: 195000 },
-            { title: 'Sách K', quantity: 1, price: 100000 },
-        ],
-    },
-];
-
 export function InvoicePage() {
-    const [invoices, setInvoices] = useState<Invoice[]>(mockInvoices);
+    const [invoices, setInvoices] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [customers, setCustomers] = useState<any[]>([]);
+
     const [searchTerm, setSearchTerm] = useState('');
     const [isViewBooksOpen, setIsViewBooksOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -142,6 +57,89 @@ export function InvoicePage() {
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(
         null,
     );
+
+
+    const loadInvoices = async () => {
+        setIsLoading(true);
+        try {
+            const data = await InvoiceService.getAll();
+            setInvoices(data);
+        } catch (error) {
+            toast.error('Không thể tải danh sách hóa đơn!');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadInvoices();
+    }, []);
+
+    useEffect(() => {
+        const fetchCustomers = async () => {
+            try {
+                setCustomers([{ id: 1, name: 'Khách hàng lẻ' }]);
+            } catch (error) {
+                console.error('Lỗi lấy danh sách khách hàng');
+            }
+        };
+        fetchCustomers();
+    }, []);
+
+    const filteredInvoices = invoices.filter((invoice) => {
+        const matchesSearch =
+            (invoice.code || invoice.invoiceNumber || '') // BE trả về code
+                .toLowerCase()
+                .includes(searchTerm.toLowerCase()) ||
+            (invoice.customer || '')
+                .toLowerCase()
+                .includes(searchTerm.toLowerCase());
+
+        const matchesStatus =
+            statusFilter === 'all' || invoice.status === statusFilter;
+
+        let matchesPrice = true;
+        const amount = invoice.cost || invoice.totalAmount; // BE trả về cost
+
+        if (priceFilter === 'under100') matchesPrice = amount < 100000;
+        else if (priceFilter === '100-200')
+            matchesPrice = amount >= 100000 && amount <= 200000;
+        else if (priceFilter === '200-500')
+            matchesPrice = amount > 200000 && amount <= 500000;
+        else if (priceFilter === 'over500') matchesPrice = amount > 500000;
+
+        return matchesSearch && matchesStatus && matchesPrice;
+    });
+
+    const handleCreateInvoice = async () => {
+        if (!createFormData.customer || createFormData.books.length === 0) {
+            toast.error('Vui lòng nhập đầy đủ thông tin và chọn sách!');
+            return;
+        }
+
+        try {
+            const dto: CreateInvoiceDto = {
+                code: createFormData.invoiceNumber || `HD${Date.now()}`,
+                customerId: Number(createFormData.customer) || 1, // Bạn cần ID khách hàng thực tế từ một ô Select khách hàng
+                status: createFormData.status as any,
+                billDetails: createFormData.books.map((b) => ({
+                    bookId: b.bookid,
+                    quantity: b.quantity,
+                })),
+                vouchers: createFormData.discountCode ? [{ voucherId: 1 }] : [],
+            };
+
+            await InvoiceService.create(dto);
+            toast.success('Tạo hóa đơn thành công!');
+            setIsCreateDialogOpen(false);
+            loadInvoices(); // Tải lại danh sách từ server
+        } catch (error: any) {
+            toast.error(
+                error.response?.data?.message || 'Lỗi khi tạo hóa đơn!',
+            );
+        }
+    };
+
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [priceFilter, setPriceFilter] = useState('all');
     const [formData, setFormData] = useState({
@@ -153,13 +151,16 @@ export function InvoicePage() {
     const [createFormData, setCreateFormData] = useState({
         invoiceNumber: '',
         customer: '',
+        phoneNumber: '', 
         date: new Date().toISOString().split('T')[0],
         books: [] as InvoiceBook[],
         status: 'Chưa thanh toán' as Invoice['status'],
         discountCode: '',
         discountAmount: 0,
     });
+    
     const [newBook, setNewBook] = useState({
+        bookid: 0, 
         title: '',
         quantity: 1,
         price: 0,
@@ -172,31 +173,6 @@ export function InvoicePage() {
         toast.info('Đã xóa tất cả bộ lọc');
     };
 
-    const filteredInvoices = invoices.filter((invoice) => {
-        const matchesSearch =
-            invoice.invoiceNumber
-                .toLowerCase()
-                .includes(searchTerm.toLowerCase()) ||
-            invoice.customer.toLowerCase().includes(searchTerm.toLowerCase());
-
-        const matchesStatus =
-            statusFilter === 'all' || invoice.status === statusFilter;
-
-        let matchesPrice = true;
-        const amount = invoice.totalAmount;
-
-        if (priceFilter === 'under100') {
-            matchesPrice = amount < 100000;
-        } else if (priceFilter === '100-200') {
-            matchesPrice = amount >= 100000 && amount <= 200000;
-        } else if (priceFilter === '200-500') {
-            matchesPrice = amount > 200000 && amount <= 500000;
-        } else if (priceFilter === 'over500') {
-            matchesPrice = amount > 500000;
-        }
-
-        return matchesSearch && matchesStatus && matchesPrice;
-    });
 
     const openViewBooks = (invoice: Invoice) => {
         setSelectedInvoice(invoice);
@@ -214,60 +190,58 @@ export function InvoicePage() {
         setIsEditDialogOpen(true);
     };
 
-    const handleEditInvoice = () => {
-        if (selectedInvoice) {
-            const discountAmount = calculateEditDiscountAmount();
-            const subtotal = calculateEditSubtotal();
-            const finalTotal = subtotal - discountAmount;
-
-            const updatedInvoice: Invoice = {
-                ...selectedInvoice,
-                customer: formData.customer,
-                date: formData.date,
-                status: formData.status,
-                discountCode: formData.discountCode,
-                discountAmount: discountAmount,
-                totalAmount: finalTotal,
-            };
-            setInvoices(
-                invoices.map((invoice) =>
-                    invoice.id === selectedInvoice.id
-                        ? updatedInvoice
-                        : invoice,
-                ),
-            );
-            setIsEditDialogOpen(false);
-            toast.success('Hóa đơn đã được cập nhật thành công!');
-        }
-    };
-
     const handleDeleteInvoiceOpen = (invoice: Invoice) => {
         setSelectedInvoice(invoice);
         setIsDeleteDialogOpen(true);
     };
 
-    const handleDeleteInvoice = () => {
+    const handleDeleteInvoice = async () => {
         if (selectedInvoice) {
-            setInvoices(
-                invoices.filter((invoice) => invoice.id !== selectedInvoice.id),
-            );
-            setIsDeleteDialogOpen(false);
-            toast.success('Hóa đơn đã được xóa thành công!');
+            try {
+                await InvoiceService.delete(selectedInvoice.id);
+                toast.success('Hóa đơn đã được xóa!');
+                setIsDeleteDialogOpen(false);
+                loadInvoices(); 
+            } catch (error) {
+                toast.error('Lỗi khi xóa hóa đơn!');
+            }
+        }
+    };
+
+    const handleEditInvoice = async () => {
+        if (selectedInvoice) {
+            try {
+                const dto = {
+                    status: formData.status,
+                };
+                await InvoiceService.update(selectedInvoice.id, dto);
+                toast.success('Cập nhật thành công!');
+                setIsEditDialogOpen(false);
+                loadInvoices();
+            } catch (error) {
+                toast.error('Lỗi khi cập nhật!');
+            }
         }
     };
 
     const handleAddBook = () => {
-        if (newBook.title && newBook.quantity > 0 && newBook.price > 0) {
+        if (
+            newBook.bookid &&
+            newBook.title &&
+            newBook.quantity > 0 &&
+            newBook.price > 0
+        ) {
             setCreateFormData({
                 ...createFormData,
-                books: [...createFormData.books, newBook],
+                books: [...createFormData.books, newBook as InvoiceBook],
             });
-            setNewBook({ title: '', quantity: 1, price: 0 });
+            setNewBook({ bookid: 0, title: '', quantity: 1, price: 0 });
             toast.success('Đã thêm sách vào danh sách!');
         } else {
-            toast.error('Vui lòng nhập đầy đủ thông tin sách!');
+            toast.error('Vui lòng nhập đầy đủ thông tin sách (bao gồm ID)!');
         }
     };
+    
 
     const handleRemoveBook = (index: number) => {
         setCreateFormData({
@@ -349,42 +323,6 @@ export function InvoicePage() {
         });
     };
 
-    const handleCreateInvoice = () => {
-        if (!createFormData.customer || !createFormData.date) {
-            toast.error('Vui lòng nhập đầy đủ thông tin khách hàng và ngày!');
-            return;
-        }
-        if (createFormData.books.length === 0) {
-            toast.error('Vui lòng thêm ít nhất một sách vào hóa đơn!');
-            return;
-        }
-
-        const newInvoice: Invoice = {
-            id: invoices.length + 1,
-            invoiceNumber: `HD${String(invoices.length + 1).padStart(3, '0')}`,
-            customer: createFormData.customer,
-            date: createFormData.date,
-            totalAmount: calculateFinalTotal(),
-            status: createFormData.status,
-            items: calculateTotalItems(),
-            books: createFormData.books,
-            discountCode: createFormData.discountCode,
-            discountAmount: calculateDiscountAmount(),
-        };
-        setInvoices([...invoices, newInvoice]);
-        setIsCreateDialogOpen(false);
-        setCreateFormData({
-            invoiceNumber: '',
-            customer: '',
-            date: new Date().toISOString().split('T')[0],
-            books: [],
-            status: 'Chưa thanh toán',
-            discountCode: '',
-            discountAmount: 0,
-        });
-        toast.success('Hóa đơn mới đã được tạo thành công!');
-    };
-
     const getStatusColor = (status: Invoice['status']) => {
         switch (status) {
             case 'Đã thanh toán':
@@ -396,71 +334,90 @@ export function InvoicePage() {
         }
     };
 
-    return (
-        <div className="space-y-6">
-            <InvoiceHeader onCreateClick={() => setIsCreateDialogOpen(true)} />
-            <InvoiceStats invoices={invoices} />
-            <InvoiceFilterBar
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                statusFilter={statusFilter}
-                onStatusFilterChange={setStatusFilter}
-                priceFilter={priceFilter}
-                onPriceFilterChange={setPriceFilter}
-                onResetFilters={handleResetFilters}
-            />
-            <InvoiceTable
-                invoices={filteredInvoices}
-                onEdit={handleEditInvoiceOpen}
-                onDelete={handleDeleteInvoiceOpen}
-                onViewBooks={openViewBooks}
-                getStatusColor={getStatusColor}
-            />
+   return (
+       <div className="space-y-6">
+           {/* Header: Nút tạo hóa đơn */}
+           <InvoiceHeader onCreateClick={() => setIsCreateDialogOpen(true)} />
 
-            <ViewInvoiceDialog
-                isOpen={isViewBooksOpen}
-                onOpenChange={setIsViewBooksOpen}
-                selectedInvoice={selectedInvoice}
-                mockDiscountCodes={mockDiscountCodes}
-            />
+           {/* Hiển thị Loading hoặc Nội dung chính */}
+           {isLoading ? (
+               <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg shadow-sm border border-dashed border-gray-300">
+                   <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                   <p className="text-gray-500 font-medium">
+                       Đang tải danh sách hóa đơn từ hệ thống...
+                   </p>
+               </div>
+           ) : (
+               <>
+                   <InvoiceStats invoices={invoices} />
 
-            <CreateInvoiceDialog
-                isOpen={isCreateDialogOpen}
-                onOpenChange={setIsCreateDialogOpen}
-                formData={createFormData}
-                setFormData={setCreateFormData}
-                newBook={newBook}
-                setNewBook={setNewBook}
-                onAddBook={handleAddBook}
-                onRemoveBook={handleRemoveBook}
-                onSave={handleCreateInvoice}
-                mockDiscountCodes={mockDiscountCodes}
-                calculateTotalItems={calculateTotalItems}
-                calculateTotalAmount={calculateTotalAmount}
-                calculateDiscountAmount={calculateDiscountAmount}
-                calculateFinalTotal={calculateFinalTotal}
-                handleDiscountCodeChange={handleDiscountCodeChange}
-            />
+                   <InvoiceFilterBar
+                       searchTerm={searchTerm}
+                       onSearchChange={setSearchTerm}
+                       statusFilter={statusFilter}
+                       onStatusFilterChange={setStatusFilter}
+                       priceFilter={priceFilter}
+                       onPriceFilterChange={setPriceFilter}
+                       onResetFilters={handleResetFilters}
+                   />
 
-            <EditInvoiceDialog
-                isOpen={isEditDialogOpen}
-                onOpenChange={setIsEditDialogOpen}
-                selectedInvoice={selectedInvoice}
-                formData={formData}
-                setFormData={setFormData}
-                onSave={handleEditInvoice}
-                mockDiscountCodes={mockDiscountCodes}
-                calculateEditSubtotal={calculateEditSubtotal}
-                calculateEditDiscountAmount={calculateEditDiscountAmount}
-                calculateEditFinalTotal={calculateEditFinalTotal}
-            />
+                   <div className="bg-white rounded-lg shadow-sm">
+                       <InvoiceTable
+                           invoices={filteredInvoices}
+                           onEdit={handleEditInvoiceOpen}
+                           onDelete={handleDeleteInvoiceOpen}
+                           onViewBooks={openViewBooks}
+                           getStatusColor={getStatusColor}
+                       />
+                   </div>
+               </>
+           )}
 
-            <DeleteInvoiceDialog
-                isOpen={isDeleteDialogOpen}
-                onOpenChange={setIsDeleteDialogOpen}
-                selectedInvoice={selectedInvoice}
-                onDelete={handleDeleteInvoice}
-            />
-        </div>
-    );
+           <ViewInvoiceDialog
+               isOpen={isViewBooksOpen}
+               onOpenChange={setIsViewBooksOpen}
+               selectedInvoice={selectedInvoice}
+               mockDiscountCodes={mockDiscountCodes}
+           />
+
+           <CreateInvoiceDialog
+               isOpen={isCreateDialogOpen}
+               onOpenChange={setIsCreateDialogOpen}
+               formData={createFormData}
+               setFormData={setCreateFormData}
+               newBook={newBook}
+               setNewBook={setNewBook}
+               onAddBook={handleAddBook}
+               onRemoveBook={handleRemoveBook}
+               onSave={handleCreateInvoice}
+               mockDiscountCodes={mockDiscountCodes}
+               customers={customers}
+               calculateTotalItems={calculateTotalItems}
+               calculateTotalAmount={calculateTotalAmount}
+               calculateDiscountAmount={calculateDiscountAmount}
+               calculateFinalTotal={calculateFinalTotal}
+               handleDiscountCodeChange={handleDiscountCodeChange}
+           />
+
+           <EditInvoiceDialog
+               isOpen={isEditDialogOpen}
+               onOpenChange={setIsEditDialogOpen}
+               selectedInvoice={selectedInvoice}
+               formData={formData}
+               setFormData={setFormData}
+               onSave={handleEditInvoice}
+               mockDiscountCodes={mockDiscountCodes}
+               calculateEditSubtotal={calculateEditSubtotal}
+               calculateEditDiscountAmount={calculateEditDiscountAmount}
+               calculateEditFinalTotal={calculateEditFinalTotal}
+           />
+
+           <DeleteInvoiceDialog
+               isOpen={isDeleteDialogOpen}
+               onOpenChange={setIsDeleteDialogOpen}
+               selectedInvoice={selectedInvoice}
+               onDelete={handleDeleteInvoice}
+           />
+       </div>
+   );
 }

@@ -270,7 +270,7 @@ export function ReceiptsPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">
-                        Quản lý phiếu thu
+                        Quản lý phiếu thu tiền 
                     </h1>
                     <p className="text-gray-600 mt-1">
                         Quản lý các phiếu thu của Beta Book

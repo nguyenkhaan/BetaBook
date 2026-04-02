@@ -1,0 +1,62 @@
+import { privateApi } from '../api/api';
+import { Customer } from '../pages/customer/CustomersPage';
+
+export class CustomerService {
+    static async getAllCustomers(): Promise<Customer[]> {
+        const response = await privateApi.get('/customer');
+        const data = response.data;
+
+        return data.map((item: any) => ({
+            id: item.id,
+            customerCode: item.code,
+            name: item.name,
+            email: item.email,
+            phone: item.phone,
+            totalOrders: 0, 
+            totalSpent: item.totalPaid, 
+            level: this.mapGradeToLevel(item.grade), 
+            joinDate: new Date().toISOString().split('T')[0], 
+        }));
+    }
+
+    static async getGeneralStatistics() {
+        const response = await privateApi.get('/customer/statistic');
+        return response.data;
+    }
+
+    static async getCustomerByPhone(phone: string): Promise<Customer> {
+        const response = await privateApi.get(`/customer/phone?phone=${phone}`);
+        return response.data;
+    }
+
+    static async createCustomer(data: Omit<Customer, 'id'>) {
+        // Chú ý: BE hiện tại chưa có hàm create trong Controller bạn gửi
+        const response = await privateApi.post('/customer', data);
+        return response.data;
+    }
+
+    static async updateCustomer(id: number, data: Partial<Customer>) {
+        const response = await privateApi.put(`/customer/${id}`, data);
+        return response.data;
+    }
+
+    static async deleteCustomer(id: number) {
+        const response = await privateApi.delete(`/customer/${id}`);
+        return response.data;
+    }
+
+    private static mapGradeToLevel(grade: string): Customer['level'] {
+        switch (grade?.toUpperCase()) {
+            case 'DIAMOND':
+                return 'Kim cương';
+            case 'GOLD':
+                return 'Vàng';
+            case 'SILVER':
+                return 'Bạc';
+            case 'BRONZE':
+                return 'Đồng';
+            default:
+                return 'Đồng';
+        }
+    }
+}

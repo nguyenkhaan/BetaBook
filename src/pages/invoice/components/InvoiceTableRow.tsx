@@ -20,7 +20,7 @@ export function InvoiceTableRow({
     return (
         <tr className="hover:bg-gray-50">
             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {invoice.invoiceNumber}
+                {invoice.code}
             </td>
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 {invoice.customer}
@@ -50,7 +50,7 @@ export function InvoiceTableRow({
                 {invoice.items}
             </td>
             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {invoice.totalAmount.toLocaleString('vi-VN')}đ
+                {invoice.cost.toLocaleString('vi-VN')}đ
             </td>
             <td className="px-6 py-4 whitespace-nowrap">
                 <span

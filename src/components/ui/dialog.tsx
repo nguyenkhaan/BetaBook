@@ -51,7 +51,7 @@ interface DialogTitleProps {
 }
 
 export function DialogTitle({ children }: DialogTitleProps) {
-    return <h2 className="text-xl font-semibold text-gray-900">{children}</h2>;
+    return <h2 className="text-3xl font-semibold text-red-500">{children}</h2>;
 }
 
 interface DialogDescriptionProps {

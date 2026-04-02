@@ -40,7 +40,7 @@ export function ViewInvoiceDialog({
                                     (Beta Book - Cửa hàng sách)
                                 </div>
                                 <div className="text-center text-sm text-gray-600">
-                                    Số: {selectedInvoice.invoiceNumber}
+                                    Số: {selectedInvoice.code}
                                 </div>
                             </div>
                             <div
@@ -164,7 +164,7 @@ export function ViewInvoiceDialog({
                                     Tổng thanh toán
                                 </span>
                                 <span className="text-gray-900 font-bold text-base">
-                                    {selectedInvoice.totalAmount.toLocaleString('vi-VN')}
+                                    {selectedInvoice.cost.toLocaleString('vi-VN')}
                                 </span>
                             </div>
                         </div>

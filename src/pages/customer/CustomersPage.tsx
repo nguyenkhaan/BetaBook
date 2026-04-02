@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { toast } from 'sonner';
@@ -6,7 +6,8 @@ import { Statistic } from './components/Statistic';
 import { FilterBar } from './components/FilterBar';
 import { CustomerTable } from './components/CustomerTable';
 import { CustomerDialogs } from './components/CustomerDialogs';
-
+import { CustomerService } from '../../services/customer.service';
+import { mockCustomers } from '../customer/CustomerData';
 export interface Customer {
     id: number;
     customerCode: string;
@@ -19,78 +20,18 @@ export interface Customer {
     level: 'Đồng' | 'Bạc' | 'Vàng' | 'Kim cương';
 }
 
-const mockCustomers: Customer[] = [
-    {
-        id: 1,
-        customerCode: 'KH001',
-        name: 'Nguyễn Văn A',
-        email: 'nguyen.vana@email.com',
-        phone: '0901234567',
-        totalOrders: 12,
-        totalSpent: 2500000,
-        joinDate: '2025-01-15',
-        level: 'Vàng',
-    },
-    {
-        id: 2,
-        customerCode: 'KH002',
-        name: 'Trần Thị B',
-        email: 'tran.thib@email.com',
-        phone: '0912345678',
-        totalOrders: 8,
-        totalSpent: 1800000,
-        joinDate: '2025-01-20',
-        level: 'Bạc',
-    },
-    {
-        id: 3,
-        customerCode: 'KH003',
-        name: 'Lê Văn C',
-        email: 'le.vanc@email.com',
-        phone: '0923456789',
-        totalOrders: 25,
-        totalSpent: 5200000,
-        joinDate: '2024-12-05',
-        level: 'Kim cương',
-    },
-    {
-        id: 4,
-        customerCode: 'KH004',
-        name: 'Phạm Thị D',
-        email: 'pham.thid@email.com',
-        phone: '0934567890',
-        totalOrders: 15,
-        totalSpent: 3100000,
-        joinDate: '2025-01-10',
-        level: 'Vàng',
-    },
-    {
-        id: 5,
-        customerCode: 'KH005',
-        name: 'Hoàng Văn E',
-        email: 'hoang.vane@email.com',
-        phone: '0945678901',
-        totalOrders: 5,
-        totalSpent: 950000,
-        joinDate: '2025-02-01',
-        level: 'Đồng',
-    },
-];
-
 export function CustomersPage() {
-    const [customers, setCustomers] = useState<Customer[]>(mockCustomers);
+    // khởi tạo một state rỗng
+    const [customers, setCustomers] = useState<Customer[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedLevel, setSelectedLevel] = useState<string>('Tất cả');
     const [selectedDate, setSelectedDate] = useState<string>('');
-
+    // UI state
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-
-    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
-        null,
-    );
+    const [isLoading, setIsLoading] = useState(false);
 
     const [formData, setFormData] = useState({
         customerCode: '',
@@ -102,6 +43,81 @@ export function CustomersPage() {
         totalSpent: 0,
         level: 'Đồng' as Customer['level'],
     });
+
+    // hàm lấy dữ liệu từ be
+
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const data = await CustomerService.getAllCustomers();
+            setCustomers(data);
+        } catch (err: any) {
+            const status = err.response?.status;
+            const message =
+                err.response?.data?.message ||
+                'Không thể tải danh sách khách hàng ';
+            console.error(`Lỗi ${status} : ${message}`);
+            toast.error(message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+        null,
+    );
+
+    const handleCreateCustomer = async () => {
+        try {
+            await CustomerService.createCustomer(formData);
+            toast.success('Thêm khách hàng mới thành công');
+            setIsCreateDialogOpen(false);
+            fetchData();
+        } catch (err: any) {
+            toast.error(
+                err.response?.data?.message || 'Không thể thêm khách hàng mới',
+            );
+        }
+    };
+
+    const handleEditCustomer = async () => {
+        if (selectedCustomer) {
+            try {
+                await CustomerService.updateCustomer(
+                    selectedCustomer.id,
+                    formData,
+                );
+                toast.success('Cập nhật thông tin khách hàng thành công');
+                setIsEditDialogOpen(false);
+                fetchData();
+            } catch (err: any) {
+                toast.error(
+                    err.response?.data.message ||
+                        'Không thể cập nhật thông tin khách hàng',
+                );
+            }
+        }
+    };
+
+    const handleDeleteCustomer = async () => {
+        if (selectedCustomer) {
+            try {
+                await CustomerService.deleteCustomer(selectedCustomer.id);
+                toast.success('Xoá thông tin khách hàng thành công');
+                setIsEditDialogOpen(false);
+                fetchData();
+            } catch (err: any) {
+                toast.error(
+                    err.response?.data?.message ||
+                        'Không thễ xoá thông tin khách hàng. Vui lòng kiểm tra lại!',
+                );
+            }
+        }
+    };
 
     const handleResetFilters = () => {
         setSearchTerm('');
@@ -142,37 +158,6 @@ export function CustomersPage() {
                 return 'bg-blue-100 text-blue-800';
             default:
                 return 'bg-gray-100 text-gray-800';
-        }
-    };
-
-    const handleCreateCustomer = () => {
-        const newCustomer: Customer = {
-            ...formData,
-            id: customers.length + 1,
-            customerCode: `KH${String(customers.length + 1).padStart(3, '0')}`,
-        };
-        setCustomers([...customers, newCustomer]);
-        setIsCreateDialogOpen(false);
-        toast.success('Khách hàng đã được thêm thành công!');
-    };
-
-    const handleEditCustomer = () => {
-        if (selectedCustomer) {
-            setCustomers(
-                customers.map((c) =>
-                    c.id === selectedCustomer.id ? { ...c, ...formData } : c,
-                ),
-            );
-            setIsEditDialogOpen(false);
-            toast.success('Khách hàng đã được cập nhật thành công!');
-        }
-    };
-
-    const handleDeleteCustomer = () => {
-        if (selectedCustomer) {
-            setCustomers(customers.filter((c) => c.id !== selectedCustomer.id));
-            setIsDeleteDialogOpen(false);
-            toast.success('Khách hàng đã được xóa thành công!');
         }
     };
 

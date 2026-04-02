@@ -16,6 +16,7 @@ interface ExcelImportDialogProps {
     selectedFile: File | null;
     setSelectedFile: (file: File | null) => void;
     handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onImport: () => Promise<void>;
 }
 
 export function ExcelImportDialog({

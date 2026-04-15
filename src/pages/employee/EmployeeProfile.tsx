@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     User,
     Mail,
@@ -13,6 +13,7 @@ import { ProfileHeader } from './components/ProfileHeader';
 import { ProfileCard } from './components/ProfileCard';
 import { InfoSection } from './components/InfoSection';
 import { ChangePasswordDialog } from './components/ChangePasswordDialog';
+import { EmployeesService } from '../../services/employees.service';
 
 export function EmployeeProfile() {
     const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
@@ -21,20 +22,101 @@ export function EmployeeProfile() {
         newPassword: '',
         confirmPassword: '',
     });
+    const [employee , setEmployee] = useState({
+        name: '', position : '' , status: '' 
+    })
+    const [userProfile, setUserProfile] = useState<any>();
+    const [loading, setLoading] = useState(false);
+    // const [avatar, setAvatar] = useState('');
+    useEffect(() => {
+        const fetchProfile = async () => {
+            setLoading(true);
+            try {
+                const employeeProfile =
+                    (await EmployeesService.getMyProfile()) as any;
+                console.log(employeeProfile);
+                const workInfo = [
+                    {
+                        icon: Building,
+                        label: 'Phòng ban',
+                        value: employeeProfile.department.name,
+                        iconBgColor: 'bg-blue-100',
+                        iconColor: 'text-blue-600',
+                    },
+                    {
+                        icon: Briefcase,
+                        label: 'Chức vụ',
+                        value: employeeProfile.position.name,
+                        iconBgColor: 'bg-blue-100',
+                        iconColor: 'text-blue-600',
+                    },
+                ];
+                const contactInfo = [
+                    {
+                        icon: Mail,
+                        label: 'Email',
+                        value: employeeProfile.email,
+                    },
+                    {
+                        icon: Phone,
+                        label: 'Số điện thoại',
+                        value: employeeProfile.phone,
+                    },
+                ];
+                const additionalInfo = [
+                    {
+                        icon: User,
+                        label: 'Mã nhân viên',
+                        value: `${employeeProfile.code}`,
+                        iconBgColor: 'bg-purple-100',
+                        iconColor: 'text-purple-600',
+                    },
+                    {
+                        icon: Building,
+                        label: 'Chi nhánh',
+                        value: 'Beta Book - Trụ sở chính',
+                        iconBgColor: 'bg-purple-100',
+                        iconColor: 'text-purple-600',
+                    },
+                ];
 
+                const employmentInfo = [
+                    {
+                        icon: Calendar,
+                        label: 'Ngày bắt đầu làm việc',
+                        value: employeeProfile.createdAt,
+                        iconBgColor: 'bg-green-100',
+                        iconColor: 'text-green-600',
+                    },
+                    {
+                        icon: DollarSign,
+                        label: 'Mức lương',
+                        value: `${employeeProfile.salary.toLocaleString('vi-VN')}đ`,
+                        iconBgColor: 'bg-green-100',
+                        iconColor: 'text-green-600',
+                    },
+                ];
+                setEmployee({
+                    name: employeeProfile.name, 
+                    status: employeeProfile.status, 
+                    position: employeeProfile.position.name 
+                })
+                // setAvatar(employeeProfile.avatar || '')   //-> Hien tai chua co chuc nang update avatar 
+                setUserProfile({
+                    workInfo,
+                    additionalInfo,
+                    contactInfo,
+                    employmentInfo,
+                });
+            } catch (err) {
+                console.log(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchProfile();
+    }, []);
     // Mock employee data - in real app, this would come from context/props
-    const employee = {
-        id: 1,
-        name: 'A Nguyen Van',
-        email: 'nguyen.vana@company.com',
-        phone: '0901234567',
-        position: 'Quản lý cửa hàng',
-        department: 'Quản lý',
-        joinDate: '01/01/2024',
-        status: 'Đang làm việc',
-        salary: 15000000,
-        avatar: '',
-    };
 
     const handleChangePassword = () => {
         if (passwordData.newPassword !== passwordData.confirmPassword) {
@@ -54,38 +136,34 @@ export function EmployeeProfile() {
             confirmPassword: '',
         });
     };
-
-    const contactInfo = [
-        { icon: Mail, label: 'Email', value: employee.email },
-        { icon: Phone, label: 'Số điện thoại', value: employee.phone },
-    ];
-
-    const workInfo = [
-        { icon: Building, label: 'Phòng ban', value: employee.department, iconBgColor: 'bg-blue-100', iconColor: 'text-blue-600' },
-        { icon: Briefcase, label: 'Chức vụ', value: employee.position, iconBgColor: 'bg-blue-100', iconColor: 'text-blue-600' },
-    ];
-
-    const employmentInfo = [
-        { icon: Calendar, label: 'Ngày bắt đầu làm việc', value: employee.joinDate, iconBgColor: 'bg-green-100', iconColor: 'text-green-600' },
-        { icon: DollarSign, label: 'Mức lương', value: `${employee.salary.toLocaleString('vi-VN')}đ`, iconBgColor: 'bg-green-100', iconColor: 'text-green-600' },
-    ];
-
-    const additionalInfo = [
-        { icon: User, label: 'Mã nhân viên', value: `NV${employee.id.toString().padStart(4, '0')}`, iconBgColor: 'bg-purple-100', iconColor: 'text-purple-600' },
-        { icon: Building, label: 'Chi nhánh', value: 'Beta Book - Trụ sở chính', iconBgColor: 'bg-purple-100', iconColor: 'text-purple-600' },
-    ];
-
+    if (loading) {
+        return <div>Loading...</div>;
+    }
     return (
         <div className="space-y-6">
-            <ProfileHeader onOpenChangePassword={() => setIsChangePasswordOpen(true)} />
-            
+            <ProfileHeader
+                onOpenChangePassword={() => setIsChangePasswordOpen(true)}
+            />
+
             <ProfileCard employee={employee} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <InfoSection title="Thông tin liên hệ" items={contactInfo} />
-                <InfoSection title="Thông tin công việc" items={workInfo} />
-                <InfoSection title="Thông tin tuyển dụng" items={employmentInfo} />
-                <InfoSection title="Thông tin bổ sung" items={additionalInfo} />
+                <InfoSection
+                    title="Thông tin liên hệ"
+                    items={userProfile?.contactInfo || []}
+                />
+                <InfoSection
+                    title="Thông tin công việc"
+                    items={userProfile?.workInfo || []}
+                />
+                <InfoSection
+                    title="Thông tin tuyển dụng"
+                    items={userProfile?.employmentInfo || []}
+                />
+                <InfoSection
+                    title="Thông tin bổ sung"
+                    items={userProfile?.additionalInfo || []}
+                />
             </div>
 
             <ChangePasswordDialog

@@ -42,7 +42,8 @@ export function LoginPage() {
             CookiesService.saveToken(accessToken, TokenType.ACCESS_TOKEN);
             CookiesService.saveToken(refreshToken, TokenType.REFRESH_TOKEN);
             //Calling me for get information
-            const me = await AuthService.me(accessToken);
+            const me = await AuthService.me();
+            console.log(me) 
             //Luu tru me vao ben trong local-storage
             const result = LocalStorageService.saveValue('me', me);
             if (result) navigate('/dashboard');

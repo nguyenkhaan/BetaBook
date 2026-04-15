@@ -31,4 +31,9 @@ export class AuthService {
             return true;
         return false;
     }
+    static async logout() 
+    {
+        const responseData = await privateApi.get('auth/logout') 
+        return responseData.data 
+    }
 }

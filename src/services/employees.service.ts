@@ -65,4 +65,5 @@ export class EmployeesService {
         const response = await privateApi.get('/employee/statistic');
         return response.data;
     }
+    
 }

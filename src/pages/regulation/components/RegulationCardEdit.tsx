@@ -10,24 +10,31 @@ import {
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
-import { Switch } from '../../../components/ui/switch';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '../../../components/ui/select';
+import { Textarea } from '../../../components/ui/textarea';
+import { RegulationService, RuleOptions } from '../../../services/regulation.service';
 
-export interface RegulationData {
-    id: number;
-    maxDebt?: number;
-    minStockBeforeImport?: number;
-    minStockAfterSale?: number;
-    maxStockForImport?: number;
-    minImportQuantity?: number;
-    maxStockAfterImport?: number;
-    enabled?: boolean;
+export interface RegulationFormData {
+    id?: number;
+    title: string;
+    content: string;
+    shortDescription: string;
+    appliedAt: string;
+    status: 'APPLYING' | 'UPCOMING' | 'REJECT';
+    type: string;
 }
 
 interface EditRegulationDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    regulation: RegulationData | null;
-    onSave: (data: RegulationData) => void;
+    regulation: RegulationFormData | null;
+    onSave: (data: RegulationFormData) => void;
 }
 
 export function EditRegulationDialog({
@@ -36,156 +43,215 @@ export function EditRegulationDialog({
     regulation,
     onSave,
 }: EditRegulationDialogProps) {
-    // Khởi tạo state với dữ liệu trống
-    const [formData, setFormData] = useState<RegulationData>({ id: 0 });
+    const [formData, setFormData] = useState<RegulationFormData>({
+        title: '',
+        content: '',
+        shortDescription: '',
+        appliedAt: new Date().toISOString().split('T')[0],
+        status: 'APPLYING',
+        type: '',
+    });
 
-    // Cập nhật formData mỗi khi regulation prop thay đổi hoặc khi dialog được mở
+    const [options, setOptions] = useState<RuleOptions | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        if (open && !options) {
+            fetchOptions();
+        }
+    }, [open, options]);
+
     useEffect(() => {
         if (regulation && open) {
             setFormData({ ...regulation });
+        } else if (open && !regulation) {
+            setFormData({
+                title: '',
+                content: '',
+                shortDescription: '',
+                appliedAt: new Date().toISOString().split('T')[0],
+                status: 'APPLYING',
+                type: '',
+            });
         }
     }, [regulation, open]);
 
-    const handleSave = () => {
-        onSave(formData);
-        onOpenChange(false);
-    };
-
-    const handleInputChange = (field: keyof RegulationData, value: string) => {
-        const numValue = parseInt(value);
-        setFormData((prev) => ({
-            ...prev,
-            [field]: isNaN(numValue) ? 0 : numValue,
-        }));
-    };
-
-    if (!regulation) return null;
-
-    const renderFields = () => {
-        // Render nội dung dựa trên ID của quy định (giống logic cũ nhưng sạch hơn)
-        switch (regulation.id) {
-            case 1:
-                return (
-                    <div className="space-y-4">
-                        <StatusToggle
-                            checked={formData.enabled}
-                            onChange={(val) =>
-                                setFormData({ ...formData, enabled: val })
-                            }
-                        />
-                        <FieldItem
-                            label="Số tiền nợ tối đa (đ)"
-                            value={formData.maxDebt}
-                            onChange={(val) =>
-                                handleInputChange('maxDebt', val)
-                            }
-                            description="Chỉ bán cho khách hàng không nợ quá số tiền này"
-                        />
-                        <FieldItem
-                            label="Số lượng nhập tối thiểu"
-                            value={formData.minImportQuantity}
-                            onChange={(val) =>
-                                handleInputChange('minImportQuantity', val)
-                            }
-                        />
-                        <FieldItem
-                            label="Lượng tồn tối thiểu trước khi nhập"
-                            value={formData.minStockBeforeImport}
-                            onChange={(val) =>
-                                handleInputChange('minStockBeforeImport', val)
-                            }
-                        />
-                    </div>
-                );
-
-            case 2:
-                return (
-                    <div className="space-y-4">
-                        <StatusToggle
-                            checked={formData.enabled}
-                            onChange={(val) =>
-                                setFormData({ ...formData, enabled: val })
-                            }
-                        />
-                        <FieldItem
-                            label="Tiền nợ tối đa (đ)"
-                            value={formData.maxDebt}
-                            onChange={(val) =>
-                                handleInputChange('maxDebt', val)
-                            }
-                        />
-                        <FieldItem
-                            label="Lượng tồn tối thiểu sau khi bán"
-                            value={formData.minStockAfterSale}
-                            onChange={(val) =>
-                                handleInputChange('minStockAfterSale', val)
-                            }
-                        />
-                    </div>
-                );
-
-            case 3:
-                return (
-                    <div className="space-y-4">
-                        <StatusToggle
-                            checked={formData.enabled}
-                            onChange={(val) =>
-                                setFormData({ ...formData, enabled: val })
-                            }
-                        />
-                        <FieldItem
-                            label="Chỉ nhập sách có tồn kho ít hơn"
-                            value={formData.maxStockForImport}
-                            onChange={(val) =>
-                                handleInputChange('maxStockForImport', val)
-                            }
-                        />
-                        <FieldItem
-                            label="Số lượng nhập ít nhất"
-                            value={formData.minImportQuantity}
-                            onChange={(val) =>
-                                handleInputChange('minImportQuantity', val)
-                            }
-                        />
-                        <FieldItem
-                            label="Lượng tồn tối đa sau khi nhập"
-                            value={formData.maxStockAfterImport}
-                            onChange={(val) =>
-                                handleInputChange('maxStockAfterImport', val)
-                            }
-                            description={`Tồn hiện tại + Lượng nhập ≤ ${formData.maxStockAfterImport || 0}`}
-                        />
-                    </div>
-                );
-
-            default:
-                return (
-                    <p className="text-center text-gray-500 py-4">
-                        Quy định này hiện chưa có cấu hình tùy chỉnh.
-                    </p>
-                );
+    const fetchOptions = async () => {
+        try {
+            const data = await RegulationService.getOptions();
+            setOptions(data);
+        } catch (error) {
+            console.error('Error fetching options:', error);
         }
     };
 
-    const getTitle = () => {
-        const titles: Record<number, string> = {
-            1: 'Chỉnh sửa QĐ1 - Quy định bán hàng',
-            2: 'Chỉnh sửa QĐ2 - Quy định nợ và tồn kho',
-            3: 'Chỉnh sửa QĐ3 - Quy định nhập hàng',
-        };
-        return titles[regulation.id] || 'Chỉnh sửa quy định';
+    const handleSave = () => {
+        if (
+            !formData.title ||
+            !formData.content ||
+            !formData.shortDescription ||
+            !formData.type
+        ) {
+            alert('Vui lòng điền đầy đủ thông tin');
+            return;
+        }
+        onSave(formData);
     };
+
+    const handleInputChange = (
+        field: keyof RegulationFormData,
+        value: string
+    ) => {
+        setFormData((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
+    };
+
+    if (!options) {
+        return (
+            <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent className="sm:max-w-[600px]">
+                    <p className="text-center py-4">Đang tải...</p>
+                </DialogContent>
+            </Dialog>
+        );
+    }
+
+    const isEditing = !!regulation?.id;
+    const statusOptions = options.status || [
+        'APPLYING',
+        'UPCOMING',
+        'REJECT',
+    ];
+    const typeOptions = options.type || [];
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>{getTitle()}</DialogTitle>
+                    <DialogTitle>
+                        {isEditing ? 'Chỉnh sửa' : 'Tạo'} quy định
+                    </DialogTitle>
                     <DialogDescription>
-                        Thay đổi các thông số quy định của hệ thống
+                        {isEditing
+                            ? 'Cập nhật thông tin quy định'
+                            : 'Thêm quy định mới vào hệ thống'}
                     </DialogDescription>
                 </DialogHeader>
-                <div className="py-4">{renderFields()}</div>
+
+                <div className="space-y-5 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="title">Tiêu đề *</Label>
+                        <Input
+                            id="title"
+                            value={formData.title}
+                            onChange={(e) =>
+                                handleInputChange('title', e.target.value)
+                            }
+                            placeholder="Nhập tiêu đề quy định"
+                            className="w-full"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="shortDescription">
+                            Mô tả ngắn *
+                        </Label>
+                        <Input
+                            id="shortDescription"
+                            value={formData.shortDescription}
+                            onChange={(e) =>
+                                handleInputChange(
+                                    'shortDescription',
+                                    e.target.value
+                                )
+                            }
+                            placeholder="Nhập mô tả ngắn"
+                            className="w-full"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Loại quy định *</Label>
+                            <Select
+                                value={formData.type}
+                                onValueChange={(value) =>
+                                    handleInputChange('type', value)
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Chọn loại" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {typeOptions.map((type) => (
+                                        <SelectItem key={type} value={type}>
+                                            {type}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Trạng thái *</Label>
+                            <Select
+                                value={formData.status}
+                                onValueChange={(value) =>
+                                    handleInputChange(
+                                        'status',
+                                        value as any
+                                    )
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Chọn trạng thái" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {statusOptions.map((status) => (
+                                        <SelectItem key={status} value={status}>
+                                            {status === 'APPLYING'
+                                                ? 'Đang áp dụng'
+                                                : status === 'UPCOMING'
+                                                  ? 'Sắp có hiệu lực'
+                                                  : 'Đã hết hiệu lực'}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="appliedAt">
+                            Ngày có hiệu lực *
+                        </Label>
+                        <Input
+                            id="appliedAt"
+                            type="date"
+                            value={formData.appliedAt}
+                            onChange={(e) =>
+                                handleInputChange('appliedAt', e.target.value)
+                            }
+                            className="w-full"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="content">Nội dung đầy đủ *</Label>
+                        <Textarea
+                            id="content"
+                            value={formData.content}
+                            onChange={(e) =>
+                                handleInputChange('content', e.target.value)
+                            }
+                            placeholder="Nhập nội dung chi tiết của quy định"
+                            className="w-full min-h-[200px] font-mono"
+                        />
+                    </div>
+                </div>
+
                 <DialogFooter>
                     <Button
                         variant="outline"
@@ -195,9 +261,14 @@ export function EditRegulationDialog({
                     </Button>
                     <Button
                         onClick={handleSave}
-                        className="bg-[#f97316] hover:bg-[#ea580c] text-white"
+                        disabled={isLoading}
+                        className="bg-orange-500 font-medium text-white"
                     >
-                        Lưu thay đổi
+                        {isLoading
+                            ? 'Đang lưu...'
+                            : isEditing
+                              ? 'Cập nhật'
+                              : 'Tạo mới'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -205,53 +276,4 @@ export function EditRegulationDialog({
     );
 }
 
-// --- Các Component hỗ trợ để code gọn hơn ---
-
-function StatusToggle({
-    checked,
-    onChange,
-}: {
-    checked?: boolean;
-    onChange: (val: boolean) => void;
-}) {
-    return (
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
-            <div className="space-y-1">
-                <Label className="text-base font-semibold">
-                    Trạng thái quy định
-                </Label>
-                <p className="text-xs text-gray-500">
-                    Kích hoạt hoặc tạm ngưng áp dụng
-                </p>
-            </div>
-            <Switch checked={checked || false} onCheckedChange={onChange} />
-        </div>
-    );
-}
-
-function FieldItem({
-    label,
-    value,
-    onChange,
-    description,
-}: {
-    label: string;
-    value?: number;
-    onChange: (val: string) => void;
-    description?: string;
-}) {
-    return (
-        <div className="space-y-2">
-            <Label className="font-medium text-gray-700">{label}</Label>
-            <Input
-                type="number"
-                value={value ?? 0}
-                onChange={(e) => onChange(e.target.value)}
-                className="focus-visible:ring-orange-500"
-            />
-            {description && (
-                <p className="text-xs text-gray-400 italic">{description}</p>
-            )}
-        </div>
-    );
-}
+export interface RegulationData extends RegulationFormData {}

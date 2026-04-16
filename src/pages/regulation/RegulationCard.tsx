@@ -2,9 +2,10 @@ import { Settings, Eye, Pencil, Trash2, Power } from 'lucide-react';
 import { Badge } from '../../components/ui/badge';
 
 interface RegulationCardProps {
+    id : number; 
     title: string;
     description: string;
-    status: 'active' | 'draft' | 'inactive';
+    status: 'APPLYING' | 'UPCOMING' | 'REJECT';
     effectiveDate?: string;
     updatedDate?: string;
     author?: string;
@@ -15,6 +16,7 @@ interface RegulationCardProps {
 }
 
 export function RegulationCard({
+    id, 
     title,
     description,
     status,
@@ -27,15 +29,15 @@ export function RegulationCard({
     onView,
 }: RegulationCardProps) {
     const statusConfig = {
-        active: {
+        APPLYING: {
             label: 'Đang áp dụng',
             color: 'bg-green-100 text-green-700 border-green-200',
         },
-        draft: {
+        UPCOMING: {
             label: 'Sắp có hiệu lực',
             color: 'bg-blue-100 text-blue-700 border-blue-200',
         },
-        inactive: {
+        REJECT: {
             label: 'Đã hết hiệu lực',
             color: 'bg-gray-100 text-gray-700 border-gray-200',
         },

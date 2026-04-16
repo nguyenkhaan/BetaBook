@@ -36,7 +36,16 @@ export class CustomerService {
     }
 
     static async updateCustomer(id: number, data: Partial<Customer>) {
-        const response = await privateApi.put(`/customer/${id}`, data);
+        const updateData : Partial<Customer> & {grade? : string}  = {} 
+        if (data.email) 
+            updateData.email = data.email 
+        if (data.name) 
+            updateData.name = data.name 
+        if (data.phone) 
+            updateData.phone = data.phone 
+        if (data.level) 
+            updateData.grade = data.level
+        const response = await privateApi.put(`/customer/${id}`, updateData);
         return response.data;
     }
 

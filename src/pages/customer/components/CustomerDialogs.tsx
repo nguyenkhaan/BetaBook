@@ -11,6 +11,14 @@ import {
 } from '../../../components/ui/dialog';
 import { Label } from '../../../components/ui/label';
 import { Input } from '../../../components/ui/input';
+// Import Select components
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '../../../components/ui/select';
 
 interface CustomerDialogsProps {
     isCreateDialogOpen: boolean;
@@ -48,8 +56,10 @@ export function CustomerDialogs({
             <Dialog
                 open={isCreateDialogOpen || isEditDialogOpen}
                 onOpenChange={(val) => {
-                    setIsCreateDialogOpen(val);
-                    setIsEditDialogOpen(val);
+                    if (!val) {
+                        setIsCreateDialogOpen(false);
+                        setIsEditDialogOpen(false);
+                    }
                 }}
             >
                 <DialogContent className="sm:max-w-[500px]">
@@ -104,28 +114,34 @@ export function CustomerDialogs({
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Tổng chi tiêu (VNĐ)</Label>
-                                <Input
-                                    type="number"
-                                    value={formData.totalSpent}
-                                    onChange={(e) => {
-                                        const val =
-                                            parseInt(e.target.value) || 0;
+                                <Label>Hạng thành viên</Label>
+                                <Select
+                                    value={formData.level}
+                                    onValueChange={(value) =>
                                         setFormData({
                                             ...formData,
-                                            totalSpent: val,
-                                            level: calculateLevel(val),
-                                        });
-                                    }}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Hạng thành viên</Label>
-                                <Input
-                                    value={formData.level}
-                                    readOnly
-                                    className="bg-orange-50 font-bold text-orange-700"
-                                />
+                                            level: value,
+                                        })
+                                    }
+                                >
+                                    <SelectTrigger className="w-full bg-orange-50 font-bold text-orange-700 border-orange-200">
+                                        <SelectValue placeholder="Chọn hạng" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="BRONZE">
+                                            BRONZE
+                                        </SelectItem>
+                                        <SelectItem value="SILVER">
+                                            SILVER
+                                        </SelectItem>
+                                        <SelectItem value="GOLD">
+                                            GOLD
+                                        </SelectItem>
+                                        <SelectItem value="DIAMOND">
+                                            DIAMOND
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                     </div>
@@ -153,6 +169,7 @@ export function CustomerDialogs({
                 </DialogContent>
             </Dialog>
 
+            {/* Delete Dialog remains the same */}
             <Dialog
                 open={isDeleteDialogOpen}
                 onOpenChange={setIsDeleteDialogOpen}

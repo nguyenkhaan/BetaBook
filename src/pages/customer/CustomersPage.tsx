@@ -50,6 +50,7 @@ export function CustomersPage() {
         setIsLoading(true);
         try {
             const data = await CustomerService.getAllCustomers();
+            console.log("Customer Data: " , data) 
             setCustomers(data);
         } catch (err: any) {
             const status = err.response?.status;
@@ -85,6 +86,7 @@ export function CustomersPage() {
     };
 
     const handleEditCustomer = async () => {
+        
         if (selectedCustomer) {
             try {
                 await CustomerService.updateCustomer(
@@ -188,12 +190,12 @@ export function CustomersPage() {
                         Quản lý thông tin khách hàng của Beta Book
                     </p>
                 </div>
-                <Button
+                {/* <Button
                     className="bg-orange-500 hover:bg-orange-600"
                     onClick={() => setIsCreateDialogOpen(true)}
                 >
                     <Plus className="w-4 h-4" /> Thêm khách hàng
-                </Button>
+                </Button> */}
             </div>
 
             <Statistic

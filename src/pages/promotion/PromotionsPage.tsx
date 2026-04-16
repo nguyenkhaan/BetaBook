@@ -11,7 +11,20 @@ import {
     Voucher,
     VoucherData,
 } from '../../services/promotion.service';
-
+export type Promotion =  {
+    id : number; 
+    code: string; 
+    sale: string; 
+    quantity: number; 
+    status : string; 
+    type : string, 
+    eventName: string;  
+    name: string 
+    description: string; 
+    startDate: string; 
+    expiresAt: string; 
+    usedNumber: number 
+}
 export function PromotionsPage() {
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [loading, setLoading] = useState(true);
@@ -21,7 +34,6 @@ export function PromotionsPage() {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-
     const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(
         null,
     );
@@ -30,7 +42,7 @@ export function PromotionsPage() {
         name: '',
         eventName: '',
         sale: 0,
-        type: 'PERCENTAGE',
+        type: 'PERCENT',
         quantity: 100,
         expiresAt: new Date().toISOString().split('T')[0],
         status: 'APPLYING',
@@ -61,13 +73,13 @@ export function PromotionsPage() {
             v.eventName.toLowerCase().includes(searchTerm.toLowerCase()),
     );
 
-    const getStatusColor = (status: any) => {
+    const getStatusColor = (status: any) => {  //Fix 
         switch (status) {
             case 'APPLYING':
                 return 'bg-green-100 text-green-800';
-            case 'DISABLE':
+            case 'UPCOMING':
                 return 'bg-gray-100 text-gray-800';
-            case 'EXPIRED':
+            case 'ENDED':
                 return 'bg-red-100 text-red-800';
             default:
                 return 'bg-blue-100 text-blue-800';
@@ -80,8 +92,10 @@ export function PromotionsPage() {
             toast.success('Khuyến mãi đã được tạo thành công!');
             setIsCreateDialogOpen(false);
             loadVouchers();
-        } catch (error) {
-            toast.error('Xảy ra lỗi khi tạo khuyến mãi');
+        } catch (error : any) 
+        {
+            console.log(error) 
+            toast.error('Xảy ra lỗi khi tạo khuyến mãi: ' + error.message);
         }
     };
 

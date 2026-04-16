@@ -7,7 +7,6 @@ import { FilterBar } from './components/FilterBar';
 import { BookTable } from './components/BookTable';
 import { BookDialogs } from './components/BookDialogs';
 import { ExcelImportDialog } from './components/ExcelImportDialog';
-import { mockBooks } from './BookData';
 import { BookService } from '../../services/book.service';
 export interface BookItem {
     id: number;
@@ -18,14 +17,14 @@ export interface BookItem {
     coverImage?: string;
     publishers?: any[];
     year: number;
-    stock?: number;
+    stock: number;
     authors?: any[];
 }
 
 export function BooksPage() {
     const [books, setBooks] = useState<BookItem[]>([]);
     const [statistics, setStatistics] = useState<any>(null);
-    const [loading,setLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -49,18 +48,17 @@ export function BooksPage() {
         publisherIds: [] as number[],
     });
 
-    const fetchData = async () =>{
-        try{
+    const fetchData = async () => {
+        try {
             setLoading(true);
-            const [booksData,statsData] = await Promise.all([
+            const [booksData, statsData] = await Promise.all([
                 BookService.getAllBook(),
-                BookService.getStatistics()
+                BookService.getStatistics(),
             ]);
             setBooks(booksData);
             setStatistics(statsData);
-        }
-        catch (error){
-            toast.error('Không thể tải dữ liệu từ máy chủ');
+        } catch (error: any) {
+            toast.error('Không thể tải dữ liệu từ máy chủ' + error.message);
         } finally {
             setLoading(false);
         }
@@ -114,7 +112,16 @@ export function BooksPage() {
                 cost: Number(formData.cost),
                 stock: Number(formData.stock),
                 year: Number(formData.year),
-                // authorIds và publisherIds cần được lấy từ UI đa chọn nếu có
+                authorIds: JSON.stringify(
+                    formData.authorIds.filter(
+                        (id): id is number => id !== undefined && id !== null,
+                    ),
+                ),
+                publisherIds: JSON.stringify(
+                    formData.publisherIds.filter(
+                        (id): id is number => id !== undefined && id !== null,
+                    ),
+                ),
             };
             await BookService.createBook(payload, file);
             toast.success('Đã thêm sách mới thành công!');
@@ -130,47 +137,66 @@ export function BooksPage() {
                 authorIds: [],
                 publisherIds: [],
             });
-        } catch (error) {
-            toast.error('Lỗi khi thêm sách mới');
+        } catch (error: any) {
+            toast.error(JSON.stringify(error.message));
+            console.log(error);
         }
     };
 
-    const handleEditBook = async  (file?: File) => {
+    const handleEditBook = async (file?: File) => {
         if (!selectedBook) return;
-       try{
-        await BookService.updateBook(selectedBook.id, formData, file);
-        toast.success('Cập nhật thành công');
-        setIsEditDialogOpen(false);
-        fetchData();
-       }
-       catch(error){
-        toast.error('Lỗi xuất hiện khi cập nhật');
-       }
+        try {
+            const payload = {
+                ...formData,
+                cost: Number(formData.cost),
+                stock: Number(formData.stock),
+                year: Number(formData.year),
+                authorIds: JSON.stringify(
+                    formData.authorIds.filter(
+                        (id): id is number => id !== undefined && id !== null,
+                    ),
+                ),
+                publisherIds: JSON.stringify(
+                    formData.publisherIds.filter(
+                        (id): id is number => id !== undefined && id !== null,
+                    ),
+                ),
+            };
+            await BookService.updateBook(selectedBook.id, payload, file);
+            toast.success('Cập nhật thành công');
+            setIsEditDialogOpen(false);
+            fetchData();
+        } catch (error: any) {
+            toast.error('Lỗi xuất hiện khi cập nhật' + error.message);
+        }
     };
 
     const handleDeleteBook = async () => {
-       if(!selectedBook) return;
-       try{
-        await BookService.deleteBook(selectedBook.id);
-        toast.success('Đã xoá sách thành công!');
-        setIsDeleteDialogOpen(false);
-        fetchData();
-       } catch(error){
-        toast.error('Có lỗi xuất hiện khi xoá');
-       }
+        if (!selectedBook) return;
+        try {
+            await BookService.deleteBook(selectedBook.id);
+            toast.success('Đã xoá sách thành công!');
+            setIsDeleteDialogOpen(false);
+            fetchData();
+        } catch (error: any) {
+            toast.error('Có lỗi xuất hiện khi xoá' + error.message);
+        }
     };
 
-    const handleImportExcel = async () =>{
-        if(!selectedFile) return;
-        try{
+    const handleImportExcel = async () => {
+        if (!selectedFile) return;
+        try {
             await BookService.importExcel(selectedFile);
             toast.success('Thêm danh sách bằng file excel thành công');
             setIsExcelDialogOpen(false);
             fetchData();
-        } catch(error){
-            toast.error('Lỗi khi thêm danh sách bằng file excel');
+        } catch (error: any) {
+            toast.error(
+                'Lỗi khi thêm danh sách bằng file excel' +
+                    JSON.stringify(error.message),
+            );
         }
-    }
+    };
 
     const openEditDialog = (book: BookItem) => {
         setSelectedBook(book);
@@ -197,8 +223,7 @@ export function BooksPage() {
         setIsViewDialogOpen(true);
     };
 
-     if (loading) return <div>Đang tải dữ liệu...</div>;
-
+    if (loading) return <div>Đang tải dữ liệu...</div>;
 
     return (
         <div className="space-y-6">

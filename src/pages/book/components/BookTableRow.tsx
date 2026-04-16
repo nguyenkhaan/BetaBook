@@ -14,22 +14,22 @@ export function BookTableRow({ book, onEdit, onDelete, onView }: BookTableRowPro
     return (
         <tr className="hover:bg-gray-50">
             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-orange-600">
-                {book.bookCode}
+                {book.code}
             </td>
             <td className="px-6 py-4 text-sm font-medium text-gray-900">
                 {book.title}
             </td>
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                {book.author}
+                {book.authors}
             </td>
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                 {book.category}
             </td>
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                {book.publisher}
+                {book.publishers}
             </td>
             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {book.price.toLocaleString('vi-VN')}đ
+                {book.cost.toLocaleString('vi-VN')}đ
             </td>
             <td className="px-6 py-4 whitespace-nowrap text-sm">
                 <span

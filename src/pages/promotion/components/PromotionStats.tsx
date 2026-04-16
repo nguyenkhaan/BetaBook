@@ -8,9 +8,9 @@ interface PromotionStatsProps {
 
 export function PromotionStats({ promotions }: PromotionStatsProps) {
     const totalCount = promotions.length;
-    const activeCount = promotions.filter((p) => p.status === 'Đang áp dụng').length;
-    const upcomingCount = promotions.filter((p) => p.status === 'Sắp diễn ra').length;
-    const totalUses = promotions.reduce((sum, p) => sum + p.usedCount, 0);
+    const activeCount = promotions.filter((p) => p.status === 'APPLYING').length;
+    const upcomingCount = promotions.filter((p) => p.status === 'UPCOMING').length;
+    const totalUses = promotions.reduce((sum, p) => sum + p.usedNumber, 0);
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

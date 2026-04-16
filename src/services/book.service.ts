@@ -9,7 +9,6 @@ export class BookService {
     }
 
     static async createBook(data: any, file?: File) {
-        console.log("Data gui len la: " , data) 
         const formData = new FormData();
 
         Object.keys(data).forEach((key) => {
@@ -23,11 +22,9 @@ export class BookService {
                 formData.append(key, data[key]);
             }
         });
-        console.log(file) 
         if (file) {
             formData.append('coverImage', file);
         }
-        console.log("AAA" , formData)
         const responseData = await privateApi.post('/book', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
@@ -36,7 +33,6 @@ export class BookService {
 
     static async updateBook(id: number, data: Partial<any>, file?: File) {
         const formData = new FormData();
-
         Object.keys(data).forEach((key) => {
             if (Array.isArray(data[key])) {
                 data[key].forEach((val: any) => {

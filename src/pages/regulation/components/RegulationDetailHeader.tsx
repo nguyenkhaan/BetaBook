@@ -1,21 +1,39 @@
-import { Button } from "../../../components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import { Regulation } from "../RegulationsPage";
+import { Button } from '../../../components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import { Rule } from '../../../services/regulation.service';
 
 interface RegulationDetailHeaderProps {
-    regulation: Regulation;
+    regulation: Rule;
     onBack: () => void;
 }
 
-const RegulationDetailHeader = ({ regulation, onBack }: RegulationDetailHeaderProps) => {
-    const getStatusColor = (status: Regulation['status']) => {
+const RegulationDetailHeader = ({
+    regulation,
+    onBack,
+}: RegulationDetailHeaderProps) => {
+    const getStatusColor = (status: string) => {
         switch (status) {
-            case 'Đang áp dụng':
+            case 'APPLYING':
                 return 'bg-green-100 text-green-800';
-            case 'Sắp có hiệu lực':
+            case 'UPCOMING':
                 return 'bg-blue-100 text-blue-800';
-            case 'Đã hết hiệu lực':
+            case 'REJECT':
                 return 'bg-gray-100 text-gray-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
+        }
+    };
+
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case 'APPLYING':
+                return 'Đang áp dụng';
+            case 'UPCOMING':
+                return 'Sắp có hiệu lực';
+            case 'REJECT':
+                return 'Đã hết hiệu lực';
+            default:
+                return status;
         }
     };
 
@@ -26,17 +44,19 @@ const RegulationDetailHeader = ({ regulation, onBack }: RegulationDetailHeaderPr
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Quay lại
                 </Button>
-                <h1 className="text-3xl font-bold text-gray-900">{regulation.title}</h1>
+                <h1 className="text-3xl font-bold text-gray-900">
+                    {regulation.title}
+                </h1>
                 <div className="flex items-center gap-4 mt-2">
                     <span
                         className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                            regulation.status,
+                            regulation.status
                         )}`}
                     >
-                        {regulation.status}
+                        {getStatusLabel(regulation.status)}
                     </span>
                     <span className="px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
-                        {regulation.category}
+                        {regulation.type}
                     </span>
                 </div>
             </div>

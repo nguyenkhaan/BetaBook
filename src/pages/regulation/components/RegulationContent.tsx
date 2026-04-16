@@ -1,7 +1,7 @@
-import { Regulation } from "../RegulationsPage";
+import { Rule } from '../../../services/regulation.service';
 
 interface RegulationContentProps {
-    regulation: Regulation;
+    regulation: Rule;
 }
 
 const RegulationContent = ({ regulation }: RegulationContentProps) => {
@@ -12,7 +12,7 @@ const RegulationContent = ({ regulation }: RegulationContentProps) => {
                     Mô tả
                 </h2>
                 <p className="text-gray-700 leading-relaxed">
-                    {regulation.description}
+                    {regulation.shortDescription}
                 </p>
             </div>
             <div>
@@ -20,8 +20,7 @@ const RegulationContent = ({ regulation }: RegulationContentProps) => {
                     Nội dung chi tiết
                 </h2>
                 <div
-                    className="prose prose-orange max-w-none text-gray-800 leading-7"
-                    style={{ whiteSpace: 'pre-wrap' }}
+                    className="prose prose-orange max-w-none text-gray-800 leading-7 whitespace-pre-wrap"
                 >
                     {regulation.content}
                 </div>

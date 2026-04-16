@@ -6,6 +6,7 @@ import { Toaster } from 'sonner';
 
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { RegulationsPage } from './pages/regulation/RegulationsPage';
+import { RegulationDetailPage } from './pages/regulation/RegulationDetailPage';
 import { LoginPage } from './pages/login/LoginPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { InvoicePage } from './pages/invoice/InvoicePage';
@@ -88,6 +89,17 @@ export default function App() {
                         />
                     );
                 })}
+
+                <Route
+                    path="/regulation/:id"
+                    element={
+                        <ProtectedRoute neededRoles={routePermission.regulations}>
+                            <DashboardLayout>
+                                <RegulationDetailPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
             </Routes>
         </>
     );

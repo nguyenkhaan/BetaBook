@@ -10,6 +10,7 @@ interface BookTableBodyProps {
 }
 
 export function BookTableBody({ books, onEdit, onDelete, onView }: BookTableBodyProps) {
+    console.log(books) 
     return (
         <tbody className="bg-white divide-y divide-gray-200">
             {books.map((book) => (

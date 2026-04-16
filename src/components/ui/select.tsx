@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Check } from 'lucide-react';
+import { cn } from '../ui/utils'; // Assuming you have a cn utility, or use standard template literals
 
 interface SelectContextType {
     value: string;
@@ -17,6 +18,7 @@ interface SelectProps {
     onValueChange?: (value: string) => void;
     children: React.ReactNode;
     defaultValue?: string;
+    className?: string;
 }
 
 export function Select({
@@ -24,6 +26,7 @@ export function Select({
     onValueChange,
     children,
     defaultValue,
+    className,
 }: SelectProps) {
     const [open, setOpen] = React.useState(false);
     const [internalValue, setInternalValue] = React.useState(
@@ -31,6 +34,7 @@ export function Select({
     );
 
     const currentValue = value !== undefined ? value : internalValue;
+
     const handleValueChange = (newValue: string) => {
         if (value === undefined) {
             setInternalValue(newValue);
@@ -38,6 +42,22 @@ export function Select({
         onValueChange?.(newValue);
         setOpen(false);
     };
+
+    // Close on click outside
+    const containerRef = React.useRef<HTMLDivElement>(null);
+    React.useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                containerRef.current &&
+                !containerRef.current.contains(event.target as Node)
+            ) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () =>
+            document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     return (
         <SelectContext.Provider
@@ -48,7 +68,12 @@ export function Select({
                 setOpen,
             }}
         >
-            <div className="relative">{children}</div>
+            <div
+                ref={containerRef}
+                className={cn('relative w-full', className)}
+            >
+                {children}
+            </div>
         </SelectContext.Provider>
     );
 }
@@ -69,24 +94,43 @@ export function SelectTrigger({
         <button
             type="button"
             onClick={() => context.setOpen(!context.open)}
-            className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white flex items-center justify-between ${className}`}
+            className={cn(
+                'flex h-10 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:cursor-not-allowed disabled:opacity-50',
+                className,
+            )}
         >
-            {children}
-            <ChevronDown className="h-4 w-4 opacity-50" />
+            <div className="flex items-center gap-2 overflow-hidden truncate">
+                {children}
+            </div>
+            <ChevronDown
+                className={cn(
+                    'h-4 w-4 shrink-0 opacity-50 transition-transform duration-200',
+                    context.open && 'rotate-180',
+                )}
+            />
         </button>
     );
 }
 
 interface SelectValueProps {
     placeholder?: string;
+    className?: string;
 }
 
-export function SelectValue({ placeholder }: SelectValueProps) {
+export function SelectValue({ placeholder, className }: SelectValueProps) {
     const context = React.useContext(SelectContext);
     if (!context) throw new Error('SelectValue must be used within Select');
 
     return (
-        <span className={context.value ? 'text-gray-900' : 'text-gray-500'}>
+        <span
+            className={cn(
+                'truncate',
+                context.value ? 'text-gray-900' : 'text-gray-500',
+                className,
+            )}
+        >
+            {/* Note: This logic assumes you are passing the label string via context. 
+                In a more complex select, you'd find the label from the children. */}
             {context.value || placeholder}
         </span>
     );
@@ -107,17 +151,14 @@ export function SelectContent({
     if (!context.open) return null;
 
     return (
-        <>
-            <div
-                className="fixed inset-0 z-40"
-                onClick={() => context.setOpen(false)}
-            />
-            <div
-                className={`absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto ${className}`}
-            >
-                {children}
-            </div>
-        </>
+        <div
+            className={cn(
+                'absolute z-50 min-w-[8rem] w-full overflow-hidden rounded-md border border-gray-200 bg-white text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 mt-1',
+                className,
+            )}
+        >
+            <div className="p-1 max-h-60 overflow-y-auto">{children}</div>
+        </div>
     );
 }
 
@@ -140,9 +181,14 @@ export function SelectItem({
     return (
         <div
             onClick={() => context.onValueChange(value)}
-            className={`px-3 py-2 cursor-pointer hover:bg-orange-50 ${isSelected ? 'bg-orange-100 text-orange-900' : 'text-gray-900'} ${className}`}
+            className={cn(
+                'relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 px-3 text-sm outline-none hover:bg-orange-50 hover:text-orange-900 data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+                isSelected && 'bg-orange-100 text-orange-900 font-medium',
+                className,
+            )}
         >
-            {children}
+            <span className="flex-1 truncate">{children}</span>
+            {isSelected && <Check className="h-4 w-4 ml-2 shrink-0" />}
         </div>
     );
 }

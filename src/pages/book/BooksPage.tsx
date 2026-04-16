@@ -7,7 +7,6 @@ import { FilterBar } from './components/FilterBar';
 import { BookTable } from './components/BookTable';
 import { BookDialogs } from './components/BookDialogs';
 import { ExcelImportDialog } from './components/ExcelImportDialog';
-import { mockBooks } from './BookData';
 import { BookService } from '../../services/book.service';
 export interface BookItem {
     id: number;
@@ -18,7 +17,7 @@ export interface BookItem {
     coverImage?: string;
     publishers?: any[];
     year: number;
-    stock?: number;
+    stock: number;
     authors?: any[];
 }
 
@@ -59,8 +58,9 @@ export function BooksPage() {
             setBooks(booksData);
             setStatistics(statsData);
         }
-        catch (error){
-            toast.error('Không thể tải dữ liệu từ máy chủ');
+        catch (error : any)
+        {
+            toast.error('Không thể tải dữ liệu từ máy chủ' + error.message);
         } finally {
             setLoading(false);
         }
@@ -108,14 +108,17 @@ export function BooksPage() {
     };
 
     const handleAddBook = async (file?: File) => {
+        console.log(formData.publisherIds)
         try {
             const payload = {
                 ...formData,
                 cost: Number(formData.cost),
                 stock: Number(formData.stock),
                 year: Number(formData.year),
-                // authorIds và publisherIds cần được lấy từ UI đa chọn nếu có
+                authorIds: JSON.stringify(formData.authorIds.filter((id): id is number => id !== undefined && id !== null)), 
+                publisherIds: JSON.stringify(formData.publisherIds.filter((id): id is number => id !== undefined && id !== null))
             };
+            console.log(payload) 
             await BookService.createBook(payload, file);
             toast.success('Đã thêm sách mới thành công!');
             setIsAddDialogOpen(false);
@@ -130,8 +133,9 @@ export function BooksPage() {
                 authorIds: [],
                 publisherIds: [],
             });
-        } catch (error) {
-            toast.error('Lỗi khi thêm sách mới');
+        } catch (error : any) {
+            toast.error(JSON.stringify(error.message));
+            console.log(error) 
         }
     };
 
@@ -143,8 +147,9 @@ export function BooksPage() {
         setIsEditDialogOpen(false);
         fetchData();
        }
-       catch(error){
-        toast.error('Lỗi xuất hiện khi cập nhật');
+       catch(error : any)
+       {
+        toast.error('Lỗi xuất hiện khi cập nhật' + error.message);
        }
     };
 
@@ -155,8 +160,9 @@ export function BooksPage() {
         toast.success('Đã xoá sách thành công!');
         setIsDeleteDialogOpen(false);
         fetchData();
-       } catch(error){
-        toast.error('Có lỗi xuất hiện khi xoá');
+       } catch(error : any) 
+       {
+            toast.error('Có lỗi xuất hiện khi xoá' + error.message);
        }
     };
 
@@ -167,12 +173,16 @@ export function BooksPage() {
             toast.success('Thêm danh sách bằng file excel thành công');
             setIsExcelDialogOpen(false);
             fetchData();
-        } catch(error){
-            toast.error('Lỗi khi thêm danh sách bằng file excel');
+        } 
+        catch(error:any)
+        {
+            
+            toast.error('Lỗi khi thêm danh sách bằng file excel' + JSON.stringify(error.message));
         }
     }
 
     const openEditDialog = (book: BookItem) => {
+        console.log(book) 
         setSelectedBook(book);
         setFormData({
             code: book.code,
@@ -188,6 +198,7 @@ export function BooksPage() {
     };
 
     const openDeleteDialog = (book: BookItem) => {
+        
         setSelectedBook(book);
         setIsDeleteDialogOpen(true);
     };

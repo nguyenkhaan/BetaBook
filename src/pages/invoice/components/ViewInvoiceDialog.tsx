@@ -13,14 +13,13 @@ interface ViewInvoiceDialogProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     selectedInvoice: Invoice | null;
-    mockDiscountCodes: DiscountCode[];
 }
 
 export function ViewInvoiceDialog({
     isOpen,
     onOpenChange,
     selectedInvoice,
-    mockDiscountCodes,
+    // mockDiscountCodes,
 }: ViewInvoiceDialogProps) {
     if (!selectedInvoice) return null;
 
@@ -45,11 +44,12 @@ export function ViewInvoiceDialog({
                             </div>
                             <div
                                 className={`px-4 py-2 rounded text-sm font-medium ml-4 ${
-                                    selectedInvoice.status === 'Đã thanh toán'
+                                    selectedInvoice.status === 'COMPLETE'
                                         ? 'bg-red-500 text-white'
-                                        : selectedInvoice.status === 'Chưa thanh toán'
-                                        ? 'bg-yellow-500 text-white'
-                                        : 'bg-gray-500 text-white'
+                                        : selectedInvoice.status ===
+                                            'NOT_STARTED'
+                                          ? 'bg-yellow-500 text-white'
+                                          : 'bg-gray-500 text-white'
                                 }`}
                             >
                                 {selectedInvoice.status.toUpperCase()}
@@ -60,34 +60,44 @@ export function ViewInvoiceDialog({
                 <div className="space-y-4 py-4">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                            <span className="font-medium text-gray-700">Ngày:</span>{' '}
+                            <span className="font-medium text-gray-700">
+                                Ngày:
+                            </span>{' '}
                             <span className="text-gray-900">
-                                {selectedInvoice.date} {new Date().toTimeString().slice(0, 8)}
+                                {selectedInvoice.updatedAt}{' '}
+                                {new Date().toTimeString().slice(0, 8)}
                             </span>
                         </div>
                         <div>
-                            <span className="font-medium text-gray-700">Thủ ngân:</span>{' '}
+                            <span className="font-medium text-gray-700">
+                                Thủ ngân:
+                            </span>{' '}
                             <span className="text-gray-900">A Nguyen Van</span>
                         </div>
                         <div>
-                            <span className="font-medium text-gray-700">KH:</span>{' '}
-                            <span className="text-gray-900">{selectedInvoice.customer}</span>
+                            <span className="font-medium text-gray-700">
+                                KH:
+                            </span>{' '}
+                            <span className="text-gray-900">
+                                {selectedInvoice.customer}
+                            </span>
                         </div>
                         <div>
-                            <span className="font-medium text-gray-700">Địa chỉ:</span>{' '}
-                            <span className="text-gray-900">Hà Nội, Việt Nam</span>
+                            <span className="font-medium text-gray-700">
+                                Địa chỉ:
+                            </span>{' '}
+                            <span className="text-gray-900">
+                                Hà Nội, Việt Nam
+                            </span>
                         </div>
-                        {selectedInvoice.discountCode && (
+                        {selectedInvoice.voucherUsage && (
                             <div className="col-span-2">
-                                <span className="font-medium text-gray-700">Mã giảm giá:</span>{' '}
+                                <span className="font-medium text-gray-700">
+                                    Mã giảm giá:
+                                </span>{' '}
                                 <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-medium">
-                                    {selectedInvoice.discountCode}
+                                    {selectedInvoice.id}
                                 </span>
-                                {mockDiscountCodes.find((d) => d.code === selectedInvoice.discountCode) && (
-                                    <span className="ml-2 text-gray-600">
-                                        ({mockDiscountCodes.find((d) => d.code === selectedInvoice.discountCode)?.description})
-                                    </span>
-                                )}
                             </div>
                         )}
                     </div>
@@ -111,7 +121,7 @@ export function ViewInvoiceDialog({
                                 </tr>
                             </thead>
                             <tbody>
-                                {selectedInvoice.books.map((book, idx) => (
+                                {selectedInvoice.billDetail.map((book, idx) => (
                                     <tr key={idx} className="bg-white">
                                         <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
                                             {book.title}
@@ -120,20 +130,28 @@ export function ViewInvoiceDialog({
                                             {book.quantity}
                                         </td>
                                         <td className="border border-gray-300 px-4 py-3 text-right text-sm text-gray-900">
-                                            {book.price.toLocaleString('vi-VN')}
+                                            {book.cost.toLocaleString('vi-VN')}
                                         </td>
                                         <td className="border border-gray-300 px-4 py-3 text-right text-sm text-gray-900">
-                                            {(book.quantity * book.price).toLocaleString('vi-VN')}
+                                            {(
+                                                book.quantity * book.cost
+                                            ).toLocaleString('vi-VN')}
                                         </td>
                                     </tr>
                                 ))}
                                 <tr className="bg-white">
-                                    <td className="border border-gray-300 px-4 py-3" colSpan={4}>
+                                    <td
+                                        className="border border-gray-300 px-4 py-3"
+                                        colSpan={4}
+                                    >
                                         &nbsp;
                                     </td>
                                 </tr>
                                 <tr className="bg-white">
-                                    <td className="border border-gray-300 px-4 py-3" colSpan={4}>
+                                    <td
+                                        className="border border-gray-300 px-4 py-3"
+                                        colSpan={4}
+                                    >
                                         &nbsp;
                                     </td>
                                 </tr>
@@ -144,34 +162,51 @@ export function ViewInvoiceDialog({
                     <div className="mt-6 flex justify-end">
                         <div className="w-80 space-y-2 text-sm">
                             <div className="flex justify-between border-b pb-2">
-                                <span className="font-medium text-gray-700">Thành tiền</span>
+                                <span className="font-medium text-gray-700">
+                                    Thành tiền
+                                </span>
                                 <span className="text-gray-900 font-medium">
-                                    {selectedInvoice.books
-                                        .reduce((total, book) => total + book.quantity * book.price, 0)
+                                    {selectedInvoice.billDetail
+                                        .reduce(
+                                            (total, book) =>
+                                                total +
+                                                book.quantity * book.cost,
+                                            0,
+                                        )
                                         .toLocaleString('vi-VN')}
                                 </span>
                             </div>
-                            {selectedInvoice.discountCode && selectedInvoice.discountAmount && (
-                                <div className="flex justify-between border-b pb-2">
-                                    <span className="font-medium text-orange-600">Mã giảm giá</span>
-                                    <span className="font-medium text-orange-600">
-                                        -{selectedInvoice.discountAmount.toLocaleString('vi-VN')}
-                                    </span>
-                                </div>
-                            )}
+                            {selectedInvoice.voucherUsage && (
+                                    <div className="flex justify-between border-b pb-2">
+                                        <span className="font-medium text-orange-600">
+                                            Mã giảm giá
+                                        </span>
+                                        <span className="font-medium text-orange-600">
+                                            -
+                                            {selectedInvoice.cost.toLocaleString(
+                                                'vi-VN',
+                                            )}
+                                        </span>
+                                    </div>
+                                )}
                             <div className="flex justify-between pt-2">
                                 <span className="font-bold text-gray-900 text-base">
                                     Tổng thanh toán
                                 </span>
                                 <span className="text-gray-900 font-bold text-base">
-                                    {selectedInvoice.cost.toLocaleString('vi-VN')}
+                                    {selectedInvoice.cost.toLocaleString(
+                                        'vi-VN',
+                                    )}
                                 </span>
                             </div>
                         </div>
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                    <Button
+                        variant="outline"
+                        onClick={() => onOpenChange(false)}
+                    >
                         Đóng
                     </Button>
                     <Button className="bg-orange-500 hover:bg-orange-600">

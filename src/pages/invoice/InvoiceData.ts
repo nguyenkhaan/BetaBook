@@ -1,7 +1,7 @@
 // src/pages/invoice/InvoiceData.ts
 import { DiscountCode } from '../invoice/InvoicePage';
 import { Invoice } from '../invoice/InvoicePage';
-
+/*
 export const mockDiscountCodes: DiscountCode[] = [
     {
         id: '1',
@@ -97,3 +97,4 @@ export const mockInvoices: Invoice[] = [
         ],
     },
 ];
+*/ 

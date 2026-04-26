@@ -16,7 +16,6 @@ export class EmployeesService {
     static async getAllEmployees(): Promise<Employees[]> {
         const response = await privateApi.get('/employee');
         const data = response.data;
-        console.log("Employee: " , data) 
         return data.map((emp: any) => ({
             id: emp.id,
             code: emp.code,

@@ -63,7 +63,6 @@ export const RegulationService = {
     },
 
     update: async (id: number, dto: UpdateRuleDto): Promise<Rule> => {
-        console.log(dto) 
         const response = await privateApi.put(`/rule/${id}`, dto);
         return response.data;
     },

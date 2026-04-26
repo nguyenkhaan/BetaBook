@@ -141,7 +141,6 @@ export function EmployeesPage() {
                 salary: Number(emp.salary),
                 status: emp.status,
             }));
-            console.log(mappedData);
             setEmployees(mappedData);
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Không thể tải dữ liệu');

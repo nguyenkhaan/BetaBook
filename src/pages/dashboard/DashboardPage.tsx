@@ -20,7 +20,6 @@ import { TopBooks } from './components/TopBooks';
 
 export function DashboardPage() {
     const onNavigate = (x: string) => {
-        console.log(x);
     };
     const stats = [
         {

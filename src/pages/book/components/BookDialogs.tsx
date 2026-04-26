@@ -212,7 +212,6 @@ export function BookDialogs({
     };
 
     const handleAddBookClick = () => {
-        console.log("Du lieu la: " , formData) 
         handleAddBook(editCoverImage || undefined);
         // resetAddDialog();
     };

@@ -48,9 +48,7 @@ export class InvoiceService {
         return response.data;
     }
     static async update(billId : number , data : any) {
-        console.log(billId , "Data la: " , data) 
         const response = await privateApi.put(`/bill/${billId}` , data)
-        console.log(response.data) 
         return response.data 
         
     }

@@ -50,7 +50,6 @@ export function CustomersPage() {
         setIsLoading(true);
         try {
             const data = await CustomerService.getAllCustomers();
-            console.log("Customer Data: " , data) 
             setCustomers(data);
         } catch (err: any) {
             const status = err.response?.status;

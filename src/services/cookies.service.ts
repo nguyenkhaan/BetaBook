@@ -13,7 +13,7 @@ export class CookiesService {
         Cookies.set(type.toString(), token, {
             expires: ti,
             path: '/',
-            secure: true,
+            secure: false,
             sameSite: 'Strict',
         });
     }

@@ -7,10 +7,10 @@ import { PromotionFilterBar } from './components/PromotionFilterBar';
 import { PromotionTable } from './components/PromotionTable';
 import { PromotionDialogs } from './components/PromotionDialogs';
 import {
-    PromotionService,
+    VoucherService,
     Voucher,
     VoucherData,
-} from '../../services/promotion.service';
+} from '../../services/voucher.service';
 export type Promotion =  {
     id : number; 
     code: string; 
@@ -40,6 +40,7 @@ export function PromotionsPage() {
 
     const initialFormData: VoucherData = {
         name: '',
+        code: '',
         eventName: '',
         sale: 0,
         type: 'PERCENT',
@@ -53,7 +54,7 @@ export function PromotionsPage() {
     const loadVouchers = useCallback(async () => {
         try {
             setLoading(true);
-            const data = await PromotionService.getAllVoucher();
+            const data = await VoucherService.getAllVoucher();
             setVouchers(data);
         } catch (error) {
             toast.error('Không thể tải danh sách khuyến mãi');
@@ -88,7 +89,7 @@ export function PromotionsPage() {
 
     const handleCreatePromotion = async () => {
         try {
-            await PromotionService.createVoucher(formData);
+            await VoucherService.createVoucher(formData);
             toast.success('Khuyến mãi đã được tạo thành công!');
             setIsCreateDialogOpen(false);
             loadVouchers();
@@ -102,7 +103,7 @@ export function PromotionsPage() {
     const handleEditPromotion = async () => {
         if (selectedVoucher) {
             try {
-                await PromotionService.updateVoucher(
+                await VoucherService.updateVoucher(
                     selectedVoucher.id,
                     formData,
                 );
@@ -118,7 +119,7 @@ export function PromotionsPage() {
     const handleDeletePromotion = async () => {
         if (selectedVoucher) {
             try {
-                await PromotionService.deleteVoucher(selectedVoucher.id);
+                await VoucherService.deleteVoucher(selectedVoucher.id);
                 toast.success('Đã xóa khuyến mãi');
                 setIsDeleteDialogOpen(false);
                 loadVouchers();
@@ -141,6 +142,7 @@ export function PromotionsPage() {
         setSelectedVoucher(voucher);
         setFormData({
             name: voucher.name,
+            code: voucher.code,
             eventName: voucher.eventName,
             sale: voucher.sale,
             type: voucher.type,

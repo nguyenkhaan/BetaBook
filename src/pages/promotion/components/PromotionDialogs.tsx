@@ -19,7 +19,7 @@ import {
 import { Button } from '../../../components/ui/button';
 import { Download } from 'lucide-react';
 import { Promotion } from '../PromotionsPage';
-import { PromotionService } from '../../../services/promotion.service';
+import { VoucherService } from '../../../services/voucher.service';
 
 interface PromotionDialogsProps {
     isCreateDialogOpen: boolean;
@@ -75,7 +75,7 @@ export function PromotionDialogs({
     >([]);
     useEffect(() => {
         async function fetchOptions() {
-            const voucherOptions = await PromotionService.getOptions();
+            const voucherOptions = await VoucherService.getOptions();
             setPromotionStatusOptions(voucherOptions.status);
             setPromotionTypeOptions(voucherOptions.type);
         }

@@ -17,7 +17,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '../../../components/ui/select';
-import { InvoiceBook, DiscountCode, Invoice } from '../InvoicePage';
+import { InvoiceBook, Invoice } from '../InvoicePage';
+import { Voucher } from '../../../services/voucher.service';
 
 interface CreateInvoiceDialogProps {
     isOpen: boolean;
@@ -28,28 +29,29 @@ interface CreateInvoiceDialogProps {
         date: string;
         books: InvoiceBook[];
         status: Invoice['status'];
-        discountCode: string;
-        discountAmount: number;
         phoneNumber: string;
+        customerId?: string;
+        selectedVoucherId: string;
     };
     setFormData: (data: any) => void;
     newBook: {
+        id: string;
+        code: string;
         title: string;
         quantity: number;
         price: number;
     };
-
     setNewBook: (data: any) => void;
     onAddBook: () => void;
     onRemoveBook: (index: number) => void;
     onSave: () => void;
-    mockDiscountCodes: DiscountCode[];
+    vouchers: Voucher[];
     calculateTotalItems: () => number;
     calculateTotalAmount: () => number;
-    calculateDiscountAmount: () => number;
+    calculateDiscountAmount: () => number; // Thêm function này
     calculateFinalTotal: () => number;
-    handleDiscountCodeChange: (code: string) => void;
     customers: any[];
+    availableBooks: any[];
 }
 
 export function CreateInvoiceDialog({
@@ -62,74 +64,95 @@ export function CreateInvoiceDialog({
     onAddBook,
     onRemoveBook,
     onSave,
-    mockDiscountCodes,
+    vouchers,
     calculateTotalItems,
     calculateTotalAmount,
-    calculateDiscountAmount,
+    calculateDiscountAmount, // Thêm function này
     calculateFinalTotal,
-    handleDiscountCodeChange,
     customers,
+    availableBooks,
 }: CreateInvoiceDialogProps) {
+    const handleCustomerSearch = (value: string) => {
+        const found = customers?.find(
+            (c: any) =>
+                c.id?.toString() === value ||
+                c.name?.toLowerCase().includes(value.toLowerCase()) ||
+                c.phone === value,
+        );
+
+        setFormData({
+            ...formData,
+            customerId: found ? found.id.toString() : value,
+            customer: found ? found.name : '',
+            phoneNumber: found ? found.phone : '',
+        });
+    };
+
+    const handleBookSearch = (value: string) => {
+        const normalized = value.trim().toLowerCase();
+        const found = availableBooks?.find(
+            (b: any) =>
+                b.code?.toLowerCase() === normalized ||
+                b.id?.toString() === value,
+        );
+
+        setNewBook({
+            id: found ? found.id.toString() : '',
+            code: found ? found.code : '',
+            title: found ? found.title : '',
+            quantity: newBook.quantity || 1,
+            price: found ? Number(found.price) : 0,
+        });
+    };
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Tạo hóa đơn mới</DialogTitle>
                     <DialogDescription>
-                        Nhập thông tin hóa đơn mới
+                        Nhập thông tin hóa đơn mới (Nhập mã để tìm kiếm nhanh)
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-3 py-3">
+                    {/* KHÁCH HÀNG */}
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="phoneNumber" className="text-sm">
-                            Số điện thoại
-                        </Label>
-                        <div className="col-span-3 space-y-1">
+                        <Label className="text-sm">Tìm khách hàng</Label>
+                        <div className="col-span-3 relative">
                             <Input
-                                id="phoneNumber"
-                                value={formData.phoneNumber}
-                                onChange={(e) => {
-                                    const phone = e.target.value;
-                                    const found = customers?.find(
-                                        (c: any) => c.phone === phone,
-                                    );
-                                    setFormData({
-                                        ...formData,
-                                        phoneNumber: phone,
-                                        customer: found ? found.name : '',
-                                    });
-                                }}
-                                className="w-full"
-                                placeholder="Nhập số điện thoại khách hàng"
+                                list="customer-options"
+                                placeholder="Nhập Mã / Tên / Số điện thoại..."
+                                value={formData.customerId || ''}
+                                onChange={(e) =>
+                                    handleCustomerSearch(e.target.value)
+                                }
                             />
-                            {formData.phoneNumber && (
-                                <p
-                                    className={`text-xs font-medium ${
-                                        formData.customer
-                                            ? 'text-green-600'
-                                            : 'text-red-500'
-                                    }`}
-                                >
-                                    {formData.customer
-                                        ? `✔ Khách hàng: ${formData.customer}`
-                                        : '✖ Không tìm thấy khách hàng'}
-                                </p>
-                            )}
+                            <datalist id="customer-options">
+                                {customers?.map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.name} - {c.phone}
+                                    </option>
+                                ))}
+                            </datalist>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="customer" className="text-sm">
-                            Khách hàng
-                        </Label>
-                        <Input
-                            id="customer"
-                            value={formData.customer}
-                            readOnly
-                            className="col-span-3 bg-gray-50"
-                            placeholder="Tên khách hàng sẽ tự động hiển thị"
-                        />
+                        <Label className="text-sm">Thông tin KH</Label>
+                        <div className="col-span-3 grid grid-cols-2 gap-2">
+                            <Input
+                                value={formData.customer}
+                                readOnly
+                                className="bg-gray-50 font-medium"
+                                placeholder="Tên khách hàng"
+                            />
+                            <Input
+                                value={formData.phoneNumber}
+                                readOnly
+                                className="bg-gray-50"
+                                placeholder="Số điện thoại"
+                            />
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-4 items-center gap-4">
@@ -150,24 +173,25 @@ export function CreateInvoiceDialog({
                         />
                     </div>
 
+                    {/* GIỎ HÀNG */}
                     <div className="grid grid-cols-4 items-start gap-4">
-                        <Label className="mt-2 text-sm">Danh sách sách</Label>
+                        <Label className="mt-2 text-sm">Giỏ hàng</Label>
                         <div className="col-span-3 border border-gray-200 rounded-lg p-2 bg-gray-50 max-h-32 overflow-y-auto">
                             {formData.books.length === 0 ? (
                                 <p className="text-sm text-gray-500 text-center py-2">
-                                    Chưa có sách nào
+                                    Chưa có sản phẩm
                                 </p>
                             ) : (
                                 <table className="w-full text-sm">
                                     <thead>
-                                        <tr className="border-b border-gray-200">
-                                            <th className="text-left py-1 px-2 text-xs font-medium text-gray-500">
+                                        <tr className="border-b border-gray-200 text-xs text-gray-500 font-medium">
+                                            <th className="text-left py-1 px-2">
                                                 Tên sách
                                             </th>
-                                            <th className="text-left py-1 px-2 text-xs font-medium text-gray-500">
-                                                Số lượng
+                                            <th className="text-left py-1 px-2">
+                                                SL
                                             </th>
-                                            <th className="text-left py-1 px-2 text-xs font-medium text-gray-500">
+                                            <th className="text-left py-1 px-2">
                                                 Giá
                                             </th>
                                             <th></th>
@@ -175,7 +199,10 @@ export function CreateInvoiceDialog({
                                     </thead>
                                     <tbody>
                                         {formData.books.map((book, idx) => (
-                                            <tr key={idx}>
+                                            <tr
+                                                key={idx}
+                                                className="border-b border-gray-100 last:border-0"
+                                            >
                                                 <td className="py-1 px-2">
                                                     {book.title}
                                                 </td>
@@ -188,7 +215,7 @@ export function CreateInvoiceDialog({
                                                     )}
                                                     đ
                                                 </td>
-                                                <td>
+                                                <td className="text-right">
                                                     <Button
                                                         size="sm"
                                                         variant="ghost"
@@ -196,7 +223,7 @@ export function CreateInvoiceDialog({
                                                             onRemoveBook(idx)
                                                         }
                                                     >
-                                                        <Trash2 className="w-3 h-3" />
+                                                        <Trash2 className="w-3 h-3 text-red-500" />
                                                     </Button>
                                                 </td>
                                             </tr>
@@ -207,20 +234,29 @@ export function CreateInvoiceDialog({
                         </div>
                     </div>
 
+                    {/* THÊM SÁCH */}
                     <div className="border-t pt-3">
-                        <p className="text-sm font-medium mb-2">Thêm sách</p>
+                        <p className="text-sm font-medium mb-2 text-orange-600">
+                            Thêm sách vào hóa đơn
+                        </p>
                         <div className="grid grid-cols-12 gap-2">
-                            <Input
-                                placeholder="Tên sách"
-                                value={newBook.title}
-                                onChange={(e) =>
-                                    setNewBook({
-                                        ...newBook,
-                                        title: e.target.value,
-                                    })
-                                }
-                                className="col-span-5"
-                            />
+                            <div className="col-span-5">
+                                <Input
+                                    list="book-options"
+                                    placeholder="Nhập mã sách..."
+                                    value={newBook.id}
+                                    onChange={(e) =>
+                                        handleBookSearch(e.target.value)
+                                    }
+                                />
+                                <datalist id="book-options">
+                                    {availableBooks?.map((b) => (
+                                        <option key={b.id} value={b.id}>
+                                            {b.title}
+                                        </option>
+                                    ))}
+                                </datalist>
+                            </div>
                             <Input
                                 type="number"
                                 value={newBook.quantity}
@@ -233,64 +269,62 @@ export function CreateInvoiceDialog({
                                 className="col-span-2"
                             />
                             <Input
-                                type="number"
-                                value={newBook.price}
-                                onChange={(e) =>
-                                    setNewBook({
-                                        ...newBook,
-                                        price: parseInt(e.target.value) || 0,
-                                    })
+                                value={
+                                    newBook.title
+                                        ? `${newBook.price.toLocaleString('vi-VN')}đ`
+                                        : ''
                                 }
-                                className="col-span-3"
+                                readOnly
+                                className="col-span-3 bg-gray-50 text-xs"
                             />
                             <Button
                                 onClick={onAddBook}
-                                className="col-span-2 bg-orange-500"
+                                className="col-span-2 bg-orange-500 hover:bg-orange-600"
                             >
                                 <Plus className="w-4 h-4" />
                             </Button>
                         </div>
                     </div>
 
+                    {/* TỔNG KẾT */}
                     <div className="grid grid-cols-4 gap-4 border-t pt-3">
-                        <Label>Số mặt hàng</Label>
+                        <Label>Tạm tính ({calculateTotalItems()} món)</Label>
                         <Input
-                            value={calculateTotalItems()}
+                            value={
+                                calculateTotalAmount().toLocaleString('vi-VN') +
+                                ' đ'
+                            }
                             readOnly
-                            className="col-span-3"
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-4">
-                        <Label>Tạm tính</Label>
-                        <Input
-                            value={calculateTotalAmount().toLocaleString(
-                                'vi-VN',
-                            )}
-                            readOnly
-                            className="col-span-3"
+                            className="col-span-3 bg-gray-50"
                         />
                     </div>
 
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label className="text-sm">Mã giảm giá</Label>
-
                         <div className="col-span-3">
                             <Select
-                                value={formData.discountCode}
-                                onValueChange={handleDiscountCodeChange}
+                                value={formData.selectedVoucherId}
+                                onValueChange={(value) =>
+                                    setFormData({
+                                        ...formData,
+                                        selectedVoucherId: value,
+                                    })
+                                }
                             >
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger>
                                     <SelectValue placeholder="Chọn mã giảm giá" />
                                 </SelectTrigger>
-
-                                <SelectContent className="p-4 ml-3 mr-3">
-                                    <SelectItem value="">
+                                <SelectContent>
+                                    <SelectItem value="0">
                                         Không áp dụng
                                     </SelectItem>
-                                    {mockDiscountCodes.map((d) => (
-                                        <SelectItem key={d.id} value={d.code}>
-                                            {d.code} - {d.description}
+                                    {vouchers?.map((v) => (
+                                        <SelectItem
+                                            key={v.id}
+                                            value={v.id.toString()}
+                                        >
+                                            {v.code} - {v.name} (Giảm {v.sale}
+                                            {v.type === 'PERCENT' ? '%' : 'đ'})
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -298,24 +332,39 @@ export function CreateInvoiceDialog({
                         </div>
                     </div>
 
+                    {formData.selectedVoucherId !== '0' && (
+                        <div className="grid grid-cols-4 gap-4">
+                            <Label>Giảm giá</Label>
+                            <Input
+                                value={
+                                    '- ' +
+                                    calculateDiscountAmount().toLocaleString(
+                                        'vi-VN',
+                                    ) +
+                                    ' đ'
+                                }
+                                readOnly
+                                className="col-span-3 bg-orange-50 text-orange-600 font-medium"
+                            />
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label>Tổng tiền</Label>
+                        <Label className="font-bold text-orange-600">
+                            TỔNG TIỀN
+                        </Label>
                         <Input
                             value={
-                                calculateFinalTotal()
-                                    ? calculateFinalTotal().toLocaleString(
-                                          'vi-VN',
-                                      ) + ' VND'
-                                    : '0 VND'
+                                calculateFinalTotal().toLocaleString('vi-VN') +
+                                ' VND'
                             }
                             readOnly
-                            className="col-span-3 bg-gray-100 cursor-not-allowed"
+                            className="col-span-3 bg-orange-50 font-bold text-lg text-orange-700"
                         />
                     </div>
 
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label>Trạng thái</Label>
-
                         <div className="col-span-3">
                             <Select
                                 value={formData.status}
@@ -326,19 +375,15 @@ export function CreateInvoiceDialog({
                                     })
                                 }
                             >
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
-
                                 <SelectContent>
                                     <SelectItem value="Đã thanh toán">
                                         Đã thanh toán
                                     </SelectItem>
                                     <SelectItem value="Chưa thanh toán">
                                         Chưa thanh toán
-                                    </SelectItem>
-                                    <SelectItem value="Quá hạn">
-                                        Quá hạn
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
@@ -353,8 +398,11 @@ export function CreateInvoiceDialog({
                     >
                         Hủy
                     </Button>
-                    <Button onClick={onSave} className="bg-orange-500">
-                        Tạo hóa đơn
+                    <Button
+                        onClick={onSave}
+                        className="bg-orange-500 hover:bg-orange-600 text-white"
+                    >
+                        Xác nhận tạo hóa đơn
                     </Button>
                 </DialogFooter>
             </DialogContent>

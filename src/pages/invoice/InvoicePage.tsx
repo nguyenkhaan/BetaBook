@@ -1,4 +1,4 @@
-
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { InvoiceHeader } from './components/InvoiceHeader';
 import { InvoiceStats } from './components/InvoiceStats';
@@ -8,48 +8,58 @@ import { ViewInvoiceDialog } from './components/ViewInvoiceDialog';
 import { CreateInvoiceDialog } from './components/CreateInvoiceDialog';
 import { EditInvoiceDialog } from './components/EditInvoiceDialog';
 import { DeleteInvoiceDialog } from './components/DeleteInvoiceDialog';
-import { mockDiscountCodes, mockInvoices } from '../invoice/InvoiceData';
-
 import {
     InvoiceService,
     CreateInvoiceDto,
 } from '../../services/invoice.service';
-import { useState, useEffect } from 'react';
+import { CustomerService } from '../../services/customer.service';
+import { BookService } from '../../services/book.service';
+import { VoucherService, Voucher } from '../../services/voucher.service';
 
 export interface InvoiceBook {
+    id: string | number; // ID của dòng chi tiết hóa đơn (nếu có)
+    bookid: number; // ID của quyển sách (Dùng cái này để map với Backend)
+    code: string;
     title: string;
-    bookid: number;
     quantity: number;
     price: number;
 }
 
 export interface DiscountCode {
-    id: string;
+    id: number;
     code: string;
-    description: string;
     type: 'percentage' | 'fixed';
     value: number;
+    description: string;
 }
 
 export interface Invoice {
     id: number;
     code: string;
-    customer: string;
-    date: string;
+    status: string;
     cost: number;
-    status: 'Đã thanh toán' | 'Chưa thanh toán' | 'Quá hạn';
-    items: number;
+    createdAt: string;
+    customer: string;
+    customerPhone: string;
+    date: string;
     books: InvoiceBook[];
+    totalItems: number;
+    items: number; 
     discountCode?: string;
-    discountAmount?: number;
+    vouchers?: { voucherId: number }[];
 }
 
 export function InvoicePage() {
-    const [invoices, setInvoices] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [customers, setCustomers] = useState<any[]>([]);
+    const [availableBooks, setAvailableBooks] = useState<any[]>([]);
+    const [vouchers, setVouchers] = useState<Voucher[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [priceFilter, setPriceFilter] = useState('all');
+
     const [isViewBooksOpen, setIsViewBooksOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -58,366 +68,658 @@ export function InvoicePage() {
         null,
     );
 
+    const [formData, setFormData] = useState({
+        customer: '',
+        customerPhone: '',
+        date: '',
+        status: '',
+        selectedVoucherId: '0',
+    });
 
-    const loadInvoices = async () => {
-        setIsLoading(true);
+    const [createFormData, setCreateFormData] = useState({
+        invoiceNumber: '',
+        customer: '',
+        phoneNumber: '',
+        customerId: '',
+        date: new Date().toISOString().split('T')[0],
+        books: [] as InvoiceBook[],
+        status: 'Chưa thanh toán',
+        selectedVoucherId: '0',
+        discountCode: '',
+        discountAmount: 0,
+    });
+
+   const [newBook, setNewBook] = useState({
+       id: '',
+       code: '',
+       title: '',
+       quantity: 1,
+       price: 0,
+   });
+
+    const mockDiscountCodes: DiscountCode[] = [
+        {
+            id: 1,
+            code: 'GIAM10',
+            type: 'percentage',
+            value: 10,
+            description: 'Giảm 10%',
+        },
+    ];
+    const fetchData = useCallback(async () => {
         try {
-            const data = await InvoiceService.getAll();
-            setInvoices(data);
-        } catch (error) {
-            toast.error('Không thể tải danh sách hóa đơn!');
+            setIsLoading(true);
+            const [invoiceRes, customerRes, bookRes, voucherRes] =
+                await Promise.all([
+                    InvoiceService.getAll().catch(() => []),
+                    CustomerService.getAllCustomers().catch(() => []),
+                    BookService.getAllBook().catch(() => []),
+                    VoucherService.getAllVoucher().catch(() => []),
+                ]);
+
+            const safeCustomers = Array.isArray(customerRes) ? customerRes : [];
+            const safeVouchers = Array.isArray(voucherRes) ? voucherRes : [];
+
+            const formattedInvoices: Invoice[] = (invoiceRes || []).map(
+                (bill: any) => {
+                    // 1. Tính tổng số lượng sách
+                    const totalQty =
+                        bill.billDetail?.reduce(
+                            (acc: number, item: any) =>
+                                acc + (Number(item.quantity) || 0),
+                            0,
+                        ) || 0;
+                
+                    let displayCost = Number(bill.cost) || 0;
+
+                  
+                    if (displayCost === 0 && bill.billDetail?.length > 0) {
+                        displayCost = bill.billDetail.reduce(
+                            (acc: number, item: any) => {
+                                return (
+                                    acc +
+                                    Number(item.quantity) *
+                                        Number(item.cost || 0)
+                                );
+                            },
+                            0,
+                        );
+                        if (bill.voucherUsage && bill.voucherUsage.length > 0) {
+                            bill.voucherUsage.forEach((v: any) => {
+                                if (v.type === 'PERCENT') {
+                                    displayCost =
+                                        displayCost *
+                                        (1 - Number(v.sale || 0) / 100);
+                                } else {
+                                    displayCost = Math.max(
+                                        0,
+                                        displayCost - Number(v.sale || 0),
+                                    );
+                                }
+                            });
+                        }
+                    }
+
+                    const foundCustomer = safeCustomers.find(
+                        (c: any) => Number(c.id) === Number(bill.customerId),
+                    );
+
+                    return {
+                        id: Number(bill.id),
+                        code: bill.code,
+                        status: bill.status,
+                        cost: displayCost,
+                        createdAt: bill.createdAt,
+                        customer:
+                            bill.customer?.name ||
+                            foundCustomer?.name ||
+                            'Khách hàng lẻ',
+                        customerPhone:
+                            bill.customer?.phone || foundCustomer?.phone || '',
+                        date: bill.createdAt
+                            ? new Date(bill.createdAt).toLocaleDateString(
+                                  'vi-VN',
+                              )
+                            : 'N/A',
+                        totalItems: totalQty,
+                        items: totalQty,
+                        books:
+                            bill.billDetail?.map((item: any) => ({
+                                id: item.id, 
+                                bookid: Number(item.id),
+                                code: item.code || item.bookCode || '',
+                                title: item.title,
+                                quantity: Number(item.quantity),
+                                price: Number(item.cost),
+                            })) || [],
+                        vouchers: bill.voucherUsage || [],
+                        discountCode: bill.voucherUsage?.[0]?.code || '',
+                    };
+                },
+            );
+
+            setInvoices(formattedInvoices);
+            setCustomers(safeCustomers);
+            setVouchers(safeVouchers);
+            setAvailableBooks(
+                (bookRes || []).map((b: any) => ({
+                    id: b.id?.toString() || '',
+                    code: b.code,
+                    title: b.title || 'Không tên',
+                    price: Number(b.cost || 0),
+                })),
+            );
+        } catch (error: any) {
+            toast.error('Lỗi kết nối máy chủ');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []); 
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    const handleCreateInvoice = async () => {
+        if (!createFormData.customerId) {
+            toast.error('Vui lòng chọn khách hàng');
+            return;
+        }
+
+        if (createFormData.books.length === 0) {
+            toast.error('Vui lòng thêm ít nhất một quyển sách');
+            return;
+        }
+
+        const selectedCustomer = customers.find(
+            (customer) => customer.id.toString() === createFormData.customerId,
+        );
+
+        if (!selectedCustomer) {
+            toast.error('Thông tin khách hàng không hợp lệ');
+            return;
+        }
+
+        try {
+            setIsLoading(true);
+
+            const generateInvoiceCode = (): string => {
+                const latestInvoice = [...invoices]
+                    .filter((invoice) => invoice.code?.startsWith('HD'))
+                    .sort((a, b) => {
+                        const aNum = Number(a.code.replace('HD', '')) || 0;
+                        const bNum = Number(b.code.replace('HD', '')) || 0;
+                        return bNum - aNum;
+                    })[0];
+
+                if (!latestInvoice) {
+                    return 'HD001';
+                }
+
+                const nextNumber =
+                    (Number(latestInvoice.code.replace('HD', '')) || 0) + 1;
+
+                return `HD${nextNumber.toString().padStart(3, '0')}`;
+            };
+
+            const invoiceCode = (
+                createFormData.invoiceNumber.trim() || generateInvoiceCode()
+            ).toUpperCase();
+
+            const payload: CreateInvoiceDto = {
+                code: invoiceCode,
+                customerPhone: selectedCustomer.phone,
+                status:
+                    createFormData.status === 'Đã thanh toán'
+                        ? 'COMPLETE'
+                        : 'NOT_STARTED',
+                billDetails: createFormData.books.map((book) => ({
+                    bookId: Number(book.bookid),
+                    bookCode: book.code,
+                    quantity: Number(book.quantity),
+                })),
+                vouchers:
+                    createFormData.selectedVoucherId !== '0'
+                        ? [
+                              {
+                                  voucherId: Number(
+                                      createFormData.selectedVoucherId,
+                                  ),
+                              },
+                          ]
+                        : [],
+                temporaryCost: createFormData.books.reduce(
+                    (total, book) => total + book.quantity * book.price,
+                    0,
+                ),
+            };
+
+            await InvoiceService.create(payload);
+
+            toast.success(`Tạo hóa đơn ${invoiceCode} thành công`);
+            setIsCreateDialogOpen(false);
+            resetCreateForm();
+            await fetchData();
+        } catch (error: any) {
+            console.error('Create Invoice Error:', error);
+
+            const message =
+                error?.response?.data?.message ||
+                error?.message ||
+                'Lỗi hệ thống không xác định';
+
+            toast.error(Array.isArray(message) ? message[0] : message);
         } finally {
             setIsLoading(false);
         }
     };
 
-    useEffect(() => {
-        loadInvoices();
-    }, []);
-
-    useEffect(() => {
-        const fetchCustomers = async () => {
-            try {
-                setCustomers([{ id: 1, name: 'Khách hàng lẻ' }]);
-            } catch (error) {
-                console.error('Lỗi lấy danh sách khách hàng');
-            }
-        };
-        fetchCustomers();
-    }, []);
-
-    const filteredInvoices = invoices.filter((invoice) => {
-        const matchesSearch =
-            (invoice.code || invoice.invoiceNumber || '') // BE trả về code
-                .toLowerCase()
-                .includes(searchTerm.toLowerCase()) ||
-            (invoice.customer || '')
-                .toLowerCase()
-                .includes(searchTerm.toLowerCase());
-
-        const matchesStatus =
-            statusFilter === 'all' || invoice.status === statusFilter;
-
-        let matchesPrice = true;
-        const amount = invoice.cost || invoice.totalAmount; // BE trả về cost
-
-        if (priceFilter === 'under100') matchesPrice = amount < 100000;
-        else if (priceFilter === '100-200')
-            matchesPrice = amount >= 100000 && amount <= 200000;
-        else if (priceFilter === '200-500')
-            matchesPrice = amount > 200000 && amount <= 500000;
-        else if (priceFilter === 'over500') matchesPrice = amount > 500000;
-
-        return matchesSearch && matchesStatus && matchesPrice;
-    });
-
-    const handleCreateInvoice = async () => {
-        if (!createFormData.customer || createFormData.books.length === 0) {
-            toast.error('Vui lòng nhập đầy đủ thông tin và chọn sách!');
-            return;
-        }
-
-        try {
-            const dto: CreateInvoiceDto = {
-                code: createFormData.invoiceNumber || `HD${Date.now()}`,
-                customerId: Number(createFormData.customer) || 1, // Bạn cần ID khách hàng thực tế từ một ô Select khách hàng
-                status: createFormData.status as any,
-                billDetails: createFormData.books.map((b) => ({
-                    bookId: b.bookid,
-                    quantity: b.quantity,
-                })),
-                vouchers: createFormData.discountCode ? [{ voucherId: 1 }] : [],
-            };
-
-            await InvoiceService.create(dto);
-            toast.success('Tạo hóa đơn thành công!');
-            setIsCreateDialogOpen(false);
-            loadInvoices(); // Tải lại danh sách từ server
-        } catch (error: any) {
-            toast.error(
-                error.response?.data?.message || 'Lỗi khi tạo hóa đơn!',
-            );
-        }
-    };
-
-    const [statusFilter, setStatusFilter] = useState<string>('all');
-    const [priceFilter, setPriceFilter] = useState('all');
-    const [formData, setFormData] = useState({
-        customer: '',
-        date: '',
-        status: 'Chưa thanh toán' as Invoice['status'],
-        discountCode: '',
-    });
-    const [createFormData, setCreateFormData] = useState({
-        invoiceNumber: '',
-        customer: '',
-        phoneNumber: '', 
-        date: new Date().toISOString().split('T')[0],
-        books: [] as InvoiceBook[],
-        status: 'Chưa thanh toán' as Invoice['status'],
-        discountCode: '',
-        discountAmount: 0,
-    });
-    
-    const [newBook, setNewBook] = useState({
-        bookid: 0, 
-        title: '',
-        quantity: 1,
-        price: 0,
-    });
-
-    const handleResetFilters = () => {
-        setSearchTerm('');
-        setStatusFilter('all');
-        setPriceFilter('all');
-        toast.info('Đã xóa tất cả bộ lọc');
-    };
-
-
-    const openViewBooks = (invoice: Invoice) => {
-        setSelectedInvoice(invoice);
-        setIsViewBooksOpen(true);
-    };
-
-    const handleEditInvoiceOpen = (invoice: Invoice) => {
-        setSelectedInvoice(invoice);
-        setFormData({
-            customer: invoice.customer,
-            date: invoice.date,
-            status: invoice.status,
-            discountCode: invoice.discountCode || '',
+    const resetCreateForm = () => {
+        setCreateFormData({
+            invoiceNumber: '',
+            customer: '',
+            phoneNumber: '',
+            customerId: '',
+            date: new Date().toISOString().split('T')[0],
+            books: [],
+            status: 'Chưa thanh toán',
+            selectedVoucherId: '0',
+            discountCode: '',
+            discountAmount: 0,
         });
-        setIsEditDialogOpen(true);
-    };
-
-    const handleDeleteInvoiceOpen = (invoice: Invoice) => {
-        setSelectedInvoice(invoice);
-        setIsDeleteDialogOpen(true);
-    };
-
-    const handleDeleteInvoice = async () => {
-        if (selectedInvoice) {
-            try {
-                await InvoiceService.delete(selectedInvoice.id);
-                toast.success('Hóa đơn đã được xóa!');
-                setIsDeleteDialogOpen(false);
-                loadInvoices(); 
-            } catch (error) {
-                toast.error('Lỗi khi xóa hóa đơn!');
-            }
-        }
+        setNewBook({ id: '', code: '', title: '', quantity: 1, price: 0 });
     };
 
     const handleEditInvoice = async () => {
-        if (selectedInvoice) {
-            try {
-                const dto = {
-                    status: formData.status,
-                };
-                await InvoiceService.update(selectedInvoice.id, dto);
-                toast.success('Cập nhật thành công!');
-                setIsEditDialogOpen(false);
-                loadInvoices();
-            } catch (error) {
-                toast.error('Lỗi khi cập nhật!');
+        if (!selectedInvoice) return;
+
+        try {
+            setIsLoading(true);
+
+            const statusMap: Record<string, string> = {
+                'Đã thanh toán': 'COMPLETE',
+                'Chưa thanh toán': 'NOT_STARTED',
+                'Quá hạn': 'OVERDUE',
+            };
+
+            if (!formData.customerPhone?.trim()) {
+                toast.error('Vui lòng nhập số điện thoại khách hàng');
+                return;
             }
+
+            const validBooks = selectedInvoice.books
+                .filter(
+                    (book) =>
+                        Number(book.bookid) > 0 &&
+                        Number(book.quantity) > 0 &&
+                        book.code?.trim(),
+                )
+                .map((book) => ({
+                    bookId: Number(book.bookid),
+                    bookCode: book.code.trim(),
+                    quantity: Number(book.quantity),
+                }));
+
+            if (validBooks.length === 0) {
+                toast.error('Hóa đơn phải có ít nhất một sách hợp lệ');
+                return;
+            }
+
+            const subtotal = selectedInvoice.books.reduce(
+                (sum, book) => sum + book.quantity * book.price,
+                0,
+            );
+
+            const selectedVoucher = vouchers.find(
+                (voucher) =>
+                    voucher.id.toString() === formData.selectedVoucherId,
+            );
+
+            let finalCost = subtotal;
+            if (selectedVoucher) {
+                finalCost =
+                    selectedVoucher.type === 'PERCENT'
+                        ? subtotal * (1 - selectedVoucher.sale / 100)
+                        : Math.max(0, subtotal - selectedVoucher.sale);
+            }
+
+            const updateDto = {
+                code: selectedInvoice.code,
+                customerPhone: formData.customerPhone.trim(),
+                status: statusMap[formData.status] || selectedInvoice.status,
+                cost: Math.round(finalCost),
+                billDetails: validBooks,
+                vouchers:
+                    formData.selectedVoucherId !== '0'
+                        ? [
+                              {
+                                  voucherId: Number(formData.selectedVoucherId),
+                              },
+                          ]
+                        : [],
+            };
+
+            console.log('Update payload:', updateDto);
+
+            await InvoiceService.update(selectedInvoice.id, updateDto);
+
+            toast.success('Cập nhật hóa đơn thành công');
+            setIsEditDialogOpen(false);
+            setSelectedInvoice(null);
+            await fetchData();
+        } catch (error: any) {
+            console.error('Lỗi Edit:', error);
+
+            const errorMessage =
+                error?.response?.data?.message ||
+                error?.response?.data?.error ||
+                error?.message ||
+                'Cập nhật hóa đơn thất bại';
+
+            toast.error(
+                Array.isArray(errorMessage) ? errorMessage[0] : errorMessage,
+            );
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const handleAddBook = () => {
-        if (
-            newBook.bookid &&
-            newBook.title &&
-            newBook.quantity > 0 &&
-            newBook.price > 0
-        ) {
-            setCreateFormData({
-                ...createFormData,
-                books: [...createFormData.books, newBook as InvoiceBook],
-            });
-            setNewBook({ bookid: 0, title: '', quantity: 1, price: 0 });
-            toast.success('Đã thêm sách vào danh sách!');
-        } else {
-            toast.error('Vui lòng nhập đầy đủ thông tin sách (bao gồm ID)!');
-        }
-    };
-    
 
-    const handleRemoveBook = (index: number) => {
-        setCreateFormData({
-            ...createFormData,
-            books: createFormData.books.filter((_, idx) => idx !== index),
-        });
-        toast.success('Đã xóa sách khỏi danh sách!');
-    };
+    return (
+        <div className="space-y-6">
+            <InvoiceHeader onCreateClick={() => setIsCreateDialogOpen(true)} />
 
-    const calculateTotalAmount = () => {
-        return createFormData.books.reduce(
-            (total, book) => total + book.quantity * book.price,
-            0,
-        );
-    };
+            {isLoading ? (
+                <div className="flex justify-center items-center h-64">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                </div>
+            ) : (
+                <>
+                    <InvoiceStats invoices={invoices} />
+                    <InvoiceFilterBar
+                        searchTerm={searchTerm}
+                        onSearchChange={setSearchTerm}
+                        statusFilter={statusFilter}
+                        onStatusFilterChange={setStatusFilter}
+                        priceFilter={priceFilter}
+                        onPriceFilterChange={setPriceFilter}
+                        onResetFilters={() => {
+                            setSearchTerm('');
+                            setStatusFilter('all');
+                            setPriceFilter('all');
+                        }}
+                    />
+                    <div className="bg-white rounded-lg shadow-sm">
+                        <InvoiceTable
+                            invoices={invoices.filter((inv) =>
+                                inv.code
+                                    .toLowerCase()
+                                    .includes(searchTerm.toLowerCase()),
+                            )}
+                            onEdit={(inv) => {
+                                setSelectedInvoice(inv);
 
-    const calculateDiscountAmount = () => {
-        if (!createFormData.discountCode) return 0;
+                                const displayStatusMap: any = {
+                                    COMPLETE: 'Đã thanh toán',
+                                    NOT_STARTED: 'Chưa thanh toán',
+                                    OVERDUE: 'Quá hạn',
+                                };
 
-        const discount = mockDiscountCodes.find(
-            (d) => d.code === createFormData.discountCode,
-        );
-        if (!discount) return 0;
+                                // Lấy voucherId an toàn, tránh bị crash hàm khiến Dialog không mở được
+                                let initialVoucherId = '0';
+                                if (inv.vouchers && inv.vouchers.length > 0) {
+                                    const firstVoucher: any = inv.vouchers[0];
+                                    initialVoucherId = (
+                                        firstVoucher.voucherId ||
+                                        firstVoucher.id ||
+                                        '0'
+                                    ).toString();
+                                }
 
-        const subtotal = calculateTotalAmount();
-        if (discount.type === 'percentage') {
-            return Math.round((subtotal * discount.value) / 100);
-        } else {
-            return discount.value;
-        }
-    };
+                                setFormData({
+                                    customer: inv.customer,
+                                    customerPhone: inv.customerPhone,
+                                    date: inv.date,
+                                    status:
+                                        displayStatusMap[inv.status] ||
+                                        inv.status,
+                                    selectedVoucherId: initialVoucherId,
+                                });
 
-    const calculateEditDiscountAmount = () => {
-        if (!formData.discountCode || !selectedInvoice) return 0;
+                                setIsEditDialogOpen(true);
+                            }}
+                            onDelete={(inv) => {
+                                setSelectedInvoice(inv);
+                                setIsDeleteDialogOpen(true);
+                            }}
+                            onViewBooks={(inv) => {
+                                setSelectedInvoice(inv);
+                                setIsViewBooksOpen(true);
+                            }}
+                            getStatusColor={(status) => {
+                                switch (status) {
+                                    case 'COMPLETE':
+                                    case 'Đã thanh toán':
+                                        return 'bg-green-100 text-green-800';
+                                    case 'NOT_STARTED':
+                                    case 'Chưa thanh toán':
+                                        return 'bg-yellow-100 text-yellow-800';
+                                    case 'OVERDUE':
+                                    case 'Quá hạn':
+                                        return 'bg-red-100 text-red-800';
+                                    default:
+                                        return 'bg-gray-100 text-gray-800';
+                                }
+                            }}
+                        />
+                    </div>
+                </>
+            )}
 
-        const discount = mockDiscountCodes.find(
-            (d) => d.code === formData.discountCode,
-        );
-        if (!discount) return 0;
+            <CreateInvoiceDialog
+                isOpen={isCreateDialogOpen}
+                onOpenChange={setIsCreateDialogOpen}
+                formData={createFormData}
+                setFormData={setCreateFormData}
+                newBook={newBook}
+                setNewBook={setNewBook}
+                availableBooks={availableBooks}
+                customers={customers}
+                vouchers={vouchers}
+                onAddBook={() => {
+                    if (!newBook.id || newBook.quantity <= 0) {
+                        toast.error(
+                            'Vui lòng chọn sách và nhập số lượng hợp lệ',
+                        );
+                        return;
+                    }
 
-        const subtotal = selectedInvoice.books.reduce(
-            (total, book) => total + book.quantity * book.price,
-            0,
-        );
-        if (discount.type === 'percentage') {
-            return Math.round((subtotal * discount.value) / 100);
-        } else {
-            return discount.value;
-        }
-    };
+                    const selectedBook = availableBooks.find(
+                        (book) => book.id === newBook.id,
+                    );
 
-    const calculateEditSubtotal = () => {
-        if (!selectedInvoice) return 0;
-        return selectedInvoice.books.reduce(
-            (total, book) => total + book.quantity * book.price,
-            0,
-        );
-    };
+                    if (!selectedBook) {
+                        toast.error('Không tìm thấy thông tin sách');
+                        return;
+                    }
 
-    const calculateEditFinalTotal = () => {
-        return calculateEditSubtotal() - calculateEditDiscountAmount();
-    };
+                    if (!selectedBook.code || selectedBook.code.trim() === '') {
+                        toast.error('Sách này chưa có mã sách');
+                        return;
+                    }
 
-    const calculateFinalTotal = () => {
-        return calculateTotalAmount() - calculateDiscountAmount();
-    };
+                    setCreateFormData((prev) => {
+                        const existingIndex = prev.books.findIndex(
+                            (book) => book.bookid === Number(selectedBook.id),
+                        );
 
-    const calculateTotalItems = () => {
-        return createFormData.books.reduce(
-            (total, book) => total + book.quantity,
-            0,
-        );
-    };
+                        if (existingIndex >= 0) {
+                            const updatedBooks = [...prev.books];
+                            updatedBooks[existingIndex] = {
+                                ...updatedBooks[existingIndex],
+                                quantity:
+                                    updatedBooks[existingIndex].quantity +
+                                    Number(newBook.quantity),
+                            };
 
-    const handleDiscountCodeChange = (code: string) => {
-        setCreateFormData({
-            ...createFormData,
-            discountCode: code,
-        });
-    };
+                            return {
+                                ...prev,
+                                books: updatedBooks,
+                            };
+                        }
 
-    const getStatusColor = (status: Invoice['status']) => {
-        switch (status) {
-            case 'Đã thanh toán':
-                return 'bg-green-100 text-green-800';
-            case 'Chưa thanh toán':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'Quá hạn':
-                return 'bg-red-100 text-red-800';
-        }
-    };
+                        return {
+                            ...prev,
+                            books: [
+                                ...prev.books,
+                                {
+                                    id: selectedBook.id,
+                                    bookid: Number(selectedBook.id),
+                                    code: selectedBook.code,
+                                    title: selectedBook.title,
+                                    quantity: Number(newBook.quantity),
+                                    price: Number(selectedBook.price),
+                                },
+                            ],
+                        };
+                    });
 
-   return (
-       <div className="space-y-6">
-           {/* Header: Nút tạo hóa đơn */}
-           <InvoiceHeader onCreateClick={() => setIsCreateDialogOpen(true)} />
+                    setNewBook({
+                        id: '',
+                        code: '',
+                        title: '',
+                        quantity: 1,
+                        price: 0,
+                    });
+                }}
+                onRemoveBook={(idx) =>
+                    setCreateFormData((p: any) => ({
+                        ...p,
+                        books: p.books.filter((_: any, i: number) => i !== idx),
+                    }))
+                }
+                onSave={handleCreateInvoice}
+                calculateTotalItems={() =>
+                    createFormData.books.reduce((acc, b) => acc + b.quantity, 0)
+                }
+                calculateTotalAmount={() =>
+                    createFormData.books.reduce(
+                        (acc, b) => acc + b.quantity * b.price,
+                        0,
+                    )
+                }
+                calculateDiscountAmount={() => {
+                    const sub = createFormData.books.reduce(
+                        (acc, b) => acc + b.quantity * b.price,
+                        0,
+                    );
+                    const v = vouchers.find(
+                        (v) =>
+                            v.id.toString() ===
+                            createFormData.selectedVoucherId,
+                    );
+                    if (!v) return 0;
+                    return v.type === 'PERCENT' ? (sub * v.sale) / 100 : v.sale;
+                }}
+                calculateFinalTotal={() => {
+                    const sub = createFormData.books.reduce(
+                        (acc, b) => acc + b.quantity * b.price,
+                        0,
+                    );
+                    const v = vouchers.find(
+                        (v) =>
+                            v.id.toString() ===
+                            createFormData.selectedVoucherId,
+                    );
+                    return v
+                        ? v.type === 'PERCENT'
+                            ? sub * (1 - v.sale / 100)
+                            : Math.max(0, sub - v.sale)
+                        : sub;
+                }}
+            />
 
-           {/* Hiển thị Loading hoặc Nội dung chính */}
-           {isLoading ? (
-               <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg shadow-sm border border-dashed border-gray-300">
-                   <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                   <p className="text-gray-500 font-medium">
-                       Đang tải danh sách hóa đơn từ hệ thống...
-                   </p>
-               </div>
-           ) : (
-               <>
-                   <InvoiceStats invoices={invoices} />
+            <EditInvoiceDialog
+                isOpen={isEditDialogOpen}
+                onOpenChange={setIsEditDialogOpen}
+                selectedInvoice={selectedInvoice}
+                formData={formData}
+                setFormData={setFormData}
+                onSave={handleEditInvoice}
+                vouchers={vouchers}
+                calculateEditSubtotal={() =>
+                    selectedInvoice?.books.reduce(
+                        (acc, b) => acc + b.quantity * b.price,
+                        0,
+                    ) || 0
+                }
+                calculateEditDiscountAmount={() => {
+                    const sub =
+                        selectedInvoice?.books.reduce(
+                            (acc, b) => acc + b.quantity * b.price,
+                            0,
+                        ) || 0;
+                    const v = vouchers.find(
+                        (v) => v.id.toString() === formData.selectedVoucherId,
+                    );
+                    if (!v) return 0;
+                    return v.type === 'PERCENT' ? (sub * v.sale) / 100 : v.sale;
+                }}
+                calculateEditFinalTotal={() => {
+                    const sub =
+                        selectedInvoice?.books.reduce(
+                            (acc, b) => acc + b.quantity * b.price,
+                            0,
+                        ) || 0;
+                    const v = vouchers.find(
+                        (v) => v.id.toString() === formData.selectedVoucherId,
+                    );
+                    if (!v) return sub;
+                    return v.type === 'PERCENT'
+                        ? sub * (1 - v.sale / 100)
+                        : Math.max(0, sub - v.sale);
+                }}
+            />
 
-                   <InvoiceFilterBar
-                       searchTerm={searchTerm}
-                       onSearchChange={setSearchTerm}
-                       statusFilter={statusFilter}
-                       onStatusFilterChange={setStatusFilter}
-                       priceFilter={priceFilter}
-                       onPriceFilterChange={setPriceFilter}
-                       onResetFilters={handleResetFilters}
-                   />
+            <ViewInvoiceDialog
+                isOpen={isViewBooksOpen}
+                onOpenChange={setIsViewBooksOpen}
+                selectedInvoice={selectedInvoice}
+                mockDiscountCodes={mockDiscountCodes}
+            />
 
-                   <div className="bg-white rounded-lg shadow-sm">
-                       <InvoiceTable
-                           invoices={filteredInvoices}
-                           onEdit={handleEditInvoiceOpen}
-                           onDelete={handleDeleteInvoiceOpen}
-                           onViewBooks={openViewBooks}
-                           getStatusColor={getStatusColor}
-                       />
-                   </div>
-               </>
-           )}
+            <DeleteInvoiceDialog
+                isOpen={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+                selectedInvoice={selectedInvoice}
+                onDelete={async () => {
+                    if (!selectedInvoice) return;
+                    try {
+                        // Bước 1: Gọi service xóa
+                        await InvoiceService.delete(selectedInvoice.id);
 
-           <ViewInvoiceDialog
-               isOpen={isViewBooksOpen}
-               onOpenChange={setIsViewBooksOpen}
-               selectedInvoice={selectedInvoice}
-               mockDiscountCodes={mockDiscountCodes}
-           />
+                        // Bước 2: Thông báo
+                        toast.success(`Đã xóa hóa đơn ${selectedInvoice.code}`);
 
-           <CreateInvoiceDialog
-               isOpen={isCreateDialogOpen}
-               onOpenChange={setIsCreateDialogOpen}
-               formData={createFormData}
-               setFormData={setCreateFormData}
-               newBook={newBook}
-               setNewBook={setNewBook}
-               onAddBook={handleAddBook}
-               onRemoveBook={handleRemoveBook}
-               onSave={handleCreateInvoice}
-               mockDiscountCodes={mockDiscountCodes}
-               customers={customers}
-               calculateTotalItems={calculateTotalItems}
-               calculateTotalAmount={calculateTotalAmount}
-               calculateDiscountAmount={calculateDiscountAmount}
-               calculateFinalTotal={calculateFinalTotal}
-               handleDiscountCodeChange={handleDiscountCodeChange}
-           />
+                        // Bước 3: Đóng dialog và load lại data
+                        setIsDeleteDialogOpen(false);
+                        fetchData();
+                    } catch (error: any) {
+                        console.error('Lỗi xóa hóa đơn đầy đủ:', error);
 
-           <EditInvoiceDialog
-               isOpen={isEditDialogOpen}
-               onOpenChange={setIsEditDialogOpen}
-               selectedInvoice={selectedInvoice}
-               formData={formData}
-               setFormData={setFormData}
-               onSave={handleEditInvoice}
-               mockDiscountCodes={mockDiscountCodes}
-               calculateEditSubtotal={calculateEditSubtotal}
-               calculateEditDiscountAmount={calculateEditDiscountAmount}
-               calculateEditFinalTotal={calculateEditFinalTotal}
-           />
-
-           <DeleteInvoiceDialog
-               isOpen={isDeleteDialogOpen}
-               onOpenChange={setIsDeleteDialogOpen}
-               selectedInvoice={selectedInvoice}
-               onDelete={handleDeleteInvoice}
-           />
-       </div>
-   );
+                        // Lấy thông báo lỗi thật từ Backend trả về
+                        const backendError =
+                            error.response?.data?.message ||
+                            error.message ||
+                            'Lỗi không xác định từ Server';
+                        toast.error(
+                            Array.isArray(backendError)
+                                ? backendError[0]
+                                : backendError,
+                        );
+                    }
+                }}
+            />
+        </div>
+    );
 }

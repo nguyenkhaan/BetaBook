@@ -256,7 +256,6 @@ export function BooksPage() {
                 </div>
             </div>
 
-            {/* Sử dụng dữ liệu thống kê từ Backend */}
             <Statistic
                 totalBooks={statistics?.totalBookTitle || books.length}
                 totalStock={statistics?.totalQuantity || 0}
@@ -272,8 +271,11 @@ export function BooksPage() {
                 selectedPriceRange={selectedPriceRange}
                 setSelectedPriceRange={setSelectedPriceRange}
                 handleResetFilters={handleResetFilters}
+                allBooks={books} 
+                onSelectBook={(book) => {
+                    openViewDialog(book);
+                }}
             />
-
             <BookTable
                 books={filteredBooks}
                 onEdit={openEditDialog}

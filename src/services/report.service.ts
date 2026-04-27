@@ -5,14 +5,13 @@ export interface GeneralRevenue {
     revenueProportionRate: number;
     countBills: number;
     countBillsProportionRate: number;
-    avgBills: number;
+    avgBills: number | null;
     avgBillsProportionRate: number;
 }
 
 export interface ChartData {
     month: string;
     revenue: number;
-    orders?: number;
 }
 
 export interface TopBook {
@@ -20,21 +19,17 @@ export interface TopBook {
     code: string;
     title: string;
     sum: number;
-    revenue?: number;
 }
 
 export interface InventoryByCategory {
     category: string;
     count: number;
     totalValue: number;
-    stock?: number;
 }
 
 export interface CustomerGrade {
     grade: string;
     total: number;
-    revenue?: number;
-    avgOrder?: number;
 }
 
 export interface DebtItem {
@@ -51,24 +46,37 @@ export interface DebtSummary {
     totalEndingDebt: number;
 }
 
+const parseDate = (monthStr: string) => {
+    const [year, month] = monthStr.split('-').map(Number);
+    return { month, year };
+};
+
 export const ReportService = {
+    // 1. Thống kê tổng quan (Tháng hiện tại)
     getGeneralRevenue: async (): Promise<GeneralRevenue> => {
         const response = await privateApi.get('/statistic/revenue');
         return response.data;
     },
 
+    // 2. Biểu đồ doanh thu 6 tháng (Truyền đúng param vào URL)
     getRevenueChart: async (months: number = 6): Promise<ChartData[]> => {
         const response = await privateApi.get(
             `/statistic/revenue/month/${months}`,
         );
-        return response.data;
+        return response.data.map((item: any) => ({
+            month: item.month,
+            revenue: Number(item.revenue) || 0, // Đảm bảo luôn là kiểu number
+        }));
     },
-
+    // 3. Biểu đồ đơn hàng 6 tháng
     getOrdersChart: async (months: number = 6): Promise<ChartData[]> => {
         const response = await privateApi.get(
             `/statistic/revenue/bill/${months}`,
         );
-        return response.data;
+        return response.data.map((item: any) => ({
+            month: item.month,
+            revenue: Number(item.revenue), // BE dùng Alias 'revenue' trong queryRaw
+        }));
     },
 
     getTopBooks: async (): Promise<TopBook[]> => {
@@ -86,30 +94,40 @@ export const ReportService = {
         return response.data;
     },
 
-    getDebtReport: async (month: string): Promise<DebtItem[]> => {
-        const response = await privateApi.get('/statistic/debt', {
-            params: { month },
+    // 4. Báo cáo công nợ (Đã sửa lại để đồng bộ Backend query)
+    getDebtData: async (
+        monthStr: string,
+    ): Promise<{ list: DebtItem[]; summary: DebtSummary }> => {
+        const { month, year } = parseDate(monthStr);
+        // Lưu ý: Endpoint này bạn cần tạo thêm ở Backend hoặc dùng /statistic/:month hiện có
+        const response = await privateApi.get(`/statistic/debt`, {
+            params: { month, year },
         });
-        return response.data;
+
+        return {
+            list: response.data?.list || [],
+            summary: response.data?.summary || {
+                totalBeginningDebt: 0,
+                totalTransactions: 0,
+                totalEndingDebt: 0,
+            },
+        };
     },
 
-    getDebtSummary: async (month: string): Promise<DebtSummary> => {
-        const response = await privateApi.get('/statistic/debt/summary', {
-            params: { month },
-        });
-        return response.data;
-    },
-
-    exportReport: async (type: string, month: string) => {
+    exportReport: async (type: string, monthStr: string) => {
+        const { month, year } = parseDate(monthStr);
         const response = await privateApi.get(`/statistic/export`, {
-            params: { type, month },
+            params: { type, month, year },
             responseType: 'blob',
         });
 
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `report-${type}-${month}.xlsx`);
+        link.setAttribute(
+            'download',
+            `Bao-cao-${type}-thang-${month}-${year}.xlsx`,
+        );
         document.body.appendChild(link);
         link.click();
         link.remove();

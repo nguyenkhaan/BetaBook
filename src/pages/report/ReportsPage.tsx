@@ -35,11 +35,6 @@ const getCurrentMonth = () => {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 };
 
-const formatMonth = (monthStr: string) => {
-    const [year, month] = monthStr.split('-');
-    return `Tháng ${parseInt(month)}/${year}`;
-};
-
 export function ReportsPage() {
     const [reportType, setReportType] = useState<
         'revenue' | 'inventory' | 'customer' | 'debt'
@@ -64,14 +59,17 @@ export function ReportsPage() {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const [genRev, revChart, ordChart] = await Promise.all([
+                const [genRev, revChart, ordChart, cust] = await Promise.all([
                     ReportService.getGeneralRevenue(),
                     ReportService.getRevenueChart(6),
                     ReportService.getOrdersChart(6),
+                    ReportService.getCustomersByGrade(),
                 ]);
+
                 setGeneralRevenue(genRev);
                 setRevenueChart(revChart);
                 setOrdersChart(ordChart);
+                setCustomerData(cust);
 
                 if (reportType === 'revenue') {
                     const books = await ReportService.getTopBooks();
@@ -79,23 +77,19 @@ export function ReportsPage() {
                 } else if (reportType === 'inventory') {
                     const inv = await ReportService.getInventoryByCategory();
                     setInventoryData(inv);
-                } else if (reportType === 'customer') {
-                    const cust = await ReportService.getCustomersByGrade();
-                    setCustomerData(cust);
                 } else if (reportType === 'debt') {
-                    const [list, sum] = await Promise.all([
-                        ReportService.getDebtReport(selectedMonth),
-                        ReportService.getDebtSummary(selectedMonth),
-                    ]);
+                    const { list, summary } =
+                        await ReportService.getDebtData(selectedMonth);
                     setDebtList(list);
-                    setDebtSum(sum);
+                    setDebtSum(summary);
                 }
             } catch (error) {
-                console.error(error);
+                console.error('Lỗi lấy dữ liệu báo cáo:', error);
             } finally {
                 setIsLoading(false);
             }
         };
+
         fetchData();
     }, [reportType, selectedMonth]);
 
@@ -131,30 +125,30 @@ export function ReportsPage() {
 
             <div className="bg-white p-4 rounded-lg shadow-sm">
                 <div className="flex gap-4">
-                    {['revenue', 'inventory', 'customer', 'debt'].map(
-                        (type) => (
-                            <Button
-                                key={type}
-                                variant={
-                                    reportType === type ? 'default' : 'outline'
-                                }
-                                onClick={() => setReportType(type as any)}
-                                className={
-                                    reportType === type
-                                        ? 'bg-orange-500 hover:bg-orange-600'
-                                        : ''
-                                }
-                            >
-                                {type === 'revenue'
-                                    ? 'Doanh thu'
-                                    : type === 'inventory'
-                                      ? 'Tồn kho'
-                                      : type === 'customer'
-                                        ? 'Khách hàng'
-                                        : 'Công nợ'}
-                            </Button>
-                        ),
-                    )}
+                    {(
+                        ['revenue', 'inventory', 'customer', 'debt'] as const
+                    ).map((type) => (
+                        <Button
+                            key={type}
+                            variant={
+                                reportType === type ? 'default' : 'outline'
+                            }
+                            onClick={() => setReportType(type)}
+                            className={
+                                reportType === type
+                                    ? 'bg-orange-500 hover:bg-orange-600'
+                                    : ''
+                            }
+                        >
+                            {type === 'revenue'
+                                ? 'Doanh thu'
+                                : type === 'inventory'
+                                  ? 'Tồn kho'
+                                  : type === 'customer'
+                                    ? 'Khách hàng'
+                                    : 'Công nợ'}
+                        </Button>
+                    ))}
                 </div>
             </div>
 
@@ -178,10 +172,13 @@ export function ReportsPage() {
                     color="text-green-500"
                 />
                 <SummaryCard
-                    label="Tỷ lệ hoàn trả"
-                    value="2.3%"
-                    rate={-0.5}
-                    color="text-red-500"
+                    label="Tỷ lệ khách hàng"
+                    value={customerData.reduce(
+                        (acc, curr) => acc + curr.total,
+                        0,
+                    )}
+                    rate={0}
+                    color="text-purple-500"
                 />
             </div>
 
@@ -226,7 +223,7 @@ export function ReportsPage() {
                                     <Legend />
                                     <Bar
                                         dataKey="revenue"
-                                        fill="#f97316"
+                                        fill="#3b82f6"
                                         name="Đơn hàng"
                                     />
                                 </BarChart>
@@ -325,7 +322,7 @@ export function ReportsPage() {
                                             {item.category}
                                         </td>
                                         <td className="px-6 py-4">
-                                            {item.count} cuốn
+                                            {item.count} loại
                                         </td>
                                         <td className="px-6 py-4 font-bold">
                                             {item.totalValue.toLocaleString()}đ
@@ -335,6 +332,27 @@ export function ReportsPage() {
                             </tbody>
                         </table>
                     </div>
+                </div>
+            )}
+
+            {reportType === 'customer' && (
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 className="text-lg font-semibold mb-4">
+                        Phân loại khách hàng theo hạng
+                    </h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={customerData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="grade" />
+                            <YAxis />
+                            <Tooltip />
+                            <Bar
+                                dataKey="total"
+                                fill="#8b5cf6"
+                                name="Số lượng"
+                            />
+                        </BarChart>
+                    </ResponsiveContainer>
                 </div>
             )}
 

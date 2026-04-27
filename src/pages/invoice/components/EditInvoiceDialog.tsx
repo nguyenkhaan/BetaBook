@@ -2,10 +2,10 @@ import { Button } from '../../../components/ui/button';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogFooter,
-    DialogDescription,
 } from '../../../components/ui/dialog';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
@@ -16,21 +16,26 @@ import {
     SelectTrigger,
     SelectValue,
 } from '../../../components/ui/select';
-import { Invoice, DiscountCode } from '../InvoicePage';
+import { Invoice } from '../InvoicePage';
+import { Voucher } from '../../../services/voucher.service';
+
+interface EditInvoiceFormData {
+    code: string;
+    customer: string;
+    customerPhone: string;
+    date: string;
+    status: Invoice['status'];
+    selectedVoucherId: string;
+}
 
 interface EditInvoiceDialogProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     selectedInvoice: Invoice | null;
-    formData: {
-        customer: string;
-        date: string;
-        status: Invoice['status'];
-        discountCode: string;
-    };
-    setFormData: (data: any) => void;
+    formData: EditInvoiceFormData;
+    setFormData: React.Dispatch<React.SetStateAction<EditInvoiceFormData>>;
     onSave: () => void;
-    mockDiscountCodes: DiscountCode[];
+    vouchers: Voucher[];
     calculateEditSubtotal: () => number;
     calculateEditDiscountAmount: () => number;
     calculateEditFinalTotal: () => number;
@@ -43,172 +48,239 @@ export function EditInvoiceDialog({
     formData,
     setFormData,
     onSave,
-    mockDiscountCodes,
+    vouchers,
     calculateEditSubtotal,
     calculateEditDiscountAmount,
     calculateEditFinalTotal,
 }: EditInvoiceDialogProps) {
     if (!selectedInvoice) return null;
 
+    const totalItems = selectedInvoice.books.reduce(
+        (sum, book) => sum + book.quantity,
+        0,
+    );
+
+    const handleChange = (field: keyof EditInvoiceFormData, value: string) => {
+        setFormData((prev) => ({ ...prev, [field]: value }));
+    };
+
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[700px]">
+            <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Cập nhật hóa đơn</DialogTitle>
-                    <DialogDescription>Chỉnh sửa thông tin hóa đơn</DialogDescription>
+                    <DialogDescription>
+                        Chỉnh sửa thông tin hóa đơn {selectedInvoice.code}
+                    </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label>Số hóa đơn</Label>
-                        <Input
-                            value={selectedInvoice.code}
-                            readOnly
-                            className="col-span-3 bg-gray-50"
-                        />
+
+                <div className="space-y-6 py-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Mã hóa đơn</Label>
+                            <Input
+                                value={formData.code || selectedInvoice.code}
+                                readOnly
+                                className="bg-muted"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-date">Ngày lập</Label>
+                            <Input
+                                id="edit-date"
+                                type="date"
+                                value={formData.date}
+                                onChange={(e) =>
+                                    handleChange('date', e.target.value)
+                                }
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-customer">
+                                Tên khách hàng
+                            </Label>
+                            <Input
+                                id="edit-customer"
+                                value={formData.customer}
+                                onChange={(e) =>
+                                    handleChange('customer', e.target.value)
+                                }
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-phone">Số điện thoại</Label>
+                            <Input
+                                id="edit-phone"
+                                value={formData.customerPhone}
+                                onChange={(e) =>
+                                    handleChange(
+                                        'customerPhone',
+                                        e.target.value,
+                                    )
+                                }
+                            />
+                        </div>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="edit-customer">Khách hàng</Label>
-                        <Input
-                            id="edit-customer"
-                            value={formData.customer}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    customer: e.target.value,
-                                })
-                            }
-                            className="col-span-3"
-                        />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="edit-date">Ngày</Label>
-                        <Input
-                            id="edit-date"
-                            type="date"
-                            value={formData.date}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    date: e.target.value,
-                                })
-                            }
-                            className="col-span-3"
-                        />
-                    </div>
-                    <div className="grid grid-cols-4 items-start gap-4">
-                        <Label className="mt-2">Danh sách sách</Label>
-                        <div className="col-span-3 border border-gray-200 rounded-lg p-3 bg-gray-50">
+
+                    <div className="space-y-3">
+                        <Label>Chi tiết hóa đơn</Label>
+                        <div className="rounded-lg border">
                             <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b border-gray-200">
-                                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">
+                                <thead className="bg-muted/50">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left">
                                             Tên sách
                                         </th>
-                                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">
-                                            Số lượng
+                                        <th className="px-4 py-3 text-center">
+                                            SL
                                         </th>
-                                        <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">
-                                            Giá
+                                        <th className="px-4 py-3 text-right">
+                                            Đơn giá
+                                        </th>
+                                        <th className="px-4 py-3 text-right">
+                                            Thành tiền
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {selectedInvoice.books.map((book, idx) => (
-                                        <tr key={idx} className="border-b border-gray-100 last:border-0">
-                                            <td className="py-2 px-2">{book.title}</td>
-                                            <td className="py-2 px-2">{book.quantity}</td>
-                                            <td className="py-2 px-2">
-                                                {book.price.toLocaleString('vi-VN')}đ
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {selectedInvoice.books.map(
+                                        (book, index) => (
+                                            <tr
+                                                key={`${book.bookid}-${index}`}
+                                                className="border-t"
+                                            >
+                                                <td className="px-4 py-3">
+                                                    {book.title}
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
+                                                    {book.quantity}
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    {book.price.toLocaleString(
+                                                        'vi-VN',
+                                                    )}
+                                                    đ
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-medium">
+                                                    {(
+                                                        book.price *
+                                                        book.quantity
+                                                    ).toLocaleString('vi-VN')}
+                                                    đ
+                                                </td>
+                                            </tr>
+                                        ),
+                                    )}
                                 </tbody>
                             </table>
                         </div>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label>Số mặt hàng</Label>
-                        <Input
-                            value={selectedInvoice.items.toString()}
-                            readOnly
-                            className="col-span-3 bg-gray-50"
-                        />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Số lượng sách</Label>
+                            <Input
+                                value={totalItems}
+                                readOnly
+                                className="bg-muted"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Tạm tính</Label>
+                            <Input
+                                value={`${calculateEditSubtotal().toLocaleString('vi-VN')}đ`}
+                                readOnly
+                                className="bg-muted"
+                            />
+                        </div>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label>Tạm tính</Label>
-                        <Input
-                            value={`${calculateEditSubtotal().toLocaleString('vi-VN')}đ`}
-                            readOnly
-                            className="col-span-3 bg-gray-50"
-                        />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="edit-discountCode">Mã giảm giá</Label>
+
+                    <div className="space-y-2">
+                        <Label>Mã giảm giá</Label>
                         <Select
-                            value={formData.discountCode}
-                            onValueChange={(code) =>
-                                setFormData({
-                                    ...formData,
-                                    discountCode: code,
-                                })
+                            value={formData.selectedVoucherId}
+                            onValueChange={(value) =>
+                                handleChange('selectedVoucherId', value)
                             }
                         >
-                            <SelectTrigger className="col-span-3 w-full">
-                                <SelectValue placeholder="Chọn mã giảm giá (tùy chọn)" />
+                            <SelectTrigger>
+                                <SelectValue placeholder="Chọn mã giảm giá" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">Không áp dụng</SelectItem>
-                                {mockDiscountCodes.map((discount) => (
-                                    <SelectItem key={discount.id} value={discount.code}>
-                                        {discount.code} - {discount.description}
+                                <SelectItem value="0">Không áp dụng</SelectItem>
+                                {vouchers.map((voucher) => (
+                                    <SelectItem
+                                        key={voucher.id}
+                                        value={voucher.id.toString()}
+                                    >
+                                        {voucher.code} - {voucher.name} (Giảm{' '}
+                                        {voucher.sale}
+                                        {voucher.type === 'PERCENT' ? '%' : 'đ'}
+                                        )
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                     </div>
-                    {formData.discountCode && (
-                        <div className="grid grid-cols-4 items-center gap-4">
+
+                    {formData.selectedVoucherId !== '0' && (
+                        <div className="space-y-2">
                             <Label>Giảm giá</Label>
                             <Input
                                 value={`-${calculateEditDiscountAmount().toLocaleString('vi-VN')}đ`}
                                 readOnly
-                                className="col-span-3 bg-orange-50 text-orange-600 font-medium"
+                                className="bg-orange-50 text-orange-600 font-medium"
                             />
                         </div>
                     )}
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label className="font-semibold">Tổng tiền</Label>
-                        <Input
-                            value={`${calculateEditFinalTotal().toLocaleString('vi-VN')}đ`}
-                            readOnly
-                            className="col-span-3 bg-gray-50 font-semibold"
-                        />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="edit-status">Trạng thái</Label>
-                        <Select
-                            value={formData.status}
-                            onValueChange={(value) =>
-                                setFormData({
-                                    ...formData,
-                                    status: value as Invoice['status'],
-                                })
-                            }
-                        >
-                            <SelectTrigger className="col-span-3 w-full">
-                                <SelectValue placeholder="Chọn trạng thái" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Đã thanh toán">Đã thanh toán</SelectItem>
-                                <SelectItem value="Chưa thanh toán">Chưa thanh toán</SelectItem>
-                                <SelectItem value="Quá hạn">Quá hạn</SelectItem>
-                            </SelectContent>
-                        </Select>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Trạng thái</Label>
+                            <Select
+                                value={formData.status}
+                                onValueChange={(value) =>
+                                    handleChange('status', value)
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Chọn trạng thái" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Đã thanh toán">
+                                        Đã thanh toán
+                                    </SelectItem>
+                                    <SelectItem value="Chưa thanh toán">
+                                        Chưa thanh toán
+                                    </SelectItem>
+                                    <SelectItem value="Quá hạn">
+                                        Quá hạn
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Tổng thanh toán</Label>
+                            <Input
+                                value={`${calculateEditFinalTotal().toLocaleString('vi-VN')}đ`}
+                                readOnly
+                                className="bg-green-50 text-green-700 font-semibold text-lg"
+                            />
+                        </div>
                     </div>
                 </div>
+
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        Hủy bỏ
+                    <Button
+                        variant="outline"
+                        onClick={() => onOpenChange(false)}
+                    >
+                        Hủy
                     </Button>
                     <Button onClick={onSave}>Cập nhật hóa đơn</Button>
                 </DialogFooter>

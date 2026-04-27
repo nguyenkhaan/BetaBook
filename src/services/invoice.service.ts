@@ -2,6 +2,7 @@ import { privateApi } from '../api/api';
 
 export interface BillDetail {
     bookId: number;
+    bookCode: string;
     quantity: number;
 }
 
@@ -11,9 +12,11 @@ export interface VoucherUsage {
 
 export interface CreateInvoiceDto {
     code: string;
-    customerId: number;
+    customerId?: number;
+    customerPhone: string;
     status: string;
-    temporaryCost?: number; 
+    temporaryCost?: number;
+    cost?: number;
     billDetails: BillDetail[];
     vouchers?: VoucherUsage[];
 }
@@ -24,7 +27,7 @@ export interface Invoice {
     id: number;
     code: string;
     customerId: number;
-    cost: number;
+    cost?: number;
     status: string;
     createdAt: string;
     billDetail?: any[];

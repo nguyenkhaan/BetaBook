@@ -26,6 +26,12 @@ interface EditInvoiceFormData {
     date: string;
     status: Invoice['status'];
     selectedVoucherId: string;
+    books: Array<{
+        bookid: string;
+        title: string;
+        quantity: number;
+        price: number;
+    }>;
 }
 
 interface EditInvoiceDialogProps {
@@ -62,6 +68,20 @@ export function EditInvoiceDialog({
 
     const handleChange = (field: keyof EditInvoiceFormData, value: string) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleBookChange = (
+        index: number,
+        field: 'quantity' | 'price',
+        value: string,
+    ) => {
+        const newBooks = [...(formData.books || selectedInvoice.books)];
+        if (field === 'quantity') {
+            newBooks[index].quantity = parseInt(value) || 0;
+        } else if (field === 'price') {
+            newBooks[index].price = parseInt(value) || 0;
+        }
+        setFormData((prev) => ({ ...prev, books: newBooks }));
     };
 
     return (
@@ -146,7 +166,7 @@ export function EditInvoiceDialog({
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {selectedInvoice.books.map(
+                                    {(formData.books || selectedInvoice.books).map(
                                         (book, index) => (
                                             <tr
                                                 key={`${book.bookid}-${index}`}
@@ -156,13 +176,34 @@ export function EditInvoiceDialog({
                                                     {book.title}
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
-                                                    {book.quantity}
+                                                    <Input
+                                                        type="number"
+                                                        min="1"
+                                                        value={book.quantity}
+                                                        onChange={(e) =>
+                                                            handleBookChange(
+                                                                index,
+                                                                'quantity',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className="w-16 text-center"
+                                                    />
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
-                                                    {book.price.toLocaleString(
-                                                        'vi-VN',
-                                                    )}
-                                                    đ
+                                                    <Input
+                                                        type="number"
+                                                        min="0"
+                                                        value={book.price}
+                                                        onChange={(e) =>
+                                                            handleBookChange(
+                                                                index,
+                                                                'price',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className="w-24 text-right"
+                                                    />
                                                 </td>
                                                 <td className="px-4 py-3 text-right font-medium">
                                                     {(

@@ -25,7 +25,8 @@ publicApi.interceptors.response.use(
 privateApi.interceptors.request.use(
     (config) => {
         const token = CookiesService.getToken(TokenType.ACCESS_TOKEN);
-        if (token && config['headers']) {
+        if (token && config['headers'])
+             {
             {
                 config.headers['Authorization'] = `Bearer ${token}`;
             }

@@ -11,20 +11,20 @@ import {
     Voucher,
     VoucherData,
 } from '../../services/voucher.service';
-export type Promotion =  {
-    id : number; 
-    code: string; 
-    sale: string; 
-    quantity: number; 
-    status : string; 
-    type : string, 
-    eventName: string;  
-    name: string 
-    description: string; 
-    startDate: string; 
-    expiresAt: string; 
-    usedNumber: number 
-}
+export type Promotion = {
+    id: number;
+    code: string;
+    sale: number;
+    quantity: number;
+    status: string;
+    type: string;
+    eventName: string;
+    name: string;
+    description: string;
+    startDate: string;
+    expiresAt: string;
+    usedNumber: number;
+};
 export function PromotionsPage() {
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [loading, setLoading] = useState(true);
@@ -47,6 +47,8 @@ export function PromotionsPage() {
         quantity: 100,
         expiresAt: new Date().toISOString().split('T')[0],
         status: 'APPLYING',
+        startDate: new Date().toISOString().split('T')[0],
+        usedNumber: 0,
     };
 
     const [formData, setFormData] = useState<VoucherData>(initialFormData);
@@ -74,7 +76,8 @@ export function PromotionsPage() {
             v.eventName.toLowerCase().includes(searchTerm.toLowerCase()),
     );
 
-    const getStatusColor = (status: any) => {  //Fix 
+    const getStatusColor = (status: any) => {
+        //Fix
         switch (status) {
             case 'APPLYING':
                 return 'bg-green-100 text-green-800';
@@ -89,14 +92,40 @@ export function PromotionsPage() {
 
     const handleCreatePromotion = async () => {
         try {
-            await VoucherService.createVoucher(formData);
+            // Kiểm tra điều kiện bắt buộc để tránh lỗi undefined cho Date
+            if (!formData.startDate || !formData.expiresAt) {
+                toast.error(
+                    'Vui lòng chọn đầy đủ ngày bắt đầu và ngày hết hạn',
+                );
+                return;
+            }
+
+            // Tạo payload và ép kiểu về any để TypeScript không bắt bẻ việc chuyển String sang Date
+            const payload: any = {
+                ...formData,
+                sale: Number(formData.sale),
+                quantity: Number(formData.quantity),
+                usedNumber: Number(formData.usedNumber || 0),
+                // Chuyển đổi sang Date Object cho đúng yêu cầu validate của Backend
+                startDate: new Date(formData.startDate),
+                expiresAt: new Date(formData.expiresAt),
+            };
+
+            await VoucherService.createVoucher(payload);
+
             toast.success('Khuyến mãi đã được tạo thành công!');
             setIsCreateDialogOpen(false);
+            resetFormData();
             loadVouchers();
-        } catch (error : any) 
-        {
-            console.log(error) 
-            toast.error('Xảy ra lỗi khi tạo khuyến mãi: ' + error.message);
+        } catch (error: any) {
+            console.error('Create Error:', error);
+            // Bóc tách lỗi từ NestJS ValidationPipe
+            const backendMessage = error.response?.data?.message;
+            const errorMessage = Array.isArray(backendMessage)
+                ? backendMessage[0]
+                : backendMessage || error.message;
+
+            toast.error('Lỗi: ' + errorMessage);
         }
     };
 

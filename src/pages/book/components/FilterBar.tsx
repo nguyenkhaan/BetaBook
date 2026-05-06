@@ -83,15 +83,38 @@ export function FilterBar({
         return acc;
     }, {});
 
+    const handleSearchInputChange = (value: string) => {
+        setSearchTerm(value);
+        setShowSuggestions(Boolean(value.trim()));
+    };
+
+    const handleCategorySelect = (category: Category) => {
+        setSelectedCategory(category.name);
+        setIsCategoryOpen(false);
+    };
+
+    const handlePriceRangeChange = (value: string) => {
+        setSelectedPriceRange(value);
+    };
+
+    const handleClearFilters = () => {
+        setSearchTerm('');
+        setSelectedCategory('');
+        setSelectedPriceRange('');
+        setShowSuggestions(false);
+        setIsCategoryOpen(false);
+        handleResetFilters();
+    };
+
     return (
         <div className="relative space-y-4">
-            <div className="bg-white p-4 rounded-lg shadow-sm border flex gap-4 items-center">
+            <div className="bg-white p-4 rounded-lg shadow-sm border flex flex-col gap-4 md:flex-row md:items-center">
                 <div className="relative flex-1" ref={searchRef}>
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
                         value={searchTerm}
                         onFocus={() => setShowSuggestions(true)}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => handleSearchInputChange(e.target.value)}
                         placeholder="Tìm kiếm sách theo tên hoặc mã..."
                         className="w-full pl-10 pr-4 py-2 border rounded-md text-sm focus:ring-1 focus:ring-orange-500 outline-none"
                     />
@@ -141,12 +164,33 @@ export function FilterBar({
                     )}
                 </div>
 
-                <Button
-                    onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                    className="bg-orange-500 hover:bg-orange-600 text-white"
-                >
-                    Thể loại
-                </Button>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <select
+                        value={selectedPriceRange}
+                        onChange={(e) => handlePriceRangeChange(e.target.value)}
+                        className="border rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-orange-500"
+                    >
+                        <option value="">Giá</option>
+                        <option value="0-100000">Dưới 100k</option>
+                        <option value="100000-200000">100k - 200k</option>
+                        <option value="200000-500000">200k - 500k</option>
+                        <option value="500000+">Trên 500k</option>
+                    </select>
+
+                    <Button
+                        onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                        className="bg-orange-500 hover:bg-orange-600 text-white"
+                    >
+                        {selectedCategory || 'Thể loại'}
+                    </Button>
+
+                    <Button
+                        onClick={handleClearFilters}
+                        className="bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    >
+                        Đặt lại
+                    </Button>
+                </div>
             </div>
 
             {isCategoryOpen && (

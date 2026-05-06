@@ -11,9 +11,9 @@ export function LoginHeader() {
             </div>
 
             <div className="text-center space-y-2">
-                <CardTitle className="text-2xl">Welcome Back</CardTitle>
+                <CardTitle className="text-2xl">Chào mừng quay trở lại</CardTitle>
                 <CardDescription className="text-base">
-                    Login to continue
+                    Đăng nhập để tiếp tục
                 </CardDescription>
             </div>
         </CardHeader>

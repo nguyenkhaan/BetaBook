@@ -37,6 +37,7 @@ export interface Invoice {
     id: number;
     code: string;
     status: string;
+    rawStatus?: string;
     cost: number;
     createdAt: string;
     customer: string;
@@ -164,10 +165,22 @@ export function InvoicePage() {
                         (c: any) => Number(c.id) === Number(bill.customerId),
                     );
 
+                    const statusMap: Record<string, string> = {
+                        COMPLETE: 'Đã thanh toán',
+                        NOT_STARTED: 'Chưa thanh toán',
+                        OVERDUE: 'Quá hạn',
+                    };
+
+                    const normalizedStatus =
+                        statusMap[(bill.status || '').toString().toUpperCase()] ||
+                        bill.status ||
+                        'Chưa thanh toán';
+
                     return {
                         id: Number(bill.id),
                         code: bill.code,
-                        status: bill.status,
+                        status: normalizedStatus,
+                        rawStatus: bill.status,
                         cost: displayCost,
                         createdAt: bill.createdAt,
                         customer:
@@ -220,6 +233,16 @@ export function InvoicePage() {
         fetchData();
     }, [fetchData]);
 
+    const formatInvoiceCode = (code: string): string => {
+        const cleaned = code.trim().toUpperCase();
+        const match = cleaned.match(/^HD(\d+)$/i);
+        if (!match) {
+            return cleaned;
+        }
+        const numberPart = Number(match[1]) || 0;
+        return `HD${numberPart.toString().padStart(3, '0')}`;
+    };
+
     const handleCreateInvoice = async () => {
         if (!createFormData.customerId) {
             toast.error('Vui lòng chọn khách hàng');
@@ -245,10 +268,12 @@ export function InvoicePage() {
 
             const generateInvoiceCode = (): string => {
                 const latestInvoice = [...invoices]
-                    .filter((invoice) => invoice.code?.startsWith('HD'))
+                    .filter((invoice) => /^HD\d+$/i.test(invoice.code || ''))
                     .sort((a, b) => {
-                        const aNum = Number(a.code.replace('HD', '')) || 0;
-                        const bNum = Number(b.code.replace('HD', '')) || 0;
+                        const aMatch = (a.code || '').toUpperCase().match(/^HD(\d+)$/);
+                        const bMatch = (b.code || '').toUpperCase().match(/^HD(\d+)$/);
+                        const aNum = aMatch ? Number(aMatch[1]) : 0;
+                        const bNum = bMatch ? Number(bMatch[1]) : 0;
                         return bNum - aNum;
                     })[0];
 
@@ -257,14 +282,22 @@ export function InvoicePage() {
                 }
 
                 const nextNumber =
-                    (Number(latestInvoice.code.replace('HD', '')) || 0) + 1;
+                    (Number(
+                        (latestInvoice.code || '').toUpperCase().replace('HD', ''),
+                    ) || 0) + 1;
 
                 return `HD${nextNumber.toString().padStart(3, '0')}`;
             };
 
-            const invoiceCode = (
-                createFormData.invoiceNumber.trim() || generateInvoiceCode()
-            ).toUpperCase();
+            const invoiceInput = createFormData.invoiceNumber.trim();
+            const invoiceCode = invoiceInput
+                ? formatInvoiceCode(invoiceInput)
+                : generateInvoiceCode();
+
+            if (!/^HD\d{3}$/.test(invoiceCode)) {
+                toast.error('Mã hóa đơn phải có định dạng HD001');
+                return;
+            }
 
             const payload: CreateInvoiceDto = {
                 code: invoiceCode,
@@ -383,8 +416,13 @@ export function InvoicePage() {
                         : Math.max(0, subtotal - selectedVoucher.sale);
             }
 
+            const selectedCustomer = customers.find(
+                (c) => c.phone === formData.customerPhone.trim(),
+            );
+
             const updateDto = {
-                code: selectedInvoice.code,
+                code: formatInvoiceCode(selectedInvoice.code || ''),
+                customerId: selectedCustomer?.id || 0,
                 customerPhone: formData.customerPhone.trim(),
                 status: statusMap[formData.status] || selectedInvoice.status,
                 cost: Math.round(finalCost),
@@ -451,11 +489,31 @@ export function InvoicePage() {
                     />
                     <div className="bg-white rounded-lg shadow-sm">
                         <InvoiceTable
-                            invoices={invoices.filter((inv) =>
-                                inv.code
-                                    .toLowerCase()
-                                    .includes(searchTerm.toLowerCase()),
-                            )}
+                            invoices={invoices.filter((inv) => {
+                                const matchesSearch =
+                                    inv.code
+                                        .toLowerCase()
+                                        .includes(searchTerm.toLowerCase()) ||
+                                    inv.customer
+                                        .toLowerCase()
+                                        .includes(searchTerm.toLowerCase());
+                                const matchesStatus =
+                                    statusFilter === 'all' ||
+                                    inv.status === statusFilter;
+                                let matchesPrice = true;
+                                if (priceFilter !== 'all') {
+                                    const cost = inv.cost;
+                                    if (priceFilter === 'low') {
+                                        matchesPrice = cost < 100;
+                                    } else if (priceFilter === 'medium') {
+                                        matchesPrice =
+                                            cost >= 100 && cost <= 500;
+                                    } else if (priceFilter === 'high') {
+                                        matchesPrice = cost > 500;
+                                    }
+                                }
+                                return matchesSearch && matchesStatus && matchesPrice;
+                            })}
                             onEdit={(inv) => {
                                 setSelectedInvoice(inv);
 

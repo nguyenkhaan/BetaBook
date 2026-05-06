@@ -12,12 +12,13 @@ export class CustomerService {
             name: item.name,
             email: item.email,
             phone: item.phone,
-            totalOrders: 0, 
-            totalSpent: item.totalPaid, 
-            level: this.mapGradeToLevel(item.grade), 
-            joinDate: new Date().toISOString().split('T')[0], 
+            totalOrders: 0,
+            totalSpent: item.totalPaid,
+            level: this.mapGradeToLevel(item.grade),
+            joinDate: new Date().toISOString().split('T')[0],
         }));
     }
+   
 
     static async getGeneralStatistics() {
         const response = await privateApi.get('/customer/statistic');
@@ -36,15 +37,11 @@ export class CustomerService {
     }
 
     static async updateCustomer(id: number, data: Partial<Customer>) {
-        const updateData : Partial<Customer> & {grade? : string}  = {} 
-        if (data.email) 
-            updateData.email = data.email 
-        if (data.name) 
-            updateData.name = data.name 
-        if (data.phone) 
-            updateData.phone = data.phone 
-        if (data.level) 
-            updateData.grade = data.level
+        const updateData: Partial<Customer> & { grade?: string } = {};
+        if (data.email) updateData.email = data.email;
+        if (data.name) updateData.name = data.name;
+        if (data.phone) updateData.phone = data.phone;
+        if (data.level) updateData.grade = data.level;
         const response = await privateApi.put(`/customer/${id}`, updateData);
         return response.data;
     }

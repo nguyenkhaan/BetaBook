@@ -35,7 +35,10 @@ export function BooksPage() {
     const [isExcelDialogOpen, setIsExcelDialogOpen] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [selectedCategory, setSelectedCategory] = useState('');
+    const [selectedAuthor, setSelectedAuthor] = useState('');
+    const [selectedPublisher, setSelectedPublisher] = useState('');
     const [selectedPriceRange, setSelectedPriceRange] = useState('');
+    const [selectedStockStatus, setSelectedStockStatus] = useState('');
 
     const [formData, setFormData] = useState({
         code: '',
@@ -76,6 +79,24 @@ export function BooksPage() {
             selectedCategory === '' ||
             selectedCategory === 'Tất cả' ||
             book.category === selectedCategory;
+        const matchesAuthor =
+            selectedAuthor === '' ||
+            selectedAuthor === 'Tất cả' ||
+            !!book.authors?.some(
+                (author: any) =>
+                    author.name === selectedAuthor ||
+                    author.authorName === selectedAuthor ||
+                    author.fullName === selectedAuthor,
+            );
+        const matchesPublisher =
+            selectedPublisher === '' ||
+            selectedPublisher === 'Tất cả' ||
+            !!book.publishers?.some(
+                (publisher: any) =>
+                    publisher.name === selectedPublisher ||
+                    publisher.publisherName === selectedPublisher ||
+                    publisher.fullName === selectedPublisher,
+            );
 
         let matchesPrice = true;
         if (selectedPriceRange === '<100.000') {
@@ -88,13 +109,32 @@ export function BooksPage() {
             matchesPrice = book.cost > 500000;
         }
 
-        return matchesSearch && matchesCategory && matchesPrice;
+        let matchesStock = true;
+        if (selectedStockStatus === 'Dưới 50') {
+            matchesStock = book.stock < 50;
+        } else if (selectedStockStatus === '50 - 100') {
+            matchesStock = book.stock >= 50 && book.stock <= 100;
+        } else if (selectedStockStatus === 'Trên 100') {
+            matchesStock = book.stock > 100;
+        }
+
+        return (
+            matchesSearch &&
+            matchesCategory &&
+            matchesAuthor &&
+            matchesPublisher &&
+            matchesPrice &&
+            matchesStock
+        );
     });
 
     const handleResetFilters = () => {
         setSearchTerm('');
         setSelectedCategory('');
+        setSelectedAuthor('');
+        setSelectedPublisher('');
         setSelectedPriceRange('');
+        setSelectedStockStatus('');
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -268,8 +308,14 @@ export function BooksPage() {
                 setSearchTerm={setSearchTerm}
                 selectedCategory={selectedCategory}
                 setSelectedCategory={setSelectedCategory}
+                selectedAuthor={selectedAuthor}
+                setSelectedAuthor={setSelectedAuthor}
+                selectedPublisher={selectedPublisher}
+                setSelectedPublisher={setSelectedPublisher}
                 selectedPriceRange={selectedPriceRange}
                 setSelectedPriceRange={setSelectedPriceRange}
+                selectedStockStatus={selectedStockStatus}
+                setSelectedStockStatus={setSelectedStockStatus}
                 handleResetFilters={handleResetFilters}
                 allBooks={books} 
                 onSelectBook={(book) => {
@@ -281,6 +327,7 @@ export function BooksPage() {
                 onEdit={openEditDialog}
                 onDelete={openDeleteDialog}
                 onView={openViewDialog}
+                lowStockThreshold={50}
             />
 
             <BookDialogs

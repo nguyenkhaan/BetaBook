@@ -60,7 +60,7 @@ export class EmployeesService {
     }
 
     static async updateEmployee(id: number, data: any) {
-        const response = await privateApi.patch(`/employee/${id}`, data);
+        const response = await privateApi.put(`/employee/${id}`, data);
         return response.data;
     }
 

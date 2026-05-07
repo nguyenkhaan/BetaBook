@@ -41,12 +41,7 @@ interface PromotionDialogsProps {
     formatDate: (date: string) => string;
     getStatusColor: (status: string) => string;
 }
-type PromotionType = {
-    type: string;
-};
-type PromotionStatus = {
-    status: string;
-};
+
 export function PromotionDialogs({
     isCreateDialogOpen,
     setIsCreateDialogOpen,
@@ -73,17 +68,227 @@ export function PromotionDialogs({
     const [promotionStatusOptions, setPromotionStatusOptions] = useState<
         string[]
     >([]);
+
     useEffect(() => {
         async function fetchOptions() {
-            const voucherOptions = await VoucherService.getOptions();
-            setPromotionStatusOptions(voucherOptions.status);
-            setPromotionTypeOptions(voucherOptions.type);
+            try {
+                const voucherOptions = await VoucherService.getOptions();
+                setPromotionStatusOptions(voucherOptions.status);
+                setPromotionTypeOptions(voucherOptions.type);
+            } catch (error) {
+                console.error('Lỗi khi lấy options từ server:', error);
+            }
         }
         fetchOptions();
     }, []);
+
+    // Hàm render các trường nhập liệu dùng chung
+    const renderFormFields = (isEdit: boolean) => (
+        <div className="grid gap-5 py-4">
+            <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-gray-700">
+                    Thông tin cơ bản
+                </h4>
+                <div className="space-y-2">
+                    <Label htmlFor={`${isEdit ? 'edit-' : ''}code`}>
+                        Mã khuyến mãi (Unique)
+                    </Label>
+                    <Input
+                        id={`${isEdit ? 'edit-' : ''}code`}
+                        value={formData.code || ''}
+                        onChange={(e) =>
+                            setFormData({
+                                ...formData,
+                                code: e.target.value.toUpperCase(),
+                            })
+                        }
+                        placeholder="VD: PHUTAN2026"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor={`${isEdit ? 'edit-' : ''}name`}>
+                        Tên Voucher
+                    </Label>
+                    <Input
+                        id={`${isEdit ? 'edit-' : ''}name`}
+                        value={formData.name || ''}
+                        onChange={(e) =>
+                            setFormData({ ...formData, name: e.target.value })
+                        }
+                        placeholder="Nhập tên voucher"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor={`${isEdit ? 'edit-' : ''}eventName`}>
+                        Tên chương trình (Event)
+                    </Label>
+                    <Input
+                        id={`${isEdit ? 'edit-' : ''}eventName`}
+                        value={formData.eventName || ''}
+                        onChange={(e) =>
+                            setFormData({
+                                ...formData,
+                                eventName: e.target.value,
+                            })
+                        }
+                        placeholder="Nhập tên sự kiện"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor={`${isEdit ? 'edit-' : ''}description`}>
+                        Mô tả
+                    </Label>
+                    <Input
+                        id={`${isEdit ? 'edit-' : ''}description`}
+                        value={formData.description || ''}
+                        onChange={(e) =>
+                            setFormData({
+                                ...formData,
+                                description: e.target.value,
+                            })
+                        }
+                        placeholder="Mô tả chi tiết"
+                    />
+                </div>
+            </div>
+
+            <div className="space-y-4 pt-2 border-t">
+                <h4 className="text-sm font-semibold text-gray-700">
+                    Giá trị giảm giá
+                </h4>
+                <div className="space-y-2">
+                    <Label>Loại giảm giá</Label>
+                    <Select
+                        value={formData.type}
+                        onValueChange={(value) =>
+                            setFormData({ ...formData, type: value })
+                        }
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Chọn loại giảm giá" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {promotionTypeOptions?.map((opt) => (
+                                <SelectItem key={opt} value={opt}>
+                                    {opt}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-2">
+                    <Label>
+                        Giá trị giảm{' '}
+                        {formData.type === 'Percent' ? '(%)' : '(VNĐ)'}
+                    </Label>
+                    <Input
+                        type="number"
+                        value={formData.sale || 0}
+                        onChange={(e) =>
+                            setFormData({
+                                ...formData,
+                                sale: parseFloat(e.target.value) || 0,
+                            })
+                        }
+                    />
+                </div>
+            </div>
+
+            <div className="space-y-4 pt-2 border-t">
+                <h4 className="text-sm font-semibold text-gray-700">
+                    Thời gian và Giới hạn
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label>Ngày bắt đầu</Label>
+                        <Input
+                            type="date"
+                            value={
+                                formData.startDate
+                                    ? formData.startDate.split('T')[0]
+                                    : ''
+                            }
+                            onChange={(e) =>
+                                setFormData({
+                                    ...formData,
+                                    startDate: e.target.value,
+                                })
+                            }
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Ngày hết hạn</Label>
+                        <Input
+                            type="date"
+                            value={
+                                formData.expiresAt
+                                    ? formData.expiresAt.split('T')[0]
+                                    : ''
+                            }
+                            onChange={(e) =>
+                                setFormData({
+                                    ...formData,
+                                    expiresAt: e.target.value,
+                                })
+                            }
+                        />
+                    </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label>Tổng số lượng</Label>
+                        <Input
+                            type="number"
+                            value={formData.quantity || 0}
+                            onChange={(e) =>
+                                setFormData({
+                                    ...formData,
+                                    quantity: parseInt(e.target.value) || 0,
+                                })
+                            }
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Đã sử dụng</Label>
+                        <Input
+                            type="number"
+                            value={formData.usedNumber || 0}
+                            onChange={(e) =>
+                                setFormData({
+                                    ...formData,
+                                    usedNumber: parseInt(e.target.value) || 0,
+                                })
+                            }
+                        />
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label>Trạng thái</Label>
+                    <Select
+                        value={formData.status}
+                        onValueChange={(value) =>
+                            setFormData({ ...formData, status: value })
+                        }
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Chọn trạng thái" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {promotionStatusOptions.map((status) => (
+                                <SelectItem key={status} value={status}>
+                                    {status}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <>
-            {/* Create Promotion Dialog */}
+            {/* Create Dialog */}
             <Dialog
                 open={isCreateDialogOpen}
                 onOpenChange={setIsCreateDialogOpen}
@@ -91,642 +296,87 @@ export function PromotionDialogs({
                 <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Tạo khuyến mãi mới</DialogTitle>
-                        <DialogDescription>
-                            Nhập thông tin chương trình khuyến mãi mới
-                        </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-5 py-4">
-                        <div className="space-y-4">
-                            <h4 className="text-sm font-semibold text-gray-700">
-                                Thông tin cơ bản
-                            </h4>
-                            <div className="space-y-2">
-                                <Label
-                                    htmlFor="code"
-                                    className="text-sm font-medium"
-                                >
-                                    Mã khuyến mãi
-                                </Label>
-                                <Input
-                                    id="code"
-                                    value={formData.code}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            code: e.target.value.toUpperCase(),
-                                        })
-                                    }
-                                    placeholder="VD: BOOK2026"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label
-                                    htmlFor="name"
-                                    className="text-sm font-medium"
-                                >
-                                    Tên khuyến mãi
-                                </Label>
-                                <Input
-                                    id="name"
-                                    value={formData.name}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            name: e.target.value,
-                                        })
-                                    }
-                                    placeholder="Nhập tên khuyến mãi"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label
-                                    htmlFor="name"
-                                    className="text-sm font-medium"
-                                >
-                                    Tên chương trình
-                                </Label>
-                                <Input
-                                    id="name"
-                                    value={formData.eventName}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            eventName: e.target.value,
-                                        })
-                                    }
-                                    placeholder="Nhập tên chương trình"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label
-                                    htmlFor="description"
-                                    className="text-sm font-medium"
-                                >
-                                    Mô tả
-                                </Label>
-                                <Input
-                                    id="description"
-                                    value={formData.description}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            description: e.target.value,
-                                        })
-                                    }
-                                    placeholder="Mô tả chương trình (tùy chọn)"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-4 pt-2 border-t">
-                            <h4 className="text-sm font-semibold text-gray-700">
-                                Thông tin giảm giá
-                            </h4>
-                            <div className="space-y-2">
-                                <Label
-                                    htmlFor="type"
-                                    className="text-sm font-medium"
-                                >
-                                    Loại giảm giá
-                                </Label>
-                                <Select
-                                    value={formData.type}
-                                    onValueChange={(value) =>
-                                        setFormData({
-                                            ...formData,
-                                            type: value as Promotion['type'],
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Chọn loại giảm giá" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {promotionTypeOptions?.map(
-                                            (option, index) => (
-                                                <SelectItem
-                                                    value={option}
-                                                    key={index}
-                                                >
-                                                    {option}
-                                                </SelectItem>
-                                            ),
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label
-                                    htmlFor="discount"
-                                    className="text-sm font-medium"
-                                >
-                                    Giá trị giảm{' '}
-                                    {formData.type === 'Phần trăm'
-                                        ? '(%)'
-                                        : '(VNĐ)'}
-                                </Label>
-                                <Input
-                                    id="discount"
-                                    type="number"
-                                    value={formData.sale}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            sale: parseInt(e.target.value) || 0,
-                                        })
-                                    }
-                                    placeholder="0"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-4 pt-2 border-t">
-                            <h4 className="text-sm font-semibold text-gray-700">
-                                Thời gian và giới hạn
-                            </h4>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label
-                                        htmlFor="startDate"
-                                        className="text-sm font-medium"
-                                    >
-                                        Ngày bắt đầu
-                                    </Label>
-                                    <Input
-                                        id="startDate"
-                                        type="date"
-                                        value={formData.startDate}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                startDate: e.target.value,
-                                            })
-                                        }
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label
-                                        htmlFor="endDate"
-                                        className="text-sm font-medium"
-                                    >
-                                        Ngày kết thúc
-                                    </Label>
-                                    <Input
-                                        id="endDate"
-                                        type="date"
-                                        value={formData.expiresAt}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                expiresAt: e.target.value,
-                                            })
-                                        }
-                                    />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label
-                                        htmlFor="maxUses"
-                                        className="text-sm font-medium"
-                                    >
-                                        Số lượt tối đa
-                                    </Label>
-                                    <Input
-                                        id="maxUses"
-                                        type="number"
-                                        value={formData.quantity}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                quantity:
-                                                    parseInt(e.target.value) ||
-                                                    0,
-                                            })
-                                        }
-                                        placeholder="100"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label
-                                        htmlFor="usedCount"
-                                        className="text-sm font-medium"
-                                    >
-                                        Đã sử dụng
-                                    </Label>
-                                    <Input
-                                        id="usedCount"
-                                        type="number"
-                                        value={formData.usedNumber}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                usedNumber:
-                                                    parseInt(e.target.value) ||
-                                                    0,
-                                            })
-                                        }
-                                        placeholder="0"
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label
-                                    htmlFor="status"
-                                    className="text-sm font-medium"
-                                >
-                                    Trạng thái
-                                </Label>
-                                <Select
-                                    value={formData.status}
-                                    onValueChange={(value) =>
-                                        setFormData({
-                                            ...formData,
-                                            status: value as Promotion['status'],
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Chọn trạng thái" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {promotionStatusOptions.map(
-                                            (status, index) => (
-                                                <SelectItem
-                                                    key={index}
-                                                    value={status}
-                                                >
-                                                    {status}
-                                                </SelectItem>
-                                            ),
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    </div>
-                    <DialogFooter className="gap-2">
+                    {renderFormFields(false)}
+                    <DialogFooter>
                         <Button
-                            type="button"
                             variant="outline"
                             onClick={() => {
                                 setIsCreateDialogOpen(false);
                                 resetFormData();
                             }}
                         >
-                            Hủy bỏ
+                            Hủy
                         </Button>
                         <Button
-                            type="button"
                             onClick={handleCreatePromotion}
-                            className="bg-orange-500 hover:bg-orange-600"
+                            className="bg-orange-500 hover:bg-orange-600 text-white"
                         >
-                            Tạo khuyến mãi
+                            Xác nhận tạo
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            {/* Edit Promotion Dialog */}
+            {/* Edit Dialog */}
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Chỉnh sửa khuyến mãi</DialogTitle>
-                        <DialogDescription>
-                            Cập nhật thông tin chương trình khuyến mãi
-                        </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-5 py-4">
-                        <div className="space-y-4">
-                            <h4 className="text-sm font-semibold text-gray-700">
-                                Thông tin cơ bản
-                            </h4>
-                            <div className="space-y-2">
-                                <Label
-                                    htmlFor="editCode"
-                                    className="text-sm font-medium"
-                                >
-                                    Mã khuyến mãi
-                                </Label>
-                                <Input
-                                    id="editCode"
-                                    value={formData.code}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            code: e.target.value.toUpperCase(),
-                                        })
-                                    }
-                                    placeholder="VD: BOOK2026"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label
-                                    htmlFor="name"
-                                    className="text-sm font-medium"
-                                >
-                                    Tên khuyến mãi
-                                </Label>
-                                <Input
-                                    id="name"
-                                    value={formData.name}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            name: e.target.value,
-                                        })
-                                    }
-                                    placeholder="Nhập tên khuyến mãi"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label
-                                    htmlFor="editName"
-                                    className="text-sm font-medium"
-                                >
-                                    Tên chương trình
-                                </Label>
-                                <Input
-                                    id="editName"
-                                    value={formData.name}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            name: e.target.value,
-                                        })
-                                    }
-                                    placeholder="Nhập tên chương trình"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label
-                                    htmlFor="editDescription"
-                                    className="text-sm font-medium"
-                                >
-                                    Mô tả
-                                </Label>
-                                <Input
-                                    id="editDescription"
-                                    value={formData.description}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            description: e.target.value,
-                                        })
-                                    }
-                                    placeholder="Mô tả chương trình (tùy chọn)"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-4 pt-2 border-t">
-                            <h4 className="text-sm font-semibold text-gray-700">
-                                Thông tin giảm giá
-                            </h4>
-                            <div className="space-y-2">
-                                <Label
-                                    htmlFor="editType"
-                                    className="text-sm font-medium"
-                                >
-                                    Loại giảm giá
-                                </Label>
-                                <Select
-                                    value={formData.type}
-                                    onValueChange={(value) =>
-                                        setFormData({
-                                            ...formData,
-                                            type: value as Promotion['type'],
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Chọn loại giảm giá" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {promotionTypeOptions?.map(
-                                            (option, index) => (
-                                                <SelectItem
-                                                    value={option}
-                                                    key={index}
-                                                >
-                                                    {option}
-                                                </SelectItem>
-                                            ),
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label
-                                    htmlFor="editDiscount"
-                                    className="text-sm font-medium"
-                                >
-                                    Giá trị giảm{' '}
-                                    {formData.type === 'Phần trăm'
-                                        ? '(%)'
-                                        : '(VNĐ)'}
-                                </Label>
-                                <Input
-                                    id="editDiscount"
-                                    type="number"
-                                    value={formData.sale}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            sale: parseInt(e.target.value) || 0,
-                                        })
-                                    }
-                                    placeholder="0"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-4 pt-2 border-t">
-                            <h4 className="text-sm font-semibold text-gray-700">
-                                Thời gian và giới hạn
-                            </h4>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label
-                                        htmlFor="editStartDate"
-                                        className="text-sm font-medium"
-                                    >
-                                        Ngày bắt đầu
-                                    </Label>
-                                    <Input
-                                        id="editStartDate"
-                                        type="date"
-                                        value={formData.startDate}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                startDate: e.target.value,
-                                            })
-                                        }
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label
-                                        htmlFor="editEndDate"
-                                        className="text-sm font-medium"
-                                    >
-                                        Ngày kết thúc
-                                    </Label>
-                                    <Input
-                                        id="editEndDate"
-                                        type="date"
-                                        value={formData.expiresAt}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                expiresAt: e.target.value,
-                                            })
-                                        }
-                                    />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label
-                                        htmlFor="editMaxUses"
-                                        className="text-sm font-medium"
-                                    >
-                                        Số lượt tối đa
-                                    </Label>
-                                    <Input
-                                        id="editMaxUses"
-                                        type="number"
-                                        value={formData.quantity}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                quantity:
-                                                    parseInt(e.target.value) ||
-                                                    0,
-                                            })
-                                        }
-                                        placeholder="100"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label
-                                        htmlFor="editUsedCount"
-                                        className="text-sm font-medium"
-                                    >
-                                        Đã sử dụng
-                                    </Label>
-                                    <Input
-                                        id="editUsedCount"
-                                        type="number"
-                                        value={formData.usedNumber}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                usedNumber:
-                                                    parseInt(e.target.value) ||
-                                                    0,
-                                            })
-                                        }
-                                        placeholder="0"
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label
-                                    htmlFor="editStatus"
-                                    className="text-sm font-medium"
-                                >
-                                    Trạng thái
-                                </Label>
-                                <Select
-                                    value={formData.status}
-                                    onValueChange={(value) =>
-                                        setFormData({
-                                            ...formData,
-                                            status: value as Promotion['status'],
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Chọn trạng thái" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {promotionStatusOptions.map(
-                                            (status, index) => (
-                                                <SelectItem
-                                                    key={index}
-                                                    value={status}
-                                                >
-                                                    {status}
-                                                </SelectItem>
-                                            ),
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    </div>
-                    <DialogFooter className="gap-2">
+                    {renderFormFields(true)}
+                    <DialogFooter>
                         <Button
-                            type="button"
                             variant="outline"
                             onClick={() => setIsEditDialogOpen(false)}
                         >
-                            Hủy bỏ
+                            Hủy
                         </Button>
                         <Button
-                            type="button"
                             onClick={handleEditPromotion}
-                            className="bg-orange-500 hover:bg-orange-600"
+                            className="bg-orange-500 hover:bg-orange-600 text-white"
                         >
-                            Cập nhật
+                            Lưu thay đổi
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            {/* View Promotion Dialog */}
+            {/* View Dialog */}
             <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
                         <DialogTitle>Chi tiết khuyến mãi</DialogTitle>
-                        <DialogDescription>
-                            Thông tin chi tiết về chương trình khuyến mãi
-                        </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
-                        <div className="space-y-2">
-                            <Label className="text-sm font-medium text-gray-500">
-                                Mã khuyến mãi
+                        <div className="bg-orange-50 p-4 rounded-lg border border-orange-100 text-center">
+                            <Label className="text-orange-500 font-bold uppercase text-xs">
+                                Mã ưu đãi
                             </Label>
-                            <div className="text-lg font-semibold text-orange-600">
+                            <div className="text-2xl font-black text-orange-600 tracking-tighter">
                                 {selectedPromotion?.code}
                             </div>
                         </div>
-                        <div className="border-t pt-4 space-y-3">
-                            <div className="flex justify-between">
-                                <span className="text-sm text-gray-500">
-                                    Tên chương trình:
+                        <div className="divide-y divide-gray-100">
+                            <div className="flex justify-between py-2 text-sm">
+                                <span className="text-gray-500">
+                                    Tên voucher:
                                 </span>
-                                <span className="text-sm font-medium">
+                                <span className="font-medium">
                                     {selectedPromotion?.name}
                                 </span>
                             </div>
-                            <div className="flex justify-between">
-                                <span className="text-sm text-gray-500">
-                                    Giảm giá:
-                                </span>
-                                <span className="text-sm font-semibold text-orange-600">
-                                    {selectedPromotion?.type === 'Phần trăm'
+                            <div className="flex justify-between py-2 text-sm">
+                                <span className="text-gray-500">Giảm giá:</span>
+                                <span className="font-bold text-orange-600">
+                                    {selectedPromotion?.type === 'Percent'
                                         ? `${selectedPromotion?.sale}%`
-                                        : `${selectedPromotion?.sale}đ`}
+                                        : `${selectedPromotion?.sale?.toLocaleString()}đ`}
                                 </span>
                             </div>
-                            <div className="flex justify-between">
-                                <span className="text-sm text-gray-500">
-                                    Thời gian:
-                                </span>
-                                <span className="text-sm font-medium">
+                            <div className="flex justify-between py-2 text-sm">
+                                <span className="text-gray-500">Hiệu lực:</span>
+                                <span className="font-medium">
                                     {selectedPromotion &&
                                         formatDate(
                                             selectedPromotion.startDate,
@@ -736,114 +386,73 @@ export function PromotionDialogs({
                                         formatDate(selectedPromotion.expiresAt)}
                                 </span>
                             </div>
-                            <div className="flex justify-between">
-                                <span className="text-sm text-gray-500">
-                                    Đã dùng / Tối đa:
-                                </span>
-                                <span className="text-sm font-medium">
+                            <div className="flex justify-between py-2 text-sm">
+                                <span className="text-gray-500">Đã dùng:</span>
+                                <span className="font-medium">
                                     {selectedPromotion?.usedNumber} /{' '}
                                     {selectedPromotion?.quantity}
                                 </span>
                             </div>
-                            <div className="flex justify-between">
-                                <span className="text-sm text-gray-500">
+                            <div className="flex justify-between py-2 text-sm items-center">
+                                <span className="text-gray-500">
                                     Trạng thái:
                                 </span>
                                 <span
-                                    className={`px-3 py-1 rounded-full text-xs font-medium ${selectedPromotion && getStatusColor(selectedPromotion.status)}`}
+                                    className={`px-2 py-0.5 rounded text-xs font-bold ${selectedPromotion && getStatusColor(selectedPromotion.status)}`}
                                 >
                                     {selectedPromotion?.status}
                                 </span>
                             </div>
-                            {selectedPromotion?.description && (
-                                <div className="flex flex-col gap-1 pt-2 border-t">
-                                    <span className="text-sm text-gray-500">
-                                        Mô tả:
-                                    </span>
-                                    <span className="text-sm">
-                                        {selectedPromotion.description}
-                                    </span>
-                                </div>
-                            )}
                         </div>
                     </div>
-                    <DialogFooter className="gap-2">
+                    <DialogFooter>
                         <Button
-                            type="button"
                             variant="outline"
                             onClick={() => setIsViewDialogOpen(false)}
                         >
                             Đóng
                         </Button>
                         <Button
-                            type="button"
                             onClick={() =>
                                 selectedPromotion &&
                                 handleDownloadPromotion(selectedPromotion)
                             }
-                            className="bg-blue-500 hover:bg-blue-600"
+                            className="bg-blue-600 text-white hover:bg-blue-700"
                         >
-                            <Download className="w-4 h-4 mr-2" /> Tải khuyến mãi
+                            <Download className="w-4 h-4 mr-2" /> Tải Voucher
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            {/* Delete Promotion Dialog */}
+            {/* Delete Dialog */}
             <Dialog
                 open={isDeleteDialogOpen}
                 onOpenChange={setIsDeleteDialogOpen}
             >
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Xóa khuyến mãi</DialogTitle>
+                        <DialogTitle className="text-red-600">
+                            Xác nhận xóa
+                        </DialogTitle>
                         <DialogDescription>
-                            Bạn có chắc chắn muốn xóa khuyến mãi này không?
+                            Bạn đang chuẩn bị xóa voucher{' '}
+                            <strong>{selectedPromotion?.code}</strong>. Hành
+                            động này sẽ xóa vĩnh viễn dữ liệu khỏi hệ thống.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="py-4">
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-2">
-                            <div className="flex justify-between">
-                                <span className="text-sm text-gray-600">
-                                    Mã khuyến mãi:
-                                </span>
-                                <span className="text-sm font-semibold text-red-600">
-                                    {selectedPromotion?.code}
-                                </span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-sm text-gray-600">
-                                    Tên chương trình:
-                                </span>
-                                <span className="text-sm font-medium">
-                                    {selectedPromotion?.name}
-                                </span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-sm text-gray-600">
-                                    Đã sử dụng:
-                                </span>
-                                <span className="text-sm font-semibold">
-                                    {selectedPromotion?.usedNumber} /{' '}
-                                    {selectedPromotion?.quantity}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <DialogFooter className="gap-2">
+                    <DialogFooter>
                         <Button
-                            type="button"
                             variant="outline"
                             onClick={() => setIsDeleteDialogOpen(false)}
                         >
-                            Hủy bỏ
+                            Hủy
                         </Button>
                         <Button
-                            type="button"
                             onClick={handleDeletePromotion}
-                            className="bg-red-500 hover:bg-red-600"
+                            className="bg-red-600 text-white hover:bg-red-700"
                         >
-                            Xóa khuyến mãi
+                            Tôi chắc chắn, hãy xóa
                         </Button>
                     </DialogFooter>
                 </DialogContent>

@@ -556,16 +556,14 @@ export function EmployeesPage() {
                             </Label>
                             <Input
                                 id="code"
-                                value={
-                                    formData.code
-                                }
+                                value={formData.code}
                                 onChange={(e) =>
                                     setFormData({
                                         ...formData,
                                         code: e.target.value,
                                     })
                                 }
-                                className="bg-gray-50" 
+                                className="bg-gray-50"
                             />
                         </div>
 
@@ -677,14 +675,25 @@ export function EmployeesPage() {
                                 >
                                     <SelectTrigger>
                                         {formData.positionId ? (
-                                            <span>{positions.find(p => p.id === formData.positionId)?.name}</span>
+                                            <span>
+                                                {
+                                                    positions.find(
+                                                        (p) =>
+                                                            p.id ===
+                                                            formData.positionId,
+                                                    )?.name
+                                                }
+                                            </span>
                                         ) : (
                                             <SelectValue placeholder="Chọn chức vụ" />
                                         )}
                                     </SelectTrigger>
                                     <SelectContent>
                                         {positions.map((pos) => (
-                                            <SelectItem key={pos.id} value={String(pos.id)}>
+                                            <SelectItem
+                                                key={pos.id}
+                                                value={String(pos.id)}
+                                            >
                                                 {pos.name}
                                             </SelectItem>
                                         ))}
@@ -710,14 +719,25 @@ export function EmployeesPage() {
                                 >
                                     <SelectTrigger>
                                         {formData.departmentId ? (
-                                            <span>{departments.find(d => d.id === formData.departmentId)?.name}</span>
+                                            <span>
+                                                {
+                                                    departments.find(
+                                                        (d) =>
+                                                            d.id ===
+                                                            formData.departmentId,
+                                                    )?.name
+                                                }
+                                            </span>
                                         ) : (
                                             <SelectValue placeholder="Chọn phòng ban" />
                                         )}
                                     </SelectTrigger>
                                     <SelectContent>
                                         {departments.map((dept) => (
-                                            <SelectItem key={dept.id} value={String(dept.id)}>
+                                            <SelectItem
+                                                key={dept.id}
+                                                value={String(dept.id)}
+                                            >
                                                 {dept.name}
                                             </SelectItem>
                                         ))}
@@ -755,14 +775,20 @@ export function EmployeesPage() {
                                 <Input
                                     id="salary"
                                     type="number"
-                                    value={formData.salary}
-                                    onChange={(e) =>
+                                    value={
+                                        formData.salary === 0
+                                            ? ''
+                                            : formData.salary
+                                    }
+                                    onChange={(e) => {
+                                        const val = e.target.value;
                                         setFormData({
                                             ...formData,
+                                            // Nếu xóa hết (chuỗi rỗng) thì reset về 0
                                             salary:
-                                                parseInt(e.target.value) || 0,
-                                        })
-                                    }
+                                                val === '' ? 0 : parseInt(val),
+                                        });
+                                    }}
                                     placeholder="10000000"
                                 />
                             </div>
@@ -788,7 +814,10 @@ export function EmployeesPage() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         {statusOptions.map((status) => (
-                                            <SelectItem key={status} value={status}>
+                                            <SelectItem
+                                                key={status}
+                                                value={status}
+                                            >
                                                 {status}
                                             </SelectItem>
                                         ))}
@@ -841,10 +870,12 @@ export function EmployeesPage() {
                                 id="editcode"
                                 value={formData.code}
                                 className="bg-gray-50"
-                                onChange={(e) => setFormData({
-                                    ...formData, 
-                                    code : e.target.value 
-                                })}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        code: e.target.value,
+                                    })
+                                }
                                 readOnly
                             />
                         </div>
@@ -941,14 +972,25 @@ export function EmployeesPage() {
                                 >
                                     <SelectTrigger>
                                         {formData.positionId ? (
-                                            <span>{positions.find(p => p.id === formData.positionId)?.name}</span>
+                                            <span>
+                                                {
+                                                    positions.find(
+                                                        (p) =>
+                                                            p.id ===
+                                                            formData.positionId,
+                                                    )?.name
+                                                }
+                                            </span>
                                         ) : (
                                             <SelectValue placeholder="Chọn chức vụ" />
                                         )}
                                     </SelectTrigger>
                                     <SelectContent>
                                         {positions.map((pos) => (
-                                            <SelectItem key={pos.id} value={String(pos.id)}>
+                                            <SelectItem
+                                                key={pos.id}
+                                                value={String(pos.id)}
+                                            >
                                                 {pos.name}
                                             </SelectItem>
                                         ))}
@@ -974,14 +1016,25 @@ export function EmployeesPage() {
                                 >
                                     <SelectTrigger>
                                         {formData.departmentId ? (
-                                            <span>{departments.find(d => d.id === formData.departmentId)?.name}</span>
+                                            <span>
+                                                {
+                                                    departments.find(
+                                                        (d) =>
+                                                            d.id ===
+                                                            formData.departmentId,
+                                                    )?.name
+                                                }
+                                            </span>
                                         ) : (
                                             <SelectValue placeholder="Chọn phòng ban" />
                                         )}
                                     </SelectTrigger>
                                     <SelectContent>
                                         {departments.map((dept) => (
-                                            <SelectItem key={dept.id} value={String(dept.id)}>
+                                            <SelectItem
+                                                key={dept.id}
+                                                value={String(dept.id)}
+                                            >
                                                 {dept.name}
                                             </SelectItem>
                                         ))}
@@ -1000,7 +1053,9 @@ export function EmployeesPage() {
                                     id="editPassword"
                                     type="password"
                                     value={editPassword}
-                                    onChange={(e) => setEditPassword(e.target.value)}
+                                    onChange={(e) =>
+                                        setEditPassword(e.target.value)
+                                    }
                                     placeholder="Để trống nếu không thay đổi"
                                 />
                             </div>
@@ -1068,7 +1123,10 @@ export function EmployeesPage() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         {statusOptions.map((status) => (
-                                            <SelectItem key={status} value={status}>
+                                            <SelectItem
+                                                key={status}
+                                                value={status}
+                                            >
                                                 {status}
                                             </SelectItem>
                                         ))}

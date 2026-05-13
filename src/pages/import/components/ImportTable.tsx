@@ -10,7 +10,7 @@ interface ImportOrder {
     time: string;
     totalAmount: number;
     totalItems: number;
-    status: 'Hoàn thành' | 'Đang xử lý' | 'Đã hủy';
+    status: string;
     createdBy: string;
     note?: string;
 }
@@ -21,7 +21,7 @@ interface ImportTableProps {
     onEdit: (imp: ImportOrder) => void;
     onDelete: (imp: ImportOrder) => void;
     onDownload: (imp: ImportOrder) => void;
-    getStatusColor: (status: ImportOrder['status']) => string;
+    getStatusColor: (status: string) => string;
     formatDateTime: (date: string, time: string) => string;
 }
 

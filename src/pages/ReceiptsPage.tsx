@@ -102,7 +102,7 @@ export function ReceiptsPage() {
         } 
         catch (err) 
         {
-            toast.error("Không thể tải phiếu nhập")
+            toast.error("Không thể tải phiếu thu")
         }
     }
 

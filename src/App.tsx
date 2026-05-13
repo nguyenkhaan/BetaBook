@@ -60,8 +60,10 @@ export default function App() {
                                                 case 'customers':
                                                     return <CustomersPage />;
                                                 case 'receipts':
-                                                    return <ReceiptsPage />;
+                                                    // Phieu thu 
+                                                    return <ReceiptsPage />;  
                                                 case 'importPage':
+                                                    // Phieu nhaop 
                                                     return <ImportPage />;
                                                 case 'promotions':
                                                     return <PromotionsPage />;

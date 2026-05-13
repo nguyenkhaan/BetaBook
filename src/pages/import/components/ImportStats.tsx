@@ -32,7 +32,7 @@ export const ImportStats: React.FC<ImportStatsProps> = ({
                     <div>
                         <p className="text-gray-600 text-sm">Tổng giá trị</p>
                         <p className="text-2xl font-bold text-gray-900 mt-1">
-                            {(totalAmount / 1000000).toFixed(1)}M
+                            {(totalAmount).toFixed(1)}M
                         </p>
                     </div>
                     <FileDown className="w-10 h-10 text-green-500" />

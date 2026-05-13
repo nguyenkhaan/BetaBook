@@ -784,7 +784,6 @@ export function EmployeesPage() {
                                         const val = e.target.value;
                                         setFormData({
                                             ...formData,
-                                            // Nếu xóa hết (chuỗi rỗng) thì reset về 0
                                             salary:
                                                 val === '' ? 0 : parseInt(val),
                                         });

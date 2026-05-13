@@ -1,13 +1,17 @@
-import { Regulation } from "../RegulationsPage";
+import { Rule } from '../../../services/regulation.service';
 
 interface RegulationMetadataProps {
-    regulation: Regulation;
+    regulation: Rule;
 }
 
 const RegulationMetadata = ({ regulation }: RegulationMetadataProps) => {
-    const formatDate = (date: string) => {
-        const [year, month, day] = date.split('-');
-        return `${day}/${month}/${year}`;
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return new Intl.DateTimeFormat('vi-VN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        }).format(date);
     };
 
     return (
@@ -15,19 +19,19 @@ const RegulationMetadata = ({ regulation }: RegulationMetadataProps) => {
             <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600">Ngày có hiệu lực</p>
                 <p className="text-lg font-semibold text-gray-900">
-                    {formatDate(regulation.effectiveDate)}
+                    {formatDate(regulation.appliedAt)}
                 </p>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600">Cập nhật lần cuối</p>
                 <p className="text-lg font-semibold text-gray-900">
-                    {formatDate(regulation.lastUpdated)}
+                    {formatDate(regulation.updatedAt)}
                 </p>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600">Người cập nhật</p>
+                <p className="text-sm text-gray-600">Loại quy định</p>
                 <p className="text-lg font-semibold text-gray-900">
-                    {regulation.updatedBy}
+                    {regulation.type}
                 </p>
             </div>
         </div>

@@ -1,7 +1,7 @@
 import { privateApi } from '../api/api';
 
-export type VoucherStatus = 'APPLYING' | 'EXPIRED' | 'DISABLE';
-export type VoucherType = 'PERCENTAGE' | 'FIXED';
+export type VoucherStatus = 'APPLYING' | 'UPCOMING' | 'ENDED';
+export type VoucherType = 'PERCENT' | 'VND';
 
 export interface Voucher {
     id: number;
@@ -26,11 +26,15 @@ export interface VoucherData {
     quantity: number;
     expiresAt: string;
     type: VoucherType;
+    
 }
 
 export class PromotionService {
     private static readonly BASE_URL = '/voucher';
-
+    static async getOptions() {
+        const responseData = await privateApi.get("voucher/options"); 
+        return responseData.data 
+    }
     static async getAllVoucher(): Promise<Voucher[]> {
         const responseData = await privateApi.get(this.BASE_URL);
         return responseData.data;
@@ -46,7 +50,7 @@ export class PromotionService {
         return response.data;
     }
 
-    static async createVoucher(data: VoucherData): Promise<Voucher> {
+    static async createVoucher(data: VoucherData) {
         const response = await privateApi.post(this.BASE_URL, data);
         return response.data;
     }
@@ -55,6 +59,7 @@ export class PromotionService {
         id: number,
         data: Partial<VoucherData>,
     ): Promise<Voucher> {
+        console.log(data) 
         const response = await privateApi.put(`${this.BASE_URL}/${id}`, data);
         return response.data;
     }

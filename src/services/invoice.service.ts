@@ -1,21 +1,29 @@
 import { privateApi } from '../api/api';
 
 export interface BillDetail {
-    bookId: number;
+    bookId: string;
     quantity: number;
 }
 
-export interface VoucherUsage {
-    voucherId: number;
+export interface Voucher {
+    id: number;
+    code: string;
+    name: string;
+    description: string;
+    type: 'PERCENT' | 'VND';
+    sale: number; // value
+    status: string;
+    quantity: number;
+    expiresAt: string;
 }
-
+ 
 export interface CreateInvoiceDto {
     code: string;
     customerId: number;
     status: string;
-    temporaryCost?: number; 
-    billDetails: BillDetail[];
-    vouchers?: VoucherUsage[];
+    cost?: number; 
+    billDetail: BillDetail[];
+    voucherUsage?: VoucherUsage[];
 }
 
 export interface UpdateInvoiceDto extends Partial<CreateInvoiceDto> {}
@@ -39,14 +47,18 @@ export class InvoiceService {
         const response = await privateApi.get(this.BASE_URL);
         return response.data;
     }
-
+    static async update(billId : number , data : any) {
+        const response = await privateApi.put(`/bill/${billId}` , data)
+        return response.data 
+        
+    }
     static async create(dto: CreateInvoiceDto): Promise<{ bill: Invoice }> {
         const response = await privateApi.post(this.BASE_URL, dto);
         return response.data;
     }
 
-    static async update(id: number, dto: UpdateInvoiceDto): Promise<Invoice> {
-        const response = await privateApi.put(`${this.BASE_URL}/${id}`, dto);
+    static async getVouchers(): Promise<Voucher[]> {
+        const response = await privateApi.get('/voucher/use');
         return response.data;
     }
 

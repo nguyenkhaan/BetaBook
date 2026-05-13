@@ -16,16 +16,18 @@ export class EmployeesService {
     static async getAllEmployees(): Promise<Employees[]> {
         const response = await privateApi.get('/employee');
         const data = response.data;
-
         return data.map((emp: any) => ({
             id: emp.id,
             code: emp.code,
             email: emp.email,
             phone: emp.phone,
             avatar: emp.avatar,
+            status: emp.status, 
             departmentName: emp.department?.name || 'N/A',
             positionName: emp.position?.name || 'N/A',
             name: emp.name || emp.email.split('@')[0], 
+            salary: Number(emp.salary) || 0, 
+            createdAt : emp.createdAt  
         }));
     }
 
@@ -63,6 +65,10 @@ export class EmployeesService {
 
     static async getStatistics() {
         const response = await privateApi.get('/employee/statistic');
+        return response.data;
+    }
+    static async createEmployeeAccount(data : any , password : string) {
+        const response = await privateApi.post(`/employee`, { ...data , password });
         return response.data;
     }
 }

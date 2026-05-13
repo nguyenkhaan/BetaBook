@@ -26,11 +26,11 @@ export function InvoiceTableRow({
                 {invoice.customer}
             </td>
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                {invoice.date}
+                {new Date(invoice.updatedAt).toISOString().substring(0, 10)}
             </td>
             <td className="px-6 py-4 text-sm text-gray-600">
                 <div className="max-w-xs">
-                    {invoice.books.map((book, idx) => (
+                    {invoice.billDetail.map((book, idx) => (
                         <div key={idx} className="text-xs">
                             • {book.title} ({book.quantity})
                         </div>
@@ -38,16 +38,20 @@ export function InvoiceTableRow({
                 </div>
             </td>
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                {invoice.discountCode ? (
+                {invoice.voucherUsage.length != 0 ? (
                     <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-medium">
-                        {invoice.discountCode}
+                        {invoice.voucherUsage.map((usage) => {
+                            return <span>{usage.code}</span>
+                        })}
                     </span>
                 ) : (
                     <span className="text-gray-400">-</span>
                 )}
             </td>
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                {invoice.items}
+                {invoice.billDetail.reduce((total , book) => total + book.quantity , 0)
+                
+                }
             </td>
             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                 {invoice.cost.toLocaleString('vi-VN')}đ

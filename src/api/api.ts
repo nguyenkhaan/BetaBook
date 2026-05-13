@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { CookiesService } from '../services/cookies.service';
 import { TokenType } from '../bases/enums/jwt.enum';
-
+import toast from 'react-hot-toast'
 const publicApi = axios.create({
     baseURL: 'http://localhost:4000/api',
     timeout: 10000,
@@ -39,9 +39,15 @@ privateApi.interceptors.response.use(
     (error) => {
         const status = error.response.status;
         if (status === 401) {
-            console.log('Invalid Session. Please login again');
+            toast.error("Invalid session. Please login again")
         }
-        return Promise.reject(error);
+		const data = error.response?.data;
+        console.log("API error" , data) 
+        toast.error(JSON.stringify(data.message))
+        return Promise.reject({
+            message: data.message, 
+            status 
+        })
     },
 );
 export { publicApi, privateApi };

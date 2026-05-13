@@ -7,9 +7,9 @@ interface InvoiceStatsProps {
 
 export function InvoiceStats({ invoices }: InvoiceStatsProps) {
     const totalInvoices = invoices.length;
-    const paidInvoices = invoices.filter((i) => i.status === 'Đã thanh toán').length;
-    const unpaidInvoices = invoices.filter((i) => i.status === 'Chưa thanh toán').length;
-    const overdueInvoices = invoices.filter((i) => i.status === 'Quá hạn').length;
+    const paidInvoices = invoices.filter((i) => i.status === 'COMPLETE').length;
+    const unpaidInvoices = invoices.filter((i) => i.status === 'NOT_STARTED').length;
+    const overdueInvoices = invoices.filter((i) => i.status === 'OVERDUE').length;
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

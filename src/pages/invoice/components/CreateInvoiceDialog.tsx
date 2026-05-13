@@ -18,7 +18,7 @@ import {
     SelectValue,
 } from '../../../components/ui/select';
 import { InvoiceBook, DiscountCode, Invoice } from '../InvoicePage';
-
+import { Voucher } from '../../../services/invoice.service';
 interface CreateInvoiceDialogProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
@@ -28,27 +28,28 @@ interface CreateInvoiceDialogProps {
         date: string;
         books: InvoiceBook[];
         status: Invoice['status'];
-        discountCode: string;
+        voucherId: number | null;
         discountAmount: number;
         phoneNumber: string;
     };
     setFormData: (data: any) => void;
     newBook: {
+        code: string;
         title: string;
         quantity: number;
-        price: number;
+        cost: number;
     };
 
     setNewBook: (data: any) => void;
     onAddBook: () => void;
     onRemoveBook: (index: number) => void;
     onSave: () => void;
-    mockDiscountCodes: DiscountCode[];
+    vouchers: Voucher[];
     calculateTotalItems: () => number;
     calculateTotalAmount: () => number;
     calculateDiscountAmount: () => number;
     calculateFinalTotal: () => number;
-    handleDiscountCodeChange: (code: string) => void;
+    handleVoucherChange: (voucherId: string) => void;
     customers: any[];
 }
 
@@ -62,12 +63,12 @@ export function CreateInvoiceDialog({
     onAddBook,
     onRemoveBook,
     onSave,
-    mockDiscountCodes,
+    vouchers,
     calculateTotalItems,
     calculateTotalAmount,
     calculateDiscountAmount,
     calculateFinalTotal,
-    handleDiscountCodeChange,
+    handleVoucherChange,
     customers,
 }: CreateInvoiceDialogProps) {
     return (
@@ -183,7 +184,7 @@ export function CreateInvoiceDialog({
                                                     {book.quantity}
                                                 </td>
                                                 <td className="py-1 px-2">
-                                                    {book.price.toLocaleString(
+                                                    {book.cost.toLocaleString(
                                                         'vi-VN',
                                                     )}
                                                     đ
@@ -211,6 +212,17 @@ export function CreateInvoiceDialog({
                         <p className="text-sm font-medium mb-2">Thêm sách</p>
                         <div className="grid grid-cols-12 gap-2">
                             <Input
+                                placeholder="Nhập mã sách"
+                                value={newBook.code}
+                                onChange={(e) =>
+                                    setNewBook({
+                                        ...newBook,
+                                        code: e.target.value,
+                                    })
+                                }
+                                className="col-span-3"
+                            />
+                            <Input
                                 placeholder="Tên sách"
                                 value={newBook.title}
                                 onChange={(e) =>
@@ -219,7 +231,7 @@ export function CreateInvoiceDialog({
                                         title: e.target.value,
                                     })
                                 }
-                                className="col-span-5"
+                                className="col-span-3"
                             />
                             <Input
                                 type="number"
@@ -234,14 +246,14 @@ export function CreateInvoiceDialog({
                             />
                             <Input
                                 type="number"
-                                value={newBook.price}
+                                value={newBook.cost}
                                 onChange={(e) =>
                                     setNewBook({
                                         ...newBook,
                                         price: parseInt(e.target.value) || 0,
                                     })
                                 }
-                                className="col-span-3"
+                                className="col-span-2"
                             />
                             <Button
                                 onClick={onAddBook}
@@ -261,41 +273,26 @@ export function CreateInvoiceDialog({
                         />
                     </div>
 
-                    <div className="grid grid-cols-4 gap-4">
-                        <Label>Tạm tính</Label>
-                        <Input
-                            value={calculateTotalAmount().toLocaleString(
-                                'vi-VN',
-                            )}
-                            readOnly
-                            className="col-span-3"
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-4 items-center gap-4">
+                    <div className="grid grid-cols-1 items-center gap-4">
                         <Label className="text-sm">Mã giảm giá</Label>
-
-                        <div className="col-span-3">
-                            <Select
-                                value={formData.discountCode}
-                                onValueChange={handleDiscountCodeChange}
-                            >
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Chọn mã giảm giá" />
-                                </SelectTrigger>
-
-                                <SelectContent className="p-4 ml-3 mr-3">
-                                    <SelectItem value="">
-                                        Không áp dụng
+                        <Select
+                            value={formData.voucherId?.toString() || ''}
+                            onValueChange={handleVoucherChange}
+                        >
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Chọn mã giảm giá" />
+                            </SelectTrigger>
+                            <SelectContent className="p-4 ml-3 mr-3">
+                                <SelectItem value="">
+                                    Không áp dụng
+                                </SelectItem>
+                                {vouchers.map((v) => (
+                                    <SelectItem key={v.id} value={v.id.toString()}>
+                                        {v.name}
                                     </SelectItem>
-                                    {mockDiscountCodes.map((d) => (
-                                        <SelectItem key={d.id} value={d.code}>
-                                            {d.code} - {d.description}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <div className="grid grid-cols-4 items-center gap-4">
@@ -331,13 +328,13 @@ export function CreateInvoiceDialog({
                                 </SelectTrigger>
 
                                 <SelectContent>
-                                    <SelectItem value="Đã thanh toán">
+                                    <SelectItem value="COMPLETE">
                                         Đã thanh toán
                                     </SelectItem>
-                                    <SelectItem value="Chưa thanh toán">
+                                    <SelectItem value="NOT_STARTED">
                                         Chưa thanh toán
                                     </SelectItem>
-                                    <SelectItem value="Quá hạn">
+                                    <SelectItem value="OVERDUE">
                                         Quá hạn
                                     </SelectItem>
                                 </SelectContent>

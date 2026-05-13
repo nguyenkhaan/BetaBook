@@ -1,39 +1,58 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Sidebar, SidebarProvider } from '../../components/ui/sidebar';
 import { RegulationCard } from '../regulation/RegulationCard';
 import {
     EditRegulationDialog,
-    RegulationData,
+    RegulationFormData,
 } from '../regulation/components/RegulationCardEdit';
-import { Search, Plus, Settings, Loader2 } from 'lucide-react';
+import { Search, Plus, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { toast } from 'sonner';
 import { Toaster } from '../../components/ui/sonner';
-import { RegulationService, Rule } from '../../services/regulation.service';
+import { RegulationService, Rule, RuleStatistic } from '../../services/regulation.service';
 
 export function RegulationsPage() {
+    const navigate = useNavigate();
     const [regulations, setRegulations] = useState<Rule[]>([]);
+    const [stats, setStats] = useState<RuleStatistic | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeFilter, setActiveFilter] = useState('tat-ca');
+    const [activeFilter, setActiveFilter] = useState('all');
     const [editingRegulation, setEditingRegulation] =
-        useState<RegulationData | null>(null);
+        useState<RegulationFormData | null>(null);
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [ruleTypes, setRuleTypes] = useState<string[]>([]);
 
     useEffect(() => {
         fetchRegulations();
+        fetchOptions();
     }, []);
 
     const fetchRegulations = async () => {
         setIsLoading(true);
         try {
-            const data = await RegulationService.getAll();
+            const [data, statistics] = await Promise.all([
+                RegulationService.getAll(),
+                RegulationService.getStatistic(),
+            ]);
             setRegulations(data);
+            setStats(statistics);
         } catch (error) {
             toast.error('Không thể tải danh sách quy định');
+            console.error(error);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const fetchOptions = async () => {
+        try {
+            const options = await RegulationService.getOptions();
+            setRuleTypes(options.type);
+        } catch (error) {
+            console.error('Error fetching options:', error);
         }
     };
 
@@ -42,30 +61,46 @@ export function RegulationsPage() {
         if (rule) {
             setEditingRegulation({
                 id: rule.id,
-                enabled: rule.status === 'active',
                 title: rule.title,
                 content: rule.content,
                 shortDescription: rule.shortDescription,
-            } as any);
+                appliedAt: rule.appliedAt,
+                status: rule.status,
+                type: rule.type,
+            });
             setDialogOpen(true);
         }
     };
 
-    const handleSave = async (data: any) => {
+    const handleSave = async (data: RegulationFormData) => {
         try {
             if (data.id) {
                 await RegulationService.update(data.id, {
                     title: data.title,
                     content: data.content,
                     shortDescription: data.shortDescription,
-                    status: data.enabled ? 'active' : 'inactive',
-                } as any);
+                    appliedAt: data.appliedAt,
+                    status: data.status,
+                    type: data.type,
+                });
                 toast.success('Cập nhật quy định thành công!');
+            } else {
+                await RegulationService.create({
+                    title: data.title,
+                    content: data.content,
+                    shortDescription: data.shortDescription,
+                    appliedAt: data.appliedAt,
+                    status: data.status,
+                    type: data.type,
+                });
+                toast.success('Tạo quy định thành công!');
             }
             fetchRegulations();
             setDialogOpen(false);
+            setEditingRegulation(null);
         } catch (error) {
             toast.error('Lỗi khi lưu quy định');
+            console.error(error);
         }
     };
 
@@ -74,17 +109,21 @@ export function RegulationsPage() {
         try {
             await RegulationService.delete(id);
             setRegulations((prev) => prev.filter((r) => r.id !== id));
-            toast.info('Đã xóa quy định thành công');
+            toast.success('Đã xóa quy định thành công');
+            fetchRegulations();
         } catch (error) {
             toast.error('Lỗi khi xóa quy định');
+            console.error(error);
         }
     };
 
+    const handleView = (id: number) => {
+        navigate(`/regulation/${id}`);
+    };
+
     const filterOptions = [
-        { id: 'tat-ca', label: 'Tất cả' },
-        { id: 'nhan-su', label: 'Nhân sự' },
-        { id: 'ban-hang', label: 'Bán hàng' },
-        { id: 'kho-van', label: 'Kho vận' },
+        { id: 'all', label: 'Tất cả', type: 'all' },
+        ...ruleTypes.map((type) => ({ id: type, label: type, type })),
     ];
 
     const filteredRegulations = regulations.filter((reg) => {
@@ -93,30 +132,36 @@ export function RegulationsPage() {
             reg.shortDescription
                 ?.toLowerCase()
                 .includes(searchQuery.toLowerCase());
-        const matchesFilter =
-            activeFilter === 'tat-ca' || reg.type === activeFilter;
+        const matchesFilter = activeFilter === 'all' || reg.type === activeFilter;
         return matchesSearch && matchesFilter;
     });
 
-    const stats = [
+    const displayStats = stats || {
+        totalRules: regulations.length,
+        applying: regulations.filter((r) => r.status === 'APPLYING').length,
+        upcoming: regulations.filter((r) => r.status === 'UPCOMING').length,
+        reject: regulations.filter((r) => r.status === 'REJECT').length,
+    };
+
+    const statsList = [
         {
             label: 'Tổng quy định',
-            value: regulations.length,
+            value: displayStats.totalRules,
             color: 'text-[#f97316]',
         },
         {
             label: 'Đang áp dụng',
-            value: regulations.filter((r) => r.status === 'active').length,
+            value: displayStats.applying,
             color: 'text-green-600',
         },
         {
-            label: 'Bản nháp',
-            value: regulations.filter((r) => r.status === 'draft').length,
+            label: 'Sắp có hiệu lực',
+            value: displayStats.upcoming,
             color: 'text-blue-600',
         },
         {
-            label: 'Ngừng áp dụng',
-            value: regulations.filter((r) => r.status === 'inactive').length,
+            label: 'Đã hết hiệu lực',
+            value: displayStats.reject,
             color: 'text-gray-600',
         },
     ];
@@ -132,19 +177,6 @@ export function RegulationsPage() {
                             <span className="font-medium text-gray-900">
                                 Quy định
                             </span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="text-right">
-                                <div className="text-sm font-semibold">
-                                    Quản trị viên
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                    admin@betabook.vn
-                                </div>
-                            </div>
-                            <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold">
-                                A
-                            </div>
                         </div>
                     </header>
 
@@ -165,7 +197,7 @@ export function RegulationsPage() {
                                         setEditingRegulation(null);
                                         setDialogOpen(true);
                                     }}
-                                    className="bg-[#f97316] hover:bg-[#ea580c]"
+                                    className="bg-orange-500 font-medium"
                                 >
                                     <Plus className="w-4 h-4 mr-2" /> Thêm quy
                                     định
@@ -193,7 +225,7 @@ export function RegulationsPage() {
                                             }
                                             className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all ${
                                                 activeFilter === opt.id
-                                                    ? 'bg-[#f97316] text-white'
+                                                    ? 'bg-orange-500 p-2 text-white'
                                                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                             }`}
                                         >
@@ -204,7 +236,7 @@ export function RegulationsPage() {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                                {stats.map((stat, i) => (
+                                {statsList.map((stat, i) => (
                                     <div
                                         key={i}
                                         className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm"
@@ -230,9 +262,10 @@ export function RegulationsPage() {
                                     {filteredRegulations.map((reg) => (
                                         <RegulationCard
                                             key={reg.id}
+                                            id={reg.id}
                                             title={reg.title}
                                             description={reg.shortDescription}
-                                            status={reg.status as any}
+                                            status={reg.status}
                                             effectiveDate={new Date(
                                                 reg.appliedAt,
                                             ).toLocaleDateString('vi-VN')}
@@ -240,12 +273,11 @@ export function RegulationsPage() {
                                                 reg.updatedAt || reg.appliedAt,
                                             ).toLocaleDateString('vi-VN')}
                                             author="Hệ thống"
-                                            enabled={reg.status === 'active'}
                                             onEdit={() => handleEdit(reg.id)}
                                             onDelete={() =>
                                                 handleDelete(reg.id)
                                             }
-                                            onView={() => {}}
+                                            onView={() => handleView(reg.id)}
                                         />
                                     ))}
                                 </div>

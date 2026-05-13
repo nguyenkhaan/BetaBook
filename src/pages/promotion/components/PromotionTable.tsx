@@ -61,19 +61,19 @@ export function PromotionTable({
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 {promo.type === 'Phần trăm'
-                                    ? `${promo.discount}%`
-                                    : `${promo.discount.toLocaleString('vi-VN')}đ`}
+                                    ? `${promo.sale}%`
+                                    : `${promo.sale.toLocaleString('vi-VN')}đ`}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                 <div className="flex flex-col">
                                     <span>{formatDate(promo.startDate)}</span>
                                     <span className="text-xs text-gray-500">
-                                        đến {formatDate(promo.endDate)}
+                                        đến {formatDate(promo.expiresAt)}
                                     </span>
                                 </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {promo.usedCount} / {promo.maxUses}
+                                {promo.usedNumber} / {promo.quantity}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <span

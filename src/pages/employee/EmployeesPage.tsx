@@ -31,7 +31,7 @@ import {
 import { toast } from 'sonner';
 import { EmployeesService, Employees } from '../../services/employees.service';
 import { mockEmployees } from '../employee/EmployeeData';
-
+import { privateApi } from '../../api/api';
 import { useParams } from 'react-router-dom';
 
 export const EmployeeProfile = () => {
@@ -48,21 +48,40 @@ export const EmployeeProfile = () => {
 // Sửa lại Interface này để khớp với Employees từ Service
 export interface Employee {
     id: number;
-    employeeCode: string; // Map từ 'code' của Backend
+    code: string; // Map từ 'code' của Backend
     name: string;
     email: string;
     phone: string;
-    position: string;     // Map từ 'positionName'
-    department: string;   // Map từ 'departmentName'
-    joinDate: string;
-    status: 'Đang làm việc' | 'Nghỉ phép' | 'Đã nghỉ việc';
+    position: string; // Map từ 'positionName'
+    department: string; // Map từ 'departmentName'
+    createdAt: string;
+    status: 'WORKING' | 'RETIRED' | 'LEAVE';
     salary: number;
+}
+
+interface Department {
+    id: number;
+    name: string;
+}
+
+interface Position {
+    id: number;
+    name: string;
 }
 
 export function EmployeesPage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [password, setPassword] = useState('');
+    const [editPassword, setEditPassword] = useState('');
+    
+    // Dropdown data
+    const [departments, setDepartments] = useState<Department[]>([]);
+    const [positions, setPositions] = useState<Position[]>([]);
+    const [statusOptions, setStatusOptions] = useState<string[]>([]);
+    const [isLoadingOptions, setIsLoadingOptions] = useState(false);
+    
     //UI state
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -72,16 +91,36 @@ export function EmployeesPage() {
         null,
     );
     const [formData, setFormData] = useState({
-        employeeCode: '',
+        code: '',
         name: '',
         email: '',
         phone: '',
-        position: '',
-        department: '',
-        joinDate: new Date().toISOString().split('T')[0],
+        positionId: 0,
+        departmentId: 0,
+        createdAt: new Date().toISOString().split('T')[0],
         salary: 0,
-        status: 'Đang làm việc' as Employee['status'],
+        status: 'WORKING' as Employee['status'],
     });
+
+    const fetchDropdownOptions = async () => {
+        setIsLoadingOptions(true);
+        try {
+            // Fetch departments and positions
+            const deptPosResponse = await privateApi.get('/employee/department-position');
+            setDepartments(deptPosResponse.data?.departments || []);
+            setPositions(deptPosResponse.data?.positions || []);
+
+            // Fetch status options
+            const statusResponse = await privateApi.get('/employee/options');
+            if (statusResponse.data?.status) {
+                setStatusOptions(statusResponse.data.status);
+            }
+        } catch (err: any) {
+            console.error('Error fetching dropdown options:', err);
+        } finally {
+            setIsLoadingOptions(false);
+        }
+    };
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -90,17 +129,18 @@ export function EmployeesPage() {
 
             const mappedData: Employee[] = data.map((emp: any) => ({
                 id: emp.id,
-                employeeCode: emp.code, 
+                code: emp.code,
                 name: emp.name || emp.email.split('@')[0],
                 email: emp.email,
                 phone: emp.phone || 'N/A',
                 position: emp.positionName || 'N/A',
-                department: emp.departmentName || 'N/A', 
-                joinDate: new Date().toISOString().split('T')[0], 
-                salary: 0, 
-                status: 'Đang làm việc',
+                department: emp.departmentName || 'N/A',
+                createdAt: emp.createdAt
+                    ? new Date(emp.createdAt).toISOString().split('T')[0]
+                    : '',
+                salary: Number(emp.salary),
+                status: emp.status,
             }));
-
             setEmployees(mappedData);
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Không thể tải dữ liệu');
@@ -111,58 +151,90 @@ export function EmployeesPage() {
 
     useEffect(() => {
         fetchData();
+        fetchDropdownOptions();
     }, []);
 
     const filteredEmployees = employees.filter(
         (emp) =>
-            emp.employeeCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            emp.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
             emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
             emp.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
             emp.department.toLowerCase().includes(searchTerm.toLowerCase()),
     );
 
-    const handleCreateEmployee = () => {
-        const newEmployee: Employee = {
-            id: employees.length + 1,
-            employeeCode:
-                formData.employeeCode ||
-                `NV${String(employees.length + 1).padStart(3, '0')}`,
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            position: formData.position,
-            department: formData.department,
-            joinDate: formData.joinDate,
-            salary: formData.salary,
-            status: formData.status,
-        };
-        setEmployees([...employees, newEmployee]);
-        setIsCreateDialogOpen(false);
-        resetFormData();
-        toast.success('Nhân viên đã được thêm thành công!');
-    };
+    const handleCreateEmployee = async () => {
+        try {
+            if (!password) {
+                toast.error('Mật khẩu là bắt buộc!');
+                return;
+            }
+            if (!formData.positionId || !formData.departmentId) {
+                toast.error('Vui lòng chọn chức vụ và phòng ban!');
+                return;
+            }
 
-    const handleEditEmployee = () => {
-        if (selectedEmployee) {
-            const updatedEmployee: Employee = {
-                ...selectedEmployee,
+            const createData = {
+                code: formData.code || `NV${String(employees.length + 1).padStart(3, '0')}`,
                 name: formData.name,
                 email: formData.email,
                 phone: formData.phone,
-                position: formData.position,
-                department: formData.department,
-                joinDate: formData.joinDate,
+                positionId: formData.positionId,
+                departmentId: formData.departmentId,
+                createdAt: formData.createdAt,
                 salary: formData.salary,
                 status: formData.status,
+                password: password,
             };
-            setEmployees(
-                employees.map((emp) =>
-                    emp.id === selectedEmployee.id ? updatedEmployee : emp,
-                ),
-            );
-            setIsEditDialogOpen(false);
-            toast.success('Thông tin nhân viên đã được cập nhật!');
+
+            const result = await EmployeesService.createEmployeeAccount(createData, password);
+            if (result) {
+                toast.success('Nhân viên đã được thêm thành công!');
+                setIsCreateDialogOpen(false);
+                resetFormData();
+                fetchData();
+            } else {
+                toast.error('Tạo tài khoản thất bại. Hãy thử lại');
+            }
+        } catch (err: any) {
+            toast.error('Lỗi khi tạo tài khoản: ' + (err.response?.data?.message || err.message));
+            console.log(err);
+        }
+    };
+
+    const handleEditEmployee = async () => {
+        if (selectedEmployee) {
+            try {
+                if (!formData.positionId || !formData.departmentId) {
+                    toast.error('Vui lòng chọn chức vụ và phòng ban!');
+                    return;
+                }
+
+                const updateData: any = {
+                    name: formData.name,
+                    email: formData.email,
+                    phone: formData.phone,
+                    positionId: formData.positionId,
+                    departmentId: formData.departmentId,
+                    createdAt: formData.createdAt,
+                    salary: formData.salary,
+                    status: formData.status,
+                };
+
+                // Only include password if provided
+                if (editPassword) {
+                    updateData.password = editPassword;
+                }
+
+                await EmployeesService.updateEmployee(selectedEmployee.id, updateData);
+                setIsEditDialogOpen(false);
+                resetFormData();
+                toast.success('Thông tin nhân viên đã được cập nhật!');
+                fetchData();
+            } catch (err: any) {
+                toast.error('Lỗi khi cập nhật: ' + (err.response?.data?.message || err.message));
+                console.log(err);
+            }
         }
     };
 
@@ -177,9 +249,7 @@ export function EmployeesPage() {
     };
 
     const handleDownloadEmployee = (employee: Employee) => {
-        toast.success(
-            `Đang tải thông tin nhân viên ${employee.employeeCode}...`,
-        );
+        toast.success(`Đang tải thông tin nhân viên ${employee.code}...`);
         // Logic để tải thông tin nhân viên
     };
 
@@ -190,17 +260,22 @@ export function EmployeesPage() {
 
     const handleEditEmployeeOpen = (employee: Employee) => {
         setSelectedEmployee(employee);
+        // Find the position and department IDs from the fetched options
+        const positionId = positions.find(p => p.name === employee.position)?.id || 0;
+        const departmentId = departments.find(d => d.name === employee.department)?.id || 0;
+        
         setFormData({
-            employeeCode: employee.employeeCode,
+            code: employee.code,
             name: employee.name,
             email: employee.email,
             phone: employee.phone,
-            position: employee.position,
-            department: employee.department,
-            joinDate: employee.joinDate,
+            positionId,
+            departmentId,
+            createdAt: employee.createdAt,
             salary: employee.salary,
             status: employee.status,
         });
+        setEditPassword('');
         setIsEditDialogOpen(true);
     };
 
@@ -211,25 +286,27 @@ export function EmployeesPage() {
 
     const resetFormData = () => {
         setFormData({
-            employeeCode: '',
+            code: '',
             name: '',
             email: '',
             phone: '',
-            position: '',
-            department: '',
-            joinDate: new Date().toISOString().split('T')[0],
+            positionId: 0,
+            departmentId: 0,
+            createdAt: new Date().toISOString().split('T')[0],
             salary: 0,
-            status: 'Đang làm việc',
+            status: 'WORKING',
         });
+        setPassword('');
+        setEditPassword('');
     };
 
     const getStatusColor = (status: Employee['status']) => {
         switch (status) {
-            case 'Đang làm việc':
+            case 'WORKING':
                 return 'bg-green-100 text-green-800';
-            case 'Nghỉ phép':
+            case 'LEAVE':
                 return 'bg-yellow-100 text-yellow-800';
-            case 'Đã nghỉ việc':
+            case 'RETIRED':
                 return 'bg-gray-100 text-gray-800';
         }
     };
@@ -297,7 +374,7 @@ export function EmployeesPage() {
                             <p className="text-2xl font-bold text-green-600 mt-1">
                                 {
                                     employees.filter(
-                                        (e) => e.status === 'Đang làm việc',
+                                        (e) => e.status === 'WORKING',
                                     ).length
                                 }
                             </p>
@@ -312,7 +389,7 @@ export function EmployeesPage() {
                             <p className="text-2xl font-bold text-yellow-600 mt-1">
                                 {
                                     employees.filter(
-                                        (e) => e.status === 'Nghỉ phép',
+                                        (e) => e.status === 'LEAVE',
                                     ).length
                                 }
                             </p>
@@ -325,12 +402,9 @@ export function EmployeesPage() {
                         <div>
                             <p className="text-gray-600 text-sm">Tổng lương</p>
                             <p className="text-2xl font-bold text-gray-900 mt-1">
-                                {(
-                                    employees.reduce(
-                                        (sum, e) => sum + e.salary,
-                                        0,
-                                    ) / 1000000
-                                ).toFixed(1)}
+                                {employees
+                                    .reduce((sum, e) => sum + e.salary, 0)
+                                    .toFixed(1)}
                                 M
                             </p>
                         </div>
@@ -375,7 +449,7 @@ export function EmployeesPage() {
                             <tr key={emp.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="text-sm font-medium text-orange-600">
-                                        {emp.employeeCode}
+                                        {emp.code}
                                     </div>
                                     <div className="text-sm text-gray-900">
                                         {emp.name}
@@ -400,7 +474,7 @@ export function EmployeesPage() {
                                     {emp.department}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                    {formatDate(emp.joinDate)}
+                                    {formatDate(emp.createdAt)}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                     {emp.salary.toLocaleString('vi-VN')}đ
@@ -474,26 +548,23 @@ export function EmployeesPage() {
                         {/* Mã nhân viên */}
                         <div className="space-y-2">
                             <Label
-                                htmlFor="employeeCode"
+                                htmlFor="code"
                                 className="text-sm font-medium"
                             >
                                 Mã nhân viên
                             </Label>
                             <Input
-                                id="employeeCode"
+                                id="code"
                                 value={
-                                    formData.employeeCode ||
-                                    `NV${String(employees.length + 1).padStart(3, '0')}`
+                                    formData.code
                                 }
                                 onChange={(e) =>
                                     setFormData({
                                         ...formData,
-                                        employeeCode: e.target.value,
+                                        code: e.target.value,
                                     })
                                 }
-                                className="bg-gray-50"
-                                placeholder="Tự động tạo"
-                                readOnly
+                                className="bg-gray-50" 
                             />
                         </div>
 
@@ -543,7 +614,23 @@ export function EmployeesPage() {
                                     placeholder="example@company.com"
                                 />
                             </div>
-
+                            <div className="space-y-2">
+                                <Label
+                                    htmlFor="password"
+                                    className="text-sm text-red-600 font-medium"
+                                >
+                                    Password(*)
+                                </Label>
+                                <Input
+                                    required
+                                    id="password"
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) =>
+                                        setPassword(e.target.value)
+                                    }
+                                />
+                            </div>
                             <div className="space-y-2">
                                 <Label
                                     htmlFor="phone"
@@ -578,17 +665,30 @@ export function EmployeesPage() {
                                 >
                                     Chức vụ
                                 </Label>
-                                <Input
-                                    id="position"
-                                    value={formData.position}
-                                    onChange={(e) =>
+                                <Select
+                                    value={String(formData.positionId)}
+                                    onValueChange={(value) =>
                                         setFormData({
                                             ...formData,
-                                            position: e.target.value,
+                                            positionId: parseInt(value),
                                         })
                                     }
-                                    placeholder="VD: Nhân viên bán hàng"
-                                />
+                                >
+                                    <SelectTrigger>
+                                        {formData.positionId ? (
+                                            <span>{positions.find(p => p.id === formData.positionId)?.name}</span>
+                                        ) : (
+                                            <SelectValue placeholder="Chọn chức vụ" />
+                                        )}
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {positions.map((pos) => (
+                                            <SelectItem key={pos.id} value={String(pos.id)}>
+                                                {pos.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="space-y-2">
@@ -598,17 +698,30 @@ export function EmployeesPage() {
                                 >
                                     Phòng ban
                                 </Label>
-                                <Input
-                                    id="department"
-                                    value={formData.department}
-                                    onChange={(e) =>
+                                <Select
+                                    value={String(formData.departmentId)}
+                                    onValueChange={(value) =>
                                         setFormData({
                                             ...formData,
-                                            department: e.target.value,
+                                            departmentId: parseInt(value),
                                         })
                                     }
-                                    placeholder="VD: Bán hàng"
-                                />
+                                >
+                                    <SelectTrigger>
+                                        {formData.departmentId ? (
+                                            <span>{departments.find(d => d.id === formData.departmentId)?.name}</span>
+                                        ) : (
+                                            <SelectValue placeholder="Chọn phòng ban" />
+                                        )}
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {departments.map((dept) => (
+                                            <SelectItem key={dept.id} value={String(dept.id)}>
+                                                {dept.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="space-y-2">
@@ -621,11 +734,11 @@ export function EmployeesPage() {
                                 <Input
                                     id="joinDate"
                                     type="date"
-                                    value={formData.joinDate}
+                                    value={formData.createdAt}
                                     onChange={(e) =>
                                         setFormData({
                                             ...formData,
-                                            joinDate: e.target.value,
+                                            createdAt: e.target.value,
                                         })
                                     }
                                 />
@@ -673,15 +786,11 @@ export function EmployeesPage() {
                                         <SelectValue placeholder="Chọn trạng thái" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Đang làm việc">
-                                            Đang làm việc
-                                        </SelectItem>
-                                        <SelectItem value="Nghỉ phép">
-                                            Nghỉ phép
-                                        </SelectItem>
-                                        <SelectItem value="Đã nghỉ việc">
-                                            Đã nghỉ việc
-                                        </SelectItem>
+                                        {statusOptions.map((status) => (
+                                            <SelectItem key={status} value={status}>
+                                                {status}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -722,15 +831,19 @@ export function EmployeesPage() {
                         {/* Mã nhân viên */}
                         <div className="space-y-2">
                             <Label
-                                htmlFor="editEmployeeCode"
+                                htmlFor="editcode"
                                 className="text-sm font-medium"
                             >
                                 Mã nhân viên
                             </Label>
                             <Input
-                                id="editEmployeeCode"
-                                value={formData.employeeCode}
+                                id="editcode"
+                                value={formData.code}
                                 className="bg-gray-50"
+                                onChange={(e) => setFormData({
+                                    ...formData, 
+                                    code : e.target.value 
+                                })}
                                 readOnly
                             />
                         </div>
@@ -816,17 +929,30 @@ export function EmployeesPage() {
                                 >
                                     Chức vụ
                                 </Label>
-                                <Input
-                                    id="editPosition"
-                                    value={formData.position}
-                                    onChange={(e) =>
+                                <Select
+                                    value={String(formData.positionId)}
+                                    onValueChange={(value) =>
                                         setFormData({
                                             ...formData,
-                                            position: e.target.value,
+                                            positionId: parseInt(value),
                                         })
                                     }
-                                    placeholder="VD: Nhân viên bán hàng"
-                                />
+                                >
+                                    <SelectTrigger>
+                                        {formData.positionId ? (
+                                            <span>{positions.find(p => p.id === formData.positionId)?.name}</span>
+                                        ) : (
+                                            <SelectValue placeholder="Chọn chức vụ" />
+                                        )}
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {positions.map((pos) => (
+                                            <SelectItem key={pos.id} value={String(pos.id)}>
+                                                {pos.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="space-y-2">
@@ -836,16 +962,45 @@ export function EmployeesPage() {
                                 >
                                     Phòng ban
                                 </Label>
-                                <Input
-                                    id="editDepartment"
-                                    value={formData.department}
-                                    onChange={(e) =>
+                                <Select
+                                    value={String(formData.departmentId)}
+                                    onValueChange={(value) =>
                                         setFormData({
                                             ...formData,
-                                            department: e.target.value,
+                                            departmentId: parseInt(value),
                                         })
                                     }
-                                    placeholder="VD: Bán hàng"
+                                >
+                                    <SelectTrigger>
+                                        {formData.departmentId ? (
+                                            <span>{departments.find(d => d.id === formData.departmentId)?.name}</span>
+                                        ) : (
+                                            <SelectValue placeholder="Chọn phòng ban" />
+                                        )}
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {departments.map((dept) => (
+                                            <SelectItem key={dept.id} value={String(dept.id)}>
+                                                {dept.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label
+                                    htmlFor="editPassword"
+                                    className="text-sm font-medium"
+                                >
+                                    Mật khẩu (tùy chọn)
+                                </Label>
+                                <Input
+                                    id="editPassword"
+                                    type="password"
+                                    value={editPassword}
+                                    onChange={(e) => setEditPassword(e.target.value)}
+                                    placeholder="Để trống nếu không thay đổi"
                                 />
                             </div>
 
@@ -859,11 +1014,11 @@ export function EmployeesPage() {
                                 <Input
                                     id="editJoinDate"
                                     type="date"
-                                    value={formData.joinDate}
+                                    value={formData.createdAt}
                                     onChange={(e) =>
                                         setFormData({
                                             ...formData,
-                                            joinDate: e.target.value,
+                                            createdAt: e.target.value,
                                         })
                                     }
                                 />
@@ -911,15 +1066,11 @@ export function EmployeesPage() {
                                         <SelectValue placeholder="Chọn trạng thái" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Đang làm việc">
-                                            Đang làm việc
-                                        </SelectItem>
-                                        <SelectItem value="Nghỉ phép">
-                                            Nghỉ phép
-                                        </SelectItem>
-                                        <SelectItem value="Đã nghỉ việc">
-                                            Đã nghỉ việc
-                                        </SelectItem>
+                                        {statusOptions.map((status) => (
+                                            <SelectItem key={status} value={status}>
+                                                {status}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -959,7 +1110,7 @@ export function EmployeesPage() {
                                 Mã nhân viên
                             </Label>
                             <div className="text-lg font-semibold text-orange-600">
-                                {selectedEmployee?.employeeCode}
+                                {selectedEmployee?.code}
                             </div>
                         </div>
 
@@ -1010,7 +1161,7 @@ export function EmployeesPage() {
                                 </span>
                                 <span className="text-sm font-medium">
                                     {selectedEmployee &&
-                                        formatDate(selectedEmployee.joinDate)}
+                                        formatDate(selectedEmployee.createdAt)}
                                 </span>
                             </div>
                             <div className="flex justify-between">
@@ -1079,7 +1230,7 @@ export function EmployeesPage() {
                                     Mã nhân viên:
                                 </span>
                                 <span className="text-sm font-semibold text-red-600">
-                                    {selectedEmployee?.employeeCode}
+                                    {selectedEmployee?.code}
                                 </span>
                             </div>
                             <div className="flex justify-between">

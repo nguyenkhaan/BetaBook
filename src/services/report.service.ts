@@ -30,19 +30,15 @@ export interface InventoryByCategory {
     stock?: number;
 }
 
-export interface CustomerGrade {
-    grade: string;
-    total: number;
-    revenue?: number;
-    avgOrder?: number;
-}
-
 export interface DebtItem {
-    id: number | string;
-    customerName: string;
-    beginningDebt: number;
-    transactions: number;
-    endingDebt: number;
+    date: string;
+    customer: {
+        id: number;
+        name: string;
+    };
+    openingDebt: number;
+    generatedDebt: number;
+    closingDebt: number;
 }
 
 export interface DebtSummary {
@@ -51,17 +47,30 @@ export interface DebtSummary {
     totalEndingDebt: number;
 }
 
+export interface TopCustomerItem {
+    customerId: number;
+    customerCode: string;
+    customerName: string;
+    email?: string | null;
+    phone?: string | null;
+    grade?: string;
+    totalPaid: number;
+}
+
 export const ReportService = {
     getGeneralRevenue: async (): Promise<GeneralRevenue> => {
         const response = await privateApi.get('/statistic/revenue');
         return response.data;
     },
 
-    getRevenueChart: async (months: number = 6): Promise<ChartData[]> => {
-        const response = await privateApi.get(
-            `/statistic/revenue/month/${months}`,
-        );
-        return response.data;
+    getRevenueChart: async (month: number = 6): Promise<ChartData[]> => {
+        const response = await privateApi.get('/statistics/revenue/chart', {
+            params: { month },
+        });
+        return (response.data ?? []).map((item: any) => ({
+            month: String(item?.month ?? ''),
+            revenue: Number(item?.revenue ?? 0),
+        }));
     },
 
     getOrdersChart: async (months: number = 6): Promise<ChartData[]> => {
@@ -81,23 +90,24 @@ export const ReportService = {
         return response.data;
     },
 
-    getCustomersByGrade: async (): Promise<CustomerGrade[]> => {
-        const response = await privateApi.get('/statistic/customers');
+    getCustomerDebit: async (): Promise<DebtItem[]> => {
+        const response = await privateApi.get('/statistics/customer/debit');
         return response.data;
     },
 
-    getDebtReport: async (month: string): Promise<DebtItem[]> => {
-        const response = await privateApi.get('/statistic/debt', {
-            params: { month },
+    getTopCustomers: async (limit: number = 10): Promise<TopCustomerItem[]> => {
+        const response = await privateApi.get('/statistics/top-customer', {
+            params: { limit },
         });
-        return response.data;
-    },
-
-    getDebtSummary: async (month: string): Promise<DebtSummary> => {
-        const response = await privateApi.get('/statistic/debt/summary', {
-            params: { month },
-        });
-        return response.data;
+        return (response.data ?? []).map((item: any) => ({
+            customerId: Number(item?.customerId ?? 0),
+            customerCode: String(item?.customerCode ?? ''),
+            customerName: String(item?.customerName ?? ''),
+            email: item?.email ?? null,
+            phone: item?.phone ?? null,
+            grade: item?.grade ?? '',
+            totalPaid: Number(item?.totalPaid ?? 0),
+        }));
     },
 
     exportReport: async (type: string, month: string) => {

@@ -72,22 +72,26 @@ export function CreateInvoiceDialog({
     customers,
     availableBooks,
 }: CreateInvoiceDialogProps) {
-    const handleCustomerSearch = (value: string) => {
+    const handleCustomerFound = (
+        id: number | string,
+        phone: string,
+        name: string,
+    ) => {
+        console.log(id, phone, name);
         const found = customers?.find(
             (c: any) =>
-                c.id?.toString() === value ||
-                c.name?.toLowerCase().includes(value.toLowerCase()) ||
-                c.phone === value,
+                c.id == id &&
+                c.phone.toLowerCase().includes(phone.toLowerCase()) &&
+                c.name?.toLowerCase().includes(name.toLowerCase()),
         );
-
         setFormData({
             ...formData,
-            customerId: found ? found.id.toString() : value,
-            customer: found ? found.name : '',
-            phoneNumber: found ? found.phone : '',
+            phoneNumber: found ? found.phone : phone,
+            customer: found ? found.name : name,
+            customerId: found ? found.id.toString() : id,
         });
+        return found;
     };
-
     const handleBookSearch = (value: string) => {
         const normalized = value.trim().toLowerCase();
         const found = availableBooks?.find(
@@ -104,6 +108,8 @@ export function CreateInvoiceDialog({
             price: found ? Number(found.price) : 0,
         });
     };
+    const selectCustomer = customers?.find((c) => c.id == formData.customerId);
+    console.log(formData);
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
@@ -112,6 +118,7 @@ export function CreateInvoiceDialog({
                     <DialogDescription>
                         Nhập thông tin hóa đơn mới (Nhập mã để tìm kiếm nhanh)
                     </DialogDescription>
+                    1
                 </DialogHeader>
 
                 <div className="grid gap-3 py-3">
@@ -119,21 +126,34 @@ export function CreateInvoiceDialog({
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label className="text-sm">Tìm khách hàng</Label>
                         <div className="col-span-3 relative">
-                            <Input
-                                list="customer-options"
-                                placeholder="Nhập Mã / Tên / Số điện thoại..."
+                            <Select
                                 value={formData.customerId || ''}
-                                onChange={(e) =>
-                                    handleCustomerSearch(e.target.value)
-                                }
-                            />
-                            <datalist id="customer-options">
-                                {customers?.map((c) => (
-                                    <option key={c.id} value={c.id}>
-                                        {c.name} - {c.phone}
-                                    </option>
-                                ))}
-                            </datalist>
+                                onValueChange={(value) => {
+                                    handleCustomerFound(value, '', '');
+                                }}
+                            >
+                                <SelectTrigger className="w-full cursor-pointer">
+                                    <span>
+                                        {selectCustomer
+                                            ? `${selectCustomer.name} - ${selectCustomer.phone}`
+                                            : 'Chưa tìm thấy khách hàng'}
+                                    </span>
+                                </SelectTrigger>
+                                <SelectContent className="rounded-lg cursor-pointer">
+                                    {customers?.map((customer) => (
+                                        <SelectItem
+                                            key={customer.id}
+                                            value={customer.id.toString()}
+                                            className="py-2 rounded-lg text-base xl:text-lg"
+                                        >
+                                            <div className="w-full flex items-center justify-between">
+                                                <span>{customer.name}</span>
+                                                <span>{customer.phone}</span>
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
 
@@ -142,15 +162,40 @@ export function CreateInvoiceDialog({
                         <div className="col-span-3 grid grid-cols-2 gap-2">
                             <Input
                                 value={formData.customer}
-                                readOnly
-                                className="bg-gray-50 font-medium"
                                 placeholder="Tên khách hàng"
+                                onChange={(e) => {
+                                    const name = e.target.value;
+                                    setFormData({
+                                        ...formData,
+                                        customer: name,
+                                        phoneNumber: '',
+                                        customerId: '',
+                                    });
+                                }}
                             />
                             <Input
                                 value={formData.phoneNumber}
-                                readOnly
-                                className="bg-gray-50"
                                 placeholder="Số điện thoại"
+                                onChange={(e) => {
+                                    const phone = e.target.value;
+
+                                    const found = customers?.find(
+                                        (c: any) =>
+                                            c.phone?.toLowerCase() ===
+                                            phone.toLowerCase(),
+                                    );
+
+                                    setFormData({
+                                        ...formData,
+                                        phoneNumber: phone,
+
+                                        customer: found ? found.name : '',
+
+                                        customerId: found
+                                            ? found.id.toString()
+                                            : '',
+                                    });
+                                }}
                             />
                         </div>
                     </div>
@@ -241,21 +286,28 @@ export function CreateInvoiceDialog({
                         </p>
                         <div className="grid grid-cols-12 gap-2">
                             <div className="col-span-5">
-                                <Input
-                                    list="book-options"
-                                    placeholder="Nhập mã sách..."
-                                    value={newBook.id}
-                                    onChange={(e) =>
-                                        handleBookSearch(e.target.value)
-                                    }
-                                />
-                                <datalist id="book-options">
-                                    {availableBooks?.map((b) => (
-                                        <option key={b.id} value={b.id}>
-                                            {b.title}
-                                        </option>
-                                    ))}
-                                </datalist>
+                                <Select value={newBook.id || ''} onValueChange={(value) => handleBookSearch(value)}>
+                                    <SelectTrigger className='cursor-pointer w-full'>
+                                        <span>
+                                            {newBook.title || 'Chọn sách'}
+                                        </span>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableBooks.map((book) => {
+                                            return (
+                                                <SelectItem
+                                                    key={book.id}
+                                                    value={book.id.toString()}
+                                                    className="py-2 rounded-lg text-base xl:text-lg"
+                                                >   
+                                                    <div className="w-full flex items-center justify-between">
+                                                        <span>{book.title}</span>
+                                                    </div>
+                                                </SelectItem>
+                                            )
+                                        })}
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <Input
                                 type="number"

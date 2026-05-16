@@ -8,6 +8,7 @@ import { BookTable } from './components/BookTable';
 import { BookDialogs } from './components/BookDialogs';
 import { ExcelImportDialog } from './components/ExcelImportDialog';
 import { BookService } from '../../services/book.service';
+
 export interface BookItem {
     id: number;
     code: string;
@@ -19,6 +20,8 @@ export interface BookItem {
     year: number;
     stock: number;
     authors?: any[];
+    author?: string;
+    publisher?: string;
 }
 
 export function BooksPage() {
@@ -34,11 +37,16 @@ export function BooksPage() {
     const [selectedBook, setSelectedBook] = useState<BookItem | null>(null);
     const [isExcelDialogOpen, setIsExcelDialogOpen] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
     const [selectedCategory, setSelectedCategory] = useState('');
     const [selectedAuthor, setSelectedAuthor] = useState('');
     const [selectedPublisher, setSelectedPublisher] = useState('');
     const [selectedPriceRange, setSelectedPriceRange] = useState('');
     const [selectedStockStatus, setSelectedStockStatus] = useState('');
+
+    const [categories, setCategories] = useState<any[]>([]);
+    const [authors, setAuthors] = useState<any[]>([]);
+    const [publishers, setPublishers] = useState<any[]>([]);
 
     const [formData, setFormData] = useState({
         code: '',
@@ -58,39 +66,78 @@ export function BooksPage() {
                 BookService.getAllBook(),
                 BookService.getStatistics(),
             ]);
-            setBooks(booksData);
+            const normalizedBooks = booksData.map((book: any) => ({
+                ...book,
+                author:
+                    book.author ||
+                    book.authors?.[0]?.name ||
+                    book.authors?.[0]?.authorName ||
+                    book.authors?.[0]?.fullName,
+                publisher:
+                    book.publisher ||
+                    book.publishers?.[0]?.name ||
+                    book.publishers?.[0]?.publisherName ||
+                    book.publishers?.[0]?.fullName,
+            }));
+            setBooks(normalizedBooks);
             setStatistics(statsData);
         } catch (error: any) {
-            toast.error('Không thể tải dữ liệu từ máy chủ' + error.message);
+            toast.error('Không thể tải dữ liệu từ máy chủ: ' + error.message);
         } finally {
             setLoading(false);
         }
     };
 
+    const fetchFilterData = async () => {
+        try {
+            const [categoryData, authorData, publisherData] = await Promise.all(
+                [
+                    BookService.getCategories(),
+                    BookService.getAllAuthors(),
+                    BookService.getAllPublishers(),
+                ],
+            );
+            setCategories(categoryData);
+            setAuthors(authorData);
+            setPublishers(publisherData);
+        } catch (error: any) {
+            console.error(
+                'Không thể tải dữ liệu bộ lọc',
+                error.message || error,
+            );
+        }
+    };
+
     useEffect(() => {
         fetchData();
+        fetchFilterData();
     }, []);
 
     const filteredBooks = books.filter((book) => {
         const matchesSearch =
             book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             book.code.toLowerCase().includes(searchTerm.toLowerCase());
+
         const matchesCategory =
-            selectedCategory === '' ||
+            !selectedCategory ||
             selectedCategory === 'Tất cả' ||
             book.category === selectedCategory;
+
         const matchesAuthor =
-            selectedAuthor === '' ||
+            !selectedAuthor ||
             selectedAuthor === 'Tất cả' ||
+            book.author === selectedAuthor ||
             !!book.authors?.some(
                 (author: any) =>
                     author.name === selectedAuthor ||
                     author.authorName === selectedAuthor ||
                     author.fullName === selectedAuthor,
             );
+
         const matchesPublisher =
-            selectedPublisher === '' ||
+            !selectedPublisher ||
             selectedPublisher === 'Tất cả' ||
+            book.publisher === selectedPublisher ||
             !!book.publishers?.some(
                 (publisher: any) =>
                     publisher.name === selectedPublisher ||
@@ -99,21 +146,21 @@ export function BooksPage() {
             );
 
         let matchesPrice = true;
-        if (selectedPriceRange === '<100.000') {
+        if (selectedPriceRange === '0-100000') {
             matchesPrice = book.cost < 100000;
-        } else if (selectedPriceRange === '100.000 - 200.000') {
+        } else if (selectedPriceRange === '100000-200000') {
             matchesPrice = book.cost >= 100000 && book.cost <= 200000;
-        } else if (selectedPriceRange === '200.000 - 500.000') {
+        } else if (selectedPriceRange === '200000-500000') {
             matchesPrice = book.cost > 200000 && book.cost <= 500000;
-        } else if (selectedPriceRange === 'Hơn 500.000') {
+        } else if (selectedPriceRange === '500000+') {
             matchesPrice = book.cost > 500000;
         }
 
         let matchesStock = true;
-        if (selectedStockStatus === 'Dưới 50') {
-            matchesStock = book.stock < 50;
-        } else if (selectedStockStatus === '50 - 100') {
-            matchesStock = book.stock >= 50 && book.stock <= 100;
+        if (selectedStockStatus === 'Dưới 30') {
+            matchesStock = book.stock < 30;
+        } else if (selectedStockStatus === '30 - 100') {
+            matchesStock = book.stock >= 30 && book.stock <= 100;
         } else if (selectedStockStatus === 'Trên 100') {
             matchesStock = book.stock > 100;
         }
@@ -173,13 +220,12 @@ export function BooksPage() {
                 category: '',
                 cost: '',
                 stock: '',
-                year: '2026',
+                year: new Date().getFullYear().toString(),
                 authorIds: [],
                 publisherIds: [],
             });
         } catch (error: any) {
-            toast.error(JSON.stringify(error.message));
-            console.log(error);
+            toast.error(error.message || 'Lỗi khi thêm sách');
         }
     };
 
@@ -207,7 +253,7 @@ export function BooksPage() {
             setIsEditDialogOpen(false);
             fetchData();
         } catch (error: any) {
-            toast.error('Lỗi xuất hiện khi cập nhật' + error.message);
+            toast.error('Lỗi xuất hiện khi cập nhật: ' + error.message);
         }
     };
 
@@ -219,7 +265,7 @@ export function BooksPage() {
             setIsDeleteDialogOpen(false);
             fetchData();
         } catch (error: any) {
-            toast.error('Có lỗi xuất hiện khi xoá' + error.message);
+            toast.error('Có lỗi xuất hiện khi xoá: ' + error.message);
         }
     };
 
@@ -232,8 +278,7 @@ export function BooksPage() {
             fetchData();
         } catch (error: any) {
             toast.error(
-                'Lỗi khi thêm danh sách bằng file excel' +
-                    JSON.stringify(error.message),
+                'Lỗi khi thêm danh sách bằng file excel: ' + error.message,
             );
         }
     };
@@ -247,8 +292,9 @@ export function BooksPage() {
             cost: book.cost.toString(),
             stock: (book.stock || 0).toString(),
             year: book.year.toString(),
-            authorIds: book.authors?.map((a) => a.authorId) || [],
-            publisherIds: book.publishers?.map((p) => p.publisherId) || [],
+            authorIds: book.authors?.map((a) => a.id || a.authorId) || [],
+            publisherIds:
+                book.publishers?.map((p) => p.id || p.publisherId) || [],
         });
         setIsEditDialogOpen(true);
     };
@@ -317,17 +363,21 @@ export function BooksPage() {
                 selectedStockStatus={selectedStockStatus}
                 setSelectedStockStatus={setSelectedStockStatus}
                 handleResetFilters={handleResetFilters}
-                allBooks={books} 
+                allBooks={books}
+                categories={categories}
+                authors={authors}
+                publishers={publishers}
                 onSelectBook={(book) => {
                     openViewDialog(book);
                 }}
             />
+
             <BookTable
                 books={filteredBooks}
                 onEdit={openEditDialog}
                 onDelete={openDeleteDialog}
                 onView={openViewDialog}
-                lowStockThreshold={50}
+                lowStockThreshold={30}
             />
 
             <BookDialogs

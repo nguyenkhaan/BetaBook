@@ -17,8 +17,8 @@ import { BookService } from '../../services/book.service';
 import { VoucherService, Voucher } from '../../services/voucher.service';
 
 export interface InvoiceBook {
-    id: string | number; // ID của dòng chi tiết hóa đơn (nếu có)
-    bookid: number; // ID của quyển sách (Dùng cái này để map với Backend)
+    id: string | number;
+    bookid: number;
     code: string;
     title: string;
     quantity: number;
@@ -45,7 +45,7 @@ export interface Invoice {
     date: string;
     books: InvoiceBook[];
     totalItems: number;
-    items: number; 
+    items: number;
     discountCode?: string;
     vouchers?: { voucherId: number }[];
 }
@@ -70,11 +70,13 @@ export function InvoicePage() {
     );
 
     const [formData, setFormData] = useState({
+        code: '',
         customer: '',
         customerPhone: '',
         date: '',
         status: '',
         selectedVoucherId: '0',
+        books: [] as InvoiceBook[],
     });
 
     const [createFormData, setCreateFormData] = useState({
@@ -88,15 +90,16 @@ export function InvoicePage() {
         selectedVoucherId: '0',
         discountCode: '',
         discountAmount: 0,
+        paidAmount: 0,
     });
 
-   const [newBook, setNewBook] = useState({
-       id: '',
-       code: '',
-       title: '',
-       quantity: 1,
-       price: 0,
-   });
+    const [newBook, setNewBook] = useState({
+        id: '',
+        code: '',
+        title: '',
+        quantity: 1,
+        price: 0,
+    });
 
     const mockDiscountCodes: DiscountCode[] = [
         {
@@ -107,6 +110,7 @@ export function InvoicePage() {
             description: 'Giảm 10%',
         },
     ];
+
     const fetchData = useCallback(async () => {
         try {
             setIsLoading(true);
@@ -123,17 +127,15 @@ export function InvoicePage() {
 
             const formattedInvoices: Invoice[] = (invoiceRes || []).map(
                 (bill: any) => {
-                    // 1. Tính tổng số lượng sách
                     const totalQty =
                         bill.billDetail?.reduce(
                             (acc: number, item: any) =>
                                 acc + (Number(item.quantity) || 0),
                             0,
                         ) || 0;
-                
+
                     let displayCost = Number(bill.cost) || 0;
 
-                  
                     if (displayCost === 0 && bill.billDetail?.length > 0) {
                         displayCost = bill.billDetail.reduce(
                             (acc: number, item: any) => {
@@ -172,7 +174,9 @@ export function InvoicePage() {
                     };
 
                     const normalizedStatus =
-                        statusMap[(bill.status || '').toString().toUpperCase()] ||
+                        statusMap[
+                            (bill.status || '').toString().toUpperCase()
+                        ] ||
                         bill.status ||
                         'Chưa thanh toán';
 
@@ -198,7 +202,7 @@ export function InvoicePage() {
                         items: totalQty,
                         books:
                             bill.billDetail?.map((item: any) => ({
-                                id: item.id, 
+                                id: item.id,
                                 bookid: Number(item.id),
                                 code: item.code || item.bookCode || '',
                                 title: item.title,
@@ -227,7 +231,7 @@ export function InvoicePage() {
         } finally {
             setIsLoading(false);
         }
-    }, []); 
+    }, []);
 
     useEffect(() => {
         fetchData();
@@ -270,8 +274,12 @@ export function InvoicePage() {
                 const latestInvoice = [...invoices]
                     .filter((invoice) => /^HD\d+$/i.test(invoice.code || ''))
                     .sort((a, b) => {
-                        const aMatch = (a.code || '').toUpperCase().match(/^HD(\d+)$/);
-                        const bMatch = (b.code || '').toUpperCase().match(/^HD(\d+)$/);
+                        const aMatch = (a.code || '')
+                            .toUpperCase()
+                            .match(/^HD(\d+)$/);
+                        const bMatch = (b.code || '')
+                            .toUpperCase()
+                            .match(/^HD(\d+)$/);
                         const aNum = aMatch ? Number(aMatch[1]) : 0;
                         const bNum = bMatch ? Number(bMatch[1]) : 0;
                         return bNum - aNum;
@@ -283,7 +291,9 @@ export function InvoicePage() {
 
                 const nextNumber =
                     (Number(
-                        (latestInvoice.code || '').toUpperCase().replace('HD', ''),
+                        (latestInvoice.code || '')
+                            .toUpperCase()
+                            .replace('HD', ''),
                     ) || 0) + 1;
 
                 return `HD${nextNumber.toString().padStart(3, '0')}`;
@@ -334,13 +344,10 @@ export function InvoicePage() {
             resetCreateForm();
             await fetchData();
         } catch (error: any) {
-            console.error('Create Invoice Error:', error);
-
             const message =
                 error?.response?.data?.message ||
                 error?.message ||
                 'Lỗi hệ thống không xác định';
-
             toast.error(Array.isArray(message) ? message[0] : message);
         } finally {
             setIsLoading(false);
@@ -359,6 +366,7 @@ export function InvoicePage() {
             selectedVoucherId: '0',
             discountCode: '',
             discountAmount: 0,
+            paidAmount: 0,
         });
         setNewBook({ id: '', code: '', title: '', quantity: 1, price: 0 });
     };
@@ -429,15 +437,9 @@ export function InvoicePage() {
                 billDetails: validBooks,
                 vouchers:
                     formData.selectedVoucherId !== '0'
-                        ? [
-                              {
-                                  voucherId: Number(formData.selectedVoucherId),
-                              },
-                          ]
+                        ? [{ voucherId: Number(formData.selectedVoucherId) }]
                         : [],
             };
-
-            console.log('Update payload:', updateDto);
 
             await InvoiceService.update(selectedInvoice.id, updateDto);
 
@@ -446,14 +448,11 @@ export function InvoicePage() {
             setSelectedInvoice(null);
             await fetchData();
         } catch (error: any) {
-            console.error('Lỗi Edit:', error);
-
             const errorMessage =
                 error?.response?.data?.message ||
                 error?.response?.data?.error ||
                 error?.message ||
                 'Cập nhật hóa đơn thất bại';
-
             toast.error(
                 Array.isArray(errorMessage) ? errorMessage[0] : errorMessage,
             );
@@ -462,6 +461,72 @@ export function InvoicePage() {
         }
     };
 
+    const calculateTotalItems = useCallback(() => {
+        return createFormData.books.reduce((acc, b) => acc + b.quantity, 0);
+    }, [createFormData.books]);
+
+    const calculateTotalAmount = useCallback(() => {
+        return createFormData.books.reduce(
+            (acc, b) => acc + b.quantity * b.price,
+            0,
+        );
+    }, [createFormData.books]);
+
+    const calculateDiscountAmount = useCallback(() => {
+        const sub = calculateTotalAmount();
+        const v = vouchers.find(
+            (v) => v.id.toString() === createFormData.selectedVoucherId,
+        );
+        if (!v) return 0;
+        return v.type === 'PERCENT' ? (sub * v.sale) / 100 : v.sale;
+    }, [calculateTotalAmount, vouchers, createFormData.selectedVoucherId]);
+
+    const calculateFinalTotal = useCallback(() => {
+        const sub = calculateTotalAmount();
+        const v = vouchers.find(
+            (v) => v.id.toString() === createFormData.selectedVoucherId,
+        );
+        return v
+            ? v.type === 'PERCENT'
+                ? sub * (1 - v.sale / 100)
+                : Math.max(0, sub - v.sale)
+            : sub;
+    }, [calculateTotalAmount, vouchers, createFormData.selectedVoucherId]);
+
+    const calculateDebtAmount = useCallback(() => {
+        const finalTotal = calculateFinalTotal();
+        const paid = Number(createFormData.paidAmount) || 0;
+        return finalTotal - paid;
+    }, [calculateFinalTotal, createFormData.paidAmount]);
+
+    const calculateEditSubtotal = useCallback(() => {
+        return (
+            selectedInvoice?.books.reduce(
+                (acc, b) => acc + b.quantity * b.price,
+                0,
+            ) || 0
+        );
+    }, [selectedInvoice]);
+
+    const calculateEditDiscountAmount = useCallback(() => {
+        const sub = calculateEditSubtotal();
+        const v = vouchers.find(
+            (v) => v.id.toString() === formData.selectedVoucherId,
+        );
+        if (!v) return 0;
+        return v.type === 'PERCENT' ? (sub * v.sale) / 100 : v.sale;
+    }, [calculateEditSubtotal, vouchers, formData.selectedVoucherId]);
+
+    const calculateEditFinalTotal = useCallback(() => {
+        const sub = calculateEditSubtotal();
+        const v = vouchers.find(
+            (v) => v.id.toString() === formData.selectedVoucherId,
+        );
+        if (!v) return sub;
+        return v.type === 'PERCENT'
+            ? sub * (1 - v.sale / 100)
+            : Math.max(0, sub - v.sale);
+    }, [calculateEditSubtotal, vouchers, formData.selectedVoucherId]);
 
     return (
         <div className="space-y-6">
@@ -512,7 +577,11 @@ export function InvoicePage() {
                                         matchesPrice = cost > 500;
                                     }
                                 }
-                                return matchesSearch && matchesStatus && matchesPrice;
+                                return (
+                                    matchesSearch &&
+                                    matchesStatus &&
+                                    matchesPrice
+                                );
                             })}
                             onEdit={(inv) => {
                                 setSelectedInvoice(inv);
@@ -523,7 +592,6 @@ export function InvoicePage() {
                                     OVERDUE: 'Quá hạn',
                                 };
 
-                                // Lấy voucherId an toàn, tránh bị crash hàm khiến Dialog không mở được
                                 let initialVoucherId = '0';
                                 if (inv.vouchers && inv.vouchers.length > 0) {
                                     const firstVoucher: any = inv.vouchers[0];
@@ -535,6 +603,7 @@ export function InvoicePage() {
                                 }
 
                                 setFormData({
+                                    code: inv.code || '',
                                     customer: inv.customer,
                                     customerPhone: inv.customerPhone,
                                     date: inv.date,
@@ -542,6 +611,7 @@ export function InvoicePage() {
                                         displayStatusMap[inv.status] ||
                                         inv.status,
                                     selectedVoucherId: initialVoucherId,
+                                    books: inv.books || [],
                                 });
 
                                 setIsEditDialogOpen(true);
@@ -657,44 +727,11 @@ export function InvoicePage() {
                     }))
                 }
                 onSave={handleCreateInvoice}
-                calculateTotalItems={() =>
-                    createFormData.books.reduce((acc, b) => acc + b.quantity, 0)
-                }
-                calculateTotalAmount={() =>
-                    createFormData.books.reduce(
-                        (acc, b) => acc + b.quantity * b.price,
-                        0,
-                    )
-                }
-                calculateDiscountAmount={() => {
-                    const sub = createFormData.books.reduce(
-                        (acc, b) => acc + b.quantity * b.price,
-                        0,
-                    );
-                    const v = vouchers.find(
-                        (v) =>
-                            v.id.toString() ===
-                            createFormData.selectedVoucherId,
-                    );
-                    if (!v) return 0;
-                    return v.type === 'PERCENT' ? (sub * v.sale) / 100 : v.sale;
-                }}
-                calculateFinalTotal={() => {
-                    const sub = createFormData.books.reduce(
-                        (acc, b) => acc + b.quantity * b.price,
-                        0,
-                    );
-                    const v = vouchers.find(
-                        (v) =>
-                            v.id.toString() ===
-                            createFormData.selectedVoucherId,
-                    );
-                    return v
-                        ? v.type === 'PERCENT'
-                            ? sub * (1 - v.sale / 100)
-                            : Math.max(0, sub - v.sale)
-                        : sub;
-                }}
+                calculateTotalItems={calculateTotalItems}
+                calculateTotalAmount={calculateTotalAmount}
+                calculateDiscountAmount={calculateDiscountAmount}
+                calculateFinalTotal={calculateFinalTotal}
+                calculateDebtAmount={calculateDebtAmount}
             />
 
             <EditInvoiceDialog
@@ -705,38 +742,9 @@ export function InvoicePage() {
                 setFormData={setFormData}
                 onSave={handleEditInvoice}
                 vouchers={vouchers}
-                calculateEditSubtotal={() =>
-                    selectedInvoice?.books.reduce(
-                        (acc, b) => acc + b.quantity * b.price,
-                        0,
-                    ) || 0
-                }
-                calculateEditDiscountAmount={() => {
-                    const sub =
-                        selectedInvoice?.books.reduce(
-                            (acc, b) => acc + b.quantity * b.price,
-                            0,
-                        ) || 0;
-                    const v = vouchers.find(
-                        (v) => v.id.toString() === formData.selectedVoucherId,
-                    );
-                    if (!v) return 0;
-                    return v.type === 'PERCENT' ? (sub * v.sale) / 100 : v.sale;
-                }}
-                calculateEditFinalTotal={() => {
-                    const sub =
-                        selectedInvoice?.books.reduce(
-                            (acc, b) => acc + b.quantity * b.price,
-                            0,
-                        ) || 0;
-                    const v = vouchers.find(
-                        (v) => v.id.toString() === formData.selectedVoucherId,
-                    );
-                    if (!v) return sub;
-                    return v.type === 'PERCENT'
-                        ? sub * (1 - v.sale / 100)
-                        : Math.max(0, sub - v.sale);
-                }}
+                calculateEditSubtotal={calculateEditSubtotal}
+                calculateEditDiscountAmount={calculateEditDiscountAmount}
+                calculateEditFinalTotal={calculateEditFinalTotal}
             />
 
             <ViewInvoiceDialog
@@ -753,19 +761,11 @@ export function InvoicePage() {
                 onDelete={async () => {
                     if (!selectedInvoice) return;
                     try {
-                        // Bước 1: Gọi service xóa
                         await InvoiceService.delete(selectedInvoice.id);
-
-                        // Bước 2: Thông báo
                         toast.success(`Đã xóa hóa đơn ${selectedInvoice.code}`);
-
-                        // Bước 3: Đóng dialog và load lại data
                         setIsDeleteDialogOpen(false);
                         fetchData();
                     } catch (error: any) {
-                        console.error('Lỗi xóa hóa đơn đầy đủ:', error);
-
-                        // Lấy thông báo lỗi thật từ Backend trả về
                         const backendError =
                             error.response?.data?.message ||
                             error.message ||

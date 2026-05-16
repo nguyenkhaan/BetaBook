@@ -8,6 +8,7 @@ interface BookTableRowProps {
     onEdit: (book: BookItem) => void;
     onDelete: (book: BookItem) => void;
     onView: (book: BookItem) => void;
+    lowStockThreshold?: number;
 }
 
 export function BookTableRow({ book, onEdit, onDelete, onView }: BookTableRowProps) {

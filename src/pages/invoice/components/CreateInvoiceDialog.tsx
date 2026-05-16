@@ -32,6 +32,7 @@ interface CreateInvoiceDialogProps {
         phoneNumber: string;
         customerId?: string;
         selectedVoucherId: string;
+        paidAmount: number;
     };
     setFormData: (data: any) => void;
     newBook: {
@@ -48,8 +49,9 @@ interface CreateInvoiceDialogProps {
     vouchers: Voucher[];
     calculateTotalItems: () => number;
     calculateTotalAmount: () => number;
-    calculateDiscountAmount: () => number; // Thêm function này
+    calculateDiscountAmount: () => number;
     calculateFinalTotal: () => number;
+    calculateDebtAmount: () => number;
     customers: any[];
     availableBooks: any[];
 }
@@ -67,8 +69,9 @@ export function CreateInvoiceDialog({
     vouchers,
     calculateTotalItems,
     calculateTotalAmount,
-    calculateDiscountAmount, // Thêm function này
+    calculateDiscountAmount,
     calculateFinalTotal,
+    calculateDebtAmount,
     customers,
     availableBooks,
 }: CreateInvoiceDialogProps) {
@@ -77,7 +80,6 @@ export function CreateInvoiceDialog({
         phone: string,
         name: string,
     ) => {
-        console.log(id, phone, name);
         const found = customers?.find(
             (c: any) =>
                 c.id == id &&
@@ -92,6 +94,7 @@ export function CreateInvoiceDialog({
         });
         return found;
     };
+
     const handleBookSearch = (value: string) => {
         const normalized = value.trim().toLowerCase();
         const found = availableBooks?.find(
@@ -108,8 +111,9 @@ export function CreateInvoiceDialog({
             price: found ? Number(found.price) : 0,
         });
     };
+
     const selectCustomer = customers?.find((c) => c.id == formData.customerId);
-    console.log(formData);
+
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
@@ -118,7 +122,6 @@ export function CreateInvoiceDialog({
                     <DialogDescription>
                         Nhập thông tin hóa đơn mới (Nhập mã để tìm kiếm nhanh)
                     </DialogDescription>
-                    1
                 </DialogHeader>
 
                 <div className="grid gap-3 py-3">
@@ -161,19 +164,6 @@ export function CreateInvoiceDialog({
                         <Label className="text-sm">Thông tin KH</Label>
                         <div className="col-span-3 grid grid-cols-2 gap-2">
                             <Input
-                                value={formData.customer}
-                                placeholder="Tên khách hàng"
-                                onChange={(e) => {
-                                    const name = e.target.value;
-                                    setFormData({
-                                        ...formData,
-                                        customer: name,
-                                        phoneNumber: '',
-                                        customerId: '',
-                                    });
-                                }}
-                            />
-                            <Input
                                 value={formData.phoneNumber}
                                 placeholder="Số điện thoại"
                                 onChange={(e) => {
@@ -188,9 +178,7 @@ export function CreateInvoiceDialog({
                                     setFormData({
                                         ...formData,
                                         phoneNumber: phone,
-
                                         customer: found ? found.name : '',
-
                                         customerId: found
                                             ? found.id.toString()
                                             : '',
@@ -286,8 +274,13 @@ export function CreateInvoiceDialog({
                         </p>
                         <div className="grid grid-cols-12 gap-2">
                             <div className="col-span-5">
-                                <Select value={newBook.id || ''} onValueChange={(value) => handleBookSearch(value)}>
-                                    <SelectTrigger className='cursor-pointer w-full'>
+                                <Select
+                                    value={newBook.id || ''}
+                                    onValueChange={(value) =>
+                                        handleBookSearch(value)
+                                    }
+                                >
+                                    <SelectTrigger className="cursor-pointer w-full">
                                         <span>
                                             {newBook.title || 'Chọn sách'}
                                         </span>
@@ -299,25 +292,31 @@ export function CreateInvoiceDialog({
                                                     key={book.id}
                                                     value={book.id.toString()}
                                                     className="py-2 rounded-lg text-base xl:text-lg"
-                                                >   
+                                                >
                                                     <div className="w-full flex items-center justify-between">
-                                                        <span>{book.title}</span>
+                                                        <span>
+                                                            {book.title}
+                                                        </span>
                                                     </div>
                                                 </SelectItem>
-                                            )
+                                            );
                                         })}
                                     </SelectContent>
                                 </Select>
                             </div>
                             <Input
                                 type="number"
+                                min={1}
                                 value={newBook.quantity}
-                                onChange={(e) =>
+                                onChange={(e) => {
+                                    const value = e.target.value;
+
                                     setNewBook({
                                         ...newBook,
-                                        quantity: parseInt(e.target.value) || 1,
-                                    })
-                                }
+                                        quantity:
+                                            value === '' ? '' : Number(value),
+                                    });
+                                }}
                                 className="col-span-2"
                             />
                             <Input
@@ -396,18 +395,54 @@ export function CreateInvoiceDialog({
                                     ' đ'
                                 }
                                 readOnly
-                                className="col-span-3 bg-orange-50 text-orange-600 font-medium"
+                                className="col-span-3 text-orange-600 font-medium"
                             />
                         </div>
                     )}
 
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label className="font-bold text-orange-600">
-                            TỔNG TIỀN
-                        </Label>
+                        <Label className="font-bold">Tổng tiền phải trả</Label>
                         <Input
                             value={
                                 calculateFinalTotal().toLocaleString('vi-VN') +
+                                ' VND'
+                            }
+                            readOnly
+                            className="col-span-3 font-bold text-lg"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label className="">
+                            Số tiền KH trả
+                        </Label>
+                        <Input
+                            type="number"
+                            min={0}
+                            placeholder="Nhập số tiền khách trả..."
+                            value={formData.paidAmount || ''}
+                            onChange={(e) => {
+                                const val = Number(e.target.value);
+                                const finalTotal = calculateFinalTotal();
+
+                                setFormData({
+                                    ...formData,
+                                    paidAmount: val,
+                                    status:
+                                        val >= finalTotal
+                                            ? 'Đã thanh toán'
+                                            : 'Chưa thanh toán',
+                                });
+                            }}
+                            className="col-span-3 font-bold text-base"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label className="font-bold">Số tiền nợ</Label>
+                        <Input
+                            value={
+                                calculateDebtAmount().toLocaleString('vi-VN') +
                                 ' VND'
                             }
                             readOnly

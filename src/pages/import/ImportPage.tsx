@@ -21,13 +21,7 @@ export interface ImportOrder {
     status: 'Hoàn thành' | 'Đang xử lý' | 'Đã hủy';
     createdBy: string;
     note?: string;
-    type?: 'existing' | 'new';
-    bookCode?: string;
-    newBookCode?: string;
-    bookName?: string;
-    publisher?: string;
-    importPrice?: number;
-    quantity?: number;
+    details?: any[];
 }
 
 export function ImportPage() {
@@ -52,16 +46,7 @@ export function ImportPage() {
         status: 'Đang xử lý' as ImportOrder['status'],
         createdBy: 'A Nguyen Van',
         note: '',
-        type: 'existing' as 'existing' | 'new',
-        bookCode: '',
-        newBookCode: '',
-        bookName: '',
-        importPrice: 0,
-        quantity: 0,
-        authorIds: [] as string[],
-        publisherIds: [] as string[],
-        category: '',
-        year: new Date().getFullYear().toString(),
+        details: [] as any[],
     });
 
     useEffect(() => {
@@ -75,7 +60,7 @@ export function ImportPage() {
                 setImports(data);
             }
         } catch (error) {
-            console.error('Lỗi khi tải danh sách phiếu nhập:', error);
+            console.error(error);
         }
     };
 
@@ -107,24 +92,9 @@ export function ImportPage() {
             return;
         }
 
-        if (formData.type === 'existing' && !formData.bookCode?.trim()) {
-            toast.error('Vui lòng nhập mã sách');
+        if (!formData.details || formData.details.length === 0) {
+            toast.error('Vui lòng thêm ít nhất một sách vào phiếu nhập');
             return;
-        }
-
-        if (formData.type === 'new') {
-            if (!formData.newBookCode?.trim()) {
-                toast.error('Vui lòng nhập mã sách mới');
-                return;
-            }
-            if (!formData.bookName?.trim()) {
-                toast.error('Vui lòng nhập tên sách mới');
-                return;
-            }
-            if (!formData.category?.trim()) {
-                toast.error('Vui lòng chọn thể loại');
-                return;
-            }
         }
 
         try {
@@ -136,11 +106,7 @@ export function ImportPage() {
                     `PN${String(imports.length + 1).padStart(3, '0')}`,
             };
 
-            if (formData.type === 'new') {
-                await ImportService.createWithNewBook(payload);
-            } else {
-                await ImportService.create(payload);
-            }
+            await ImportService.create(payload);
 
             toast.success('Phiếu nhập đã được tạo thành công!');
             setIsCreateDialogOpen(false);
@@ -159,6 +125,11 @@ export function ImportPage() {
 
         if (!formData.supplier.trim()) {
             toast.error('Vui lòng chọn nhà cung cấp');
+            return;
+        }
+
+        if (!formData.details || formData.details.length === 0) {
+            toast.error('Vui lòng thêm ít nhất một sách vào phiếu nhập');
             return;
         }
 
@@ -214,16 +185,7 @@ export function ImportPage() {
             status: importOrder.status,
             createdBy: importOrder.createdBy,
             note: importOrder.note || '',
-            type: importOrder.type || 'existing',
-            bookCode: importOrder.bookCode || '',
-            newBookCode: importOrder.newBookCode || '',
-            bookName: importOrder.bookName || '',
-            importPrice: importOrder.importPrice || 0,
-            quantity: importOrder.quantity || 0,
-            authorIds: [],
-            publisherIds: [],
-            category: '',
-            year: new Date().getFullYear().toString(),
+            details: importOrder.details || [],
         });
         setIsEditDialogOpen(true);
     };
@@ -244,16 +206,7 @@ export function ImportPage() {
             status: 'Đang xử lý',
             createdBy: 'A Nguyen Van',
             note: '',
-            type: 'existing',
-            bookCode: '',
-            newBookCode: '',
-            bookName: '',
-            importPrice: 0,
-            quantity: 0,
-            authorIds: [],
-            publisherIds: [],
-            category: '',
-            year: new Date().getFullYear().toString(),
+            details: [],
         });
     };
 

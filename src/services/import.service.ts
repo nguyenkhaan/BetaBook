@@ -3,23 +3,23 @@ import { ImportOrder } from '../pages/import/ImportPage';
 
 export const ImportService = {
     getAll: async (): Promise<ImportOrder[]> => {
-        const response = await privateApi.get('/income');
+        const response = await privateApi.get('/imports');
         return response.data;
     },
 
     getById: async (id: number): Promise<ImportOrder> => {
-        const response = await privateApi.get(`/income/${id}`);
+        const response = await privateApi.get(`/imports/${id}`);
         return response.data;
     },
 
-    create: async (dto: any) => {
-        const response = await privateApi.post('/income', dto);
+    create: async (dto: any): Promise<ImportOrder> => {
+        const response = await privateApi.post('/imports', dto);
         return response.data;
     },
 
-    createWithNewBook: async (formData: FormData) => {
+    createWithNewBook: async (formData: FormData): Promise<ImportOrder> => {
         const response = await privateApi.post(
-            '/income/with-new-book',
+            '/imports/with-new-book',
             formData,
             {
                 headers: {
@@ -30,13 +30,13 @@ export const ImportService = {
         return response.data;
     },
 
-    update: async (id: number, dto: any) => {
-        const response = await privateApi.put(`/income/${id}`, dto);
+    update: async (id: number, dto: any): Promise<ImportOrder> => {
+        const response = await privateApi.put(`/imports/${id}`, dto);
         return response.data;
     },
 
-    delete: async (id: number) => {
-        const response = await privateApi.delete(`/income/${id}`);
+    delete: async (id: number): Promise<void> => {
+        const response = await privateApi.delete(`/imports/${id}`);
         return response.data;
     },
 };

@@ -32,7 +32,7 @@ interface CreateInvoiceDialogProps {
         phoneNumber: string;
         customerId?: string;
         selectedVoucherId: string;
-        paidAmount: number;
+        temporaryCost: number;
     };
     setFormData: (data: any) => void;
     newBook: {
@@ -76,13 +76,11 @@ export function CreateInvoiceDialog({
     availableBooks,
 }: CreateInvoiceDialogProps) {
     const handleCustomerFound = (
-        id: number | string,
         phone: string,
         name: string,
     ) => {
         const found = customers?.find(
             (c: any) =>
-                c.id == id &&
                 c.phone.toLowerCase().includes(phone.toLowerCase()) &&
                 c.name?.toLowerCase().includes(name.toLowerCase()),
         );
@@ -90,7 +88,7 @@ export function CreateInvoiceDialog({
             ...formData,
             phoneNumber: found ? found.phone : phone,
             customer: found ? found.name : name,
-            customerId: found ? found.id.toString() : id,
+            customerId: found ? found.id.toString() : '' 
         });
         return found;
     };
@@ -112,8 +110,10 @@ export function CreateInvoiceDialog({
         });
     };
 
-    const selectCustomer = customers?.find((c) => c.id == formData.customerId);
-
+    const selectCustomer = customers?.find((c) => c.phone == formData.phoneNumber);
+    const selectVoucher = vouchers?.find(
+        (v) => v.id == Number(formData.selectedVoucherId),
+    );
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
@@ -130,9 +130,17 @@ export function CreateInvoiceDialog({
                         <Label className="text-sm">Tìm khách hàng</Label>
                         <div className="col-span-3 relative">
                             <Select
-                                value={formData.customerId || ''}
+                                value={formData.phoneNumber || ''}
                                 onValueChange={(value) => {
-                                    handleCustomerFound(value, '', '');
+                                    const found = customers?.find(
+                                        (c: any) => c.phone === value
+                                    );
+                                    setFormData({
+                                        ...formData,
+                                        phoneNumber: value,
+                                        customer: found ? found.name : '',
+                                        customerId: found ? found.id.toString() : '',
+                                    });
                                 }}
                             >
                                 <SelectTrigger className="w-full cursor-pointer">
@@ -146,7 +154,7 @@ export function CreateInvoiceDialog({
                                     {customers?.map((customer) => (
                                         <SelectItem
                                             key={customer.id}
-                                            value={customer.id.toString()}
+                                            value={customer.phone}
                                             className="py-2 rounded-lg text-base xl:text-lg"
                                         >
                                             <div className="w-full flex items-center justify-between">
@@ -363,7 +371,10 @@ export function CreateInvoiceDialog({
                                 }
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Chọn mã giảm giá" />
+                                    {selectVoucher
+                                        ? `${selectVoucher.code} - ${selectVoucher.eventName}`
+                                        : 'Chưa áp dụng'}
+                                    
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="0">
@@ -413,21 +424,19 @@ export function CreateInvoiceDialog({
                     </div>
 
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label className="">
-                            Số tiền KH trả
-                        </Label>
+                        <Label className="">Số tiền KH trả</Label>
                         <Input
                             type="number"
                             min={0}
                             placeholder="Nhập số tiền khách trả..."
-                            value={formData.paidAmount || ''}
+                            value={formData.temporaryCost || ''}
                             onChange={(e) => {
                                 const val = Number(e.target.value);
                                 const finalTotal = calculateFinalTotal();
 
                                 setFormData({
                                     ...formData,
-                                    paidAmount: val,
+                                    temporaryCost: val,
                                     status:
                                         val >= finalTotal
                                             ? 'Đã thanh toán'

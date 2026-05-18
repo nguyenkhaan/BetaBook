@@ -1,4 +1,4 @@
-import { Edit, Trash2, ShoppingCart } from 'lucide-react';
+import { Edit, Trash2, ShoppingCart , Eye } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Invoice } from '../InvoicePage';
 
@@ -85,7 +85,7 @@ export function InvoiceTableRow({
                         onClick={() => onViewBooks(invoice)}
                         title="Xem danh sách sách"
                     >
-                        <ShoppingCart className="w-4 h-4" />
+                        <Eye className="w-4 h-4" />
                     </Button>
                 </div>
             </td>

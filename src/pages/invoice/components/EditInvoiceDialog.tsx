@@ -20,14 +20,15 @@ import { Invoice } from '../InvoicePage';
 import { Voucher } from '../../../services/voucher.service';
 
 interface EditInvoiceFormData {
-    code: string;
     customer: string;
     customerPhone: string;
     date: string;
     status: Invoice['status'];
     selectedVoucherId: string;
     books: Array<{
-        bookid: string;
+        id : number | string; 
+        code : string; 
+        bookid: number;
         title: string;
         quantity: number;
         price: number;
@@ -96,15 +97,6 @@ export function EditInvoiceDialog({
 
                 <div className="space-y-6 py-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label>Mã hóa đơn</Label>
-                            <Input
-                                value={formData.code || selectedInvoice.code}
-                                readOnly
-                                className="bg-muted"
-                            />
-                        </div>
-
                         <div className="space-y-2">
                             <Label htmlFor="edit-date">Ngày lập</Label>
                             <Input

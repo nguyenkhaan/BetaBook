@@ -6,7 +6,10 @@ import { Statistic } from './components/Statistic';
 import { FilterBar } from './components/FilterBar';
 import { CustomerTable } from './components/CustomerTable';
 import { CustomerDialogs } from './components/CustomerDialogs';
-import { CustomerService } from '../../services/customer.service';
+import {
+    CustomerPayload,
+    CustomerService,
+} from '../../services/customer.service';
 export interface Customer {
     id: number;
     code : string; 
@@ -21,6 +24,14 @@ export interface Customer {
 }
 
 export function CustomersPage() {
+    const defaultFormData: CustomerPayload = {
+        name: '',
+        password: '',
+        email: '',
+        phone: '',
+        grade: 'BRONZE',
+    };
+
     // khởi tạo một state rỗng
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -33,13 +44,7 @@ export function CustomersPage() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    const [formData, setFormData] = useState({
-        name: '',
-        password : '', 
-        email: '',
-        phone: '',
-        grade: 'BRONZE' as Customer['grade'],
-    });
+    const [formData, setFormData] = useState<CustomerPayload>(defaultFormData);
 
     // hàm lấy dữ liệu từ be
 
@@ -47,7 +52,6 @@ export function CustomersPage() {
         setIsLoading(true);
         try {
             const data = await CustomerService.getAllCustomers();
-            console.log("Customer Data: " , data) 
             setCustomers(data);
         } catch (err: any) {
             const status = err.response?.status;
@@ -74,6 +78,7 @@ export function CustomersPage() {
             await CustomerService.createCustomer(formData);
             toast.success('Thêm khách hàng mới thành công');
             setIsCreateDialogOpen(false);
+            setFormData(defaultFormData);
             fetchData();
         } catch (err: any) {
             toast.error(
@@ -88,14 +93,20 @@ export function CustomersPage() {
             try {
                 await CustomerService.updateCustomer(
                     selectedCustomer.id,
-                    formData,
+                    {
+                        name: formData.name,
+                        email: formData.email,
+                        phone: formData.phone,
+                        grade: formData.grade,
+                    },
                 );
                 toast.success('Cập nhật thông tin khách hàng thành công');
                 setIsEditDialogOpen(false);
+                setFormData(defaultFormData);
                 fetchData();
             } catch (err: any) {
                 toast.error(
-                    err.response?.data.message ||
+                    err.response?.data?.message ||
                         'Không thể cập nhật thông tin khách hàng',
                 );
             }
@@ -107,7 +118,8 @@ export function CustomersPage() {
             try {
                 await CustomerService.deleteCustomer(selectedCustomer.id);
                 toast.success('Xoá thông tin khách hàng thành công');
-                setIsEditDialogOpen(false);
+                setIsDeleteDialogOpen(false);
+                setSelectedCustomer(null);
                 fetchData();
             } catch (err: any) {
                 toast.error(
@@ -171,7 +183,13 @@ export function CustomersPage() {
 
     const handleEditAction = (customer: Customer) => {
         setSelectedCustomer(customer);
-        setFormData({ ...customer });
+        setFormData({
+            name: customer.name,
+            password: '',
+            email: customer.email,
+            phone: customer.phone,
+            grade: customer.grade,
+        });
         setIsEditDialogOpen(true);
     };
 
@@ -193,7 +211,10 @@ export function CustomersPage() {
                 </div>
                 <Button
                     className="bg-orange-500 hover:bg-orange-600"
-                    onClick={() => setIsCreateDialogOpen(true)}
+                    onClick={() => {
+                        setFormData(defaultFormData);
+                        setIsCreateDialogOpen(true);
+                    }}
                 >
                     <Plus className="w-4 h-4" /> Thêm khách hàng
                 </Button>
@@ -236,6 +257,8 @@ export function CustomersPage() {
                 setIsCreateDialogOpen={setIsCreateDialogOpen}
                 isEditDialogOpen={isEditDialogOpen}
                 setIsEditDialogOpen={setIsEditDialogOpen}
+                isViewDialogOpen={isViewDialogOpen}
+                setIsViewDialogOpen={setIsViewDialogOpen}
                 isDeleteDialogOpen={isDeleteDialogOpen}
                 setIsDeleteDialogOpen={setIsDeleteDialogOpen}
                 selectedCustomer={selectedCustomer}

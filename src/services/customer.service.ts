@@ -1,6 +1,14 @@
 import { privateApi } from '../api/api';
 import { Customer } from '../pages/customer/CustomersPage';
-import { MemberGradeLabel } from '../utilis/label_mapper';
+
+export interface CustomerPayload {
+    name: string;
+    email: string;
+    phone: string;
+    grade: Customer['grade'];
+    password: string;
+}
+
 export class CustomerService {
     static async getAllCustomers(): Promise<Customer[]> {
         const response = await privateApi.get('/customer');
@@ -18,7 +26,6 @@ export class CustomerService {
             joinDate: new Date().toISOString().split('T')[0],
         }));
     }
-   
 
     static async getGeneralStatistics() {
         const response = await privateApi.get('/customer/statistic');
@@ -30,20 +37,24 @@ export class CustomerService {
         return response.data;
     }
 
-    static async createCustomer(data: Omit<Customer, 'id' | 'code' | 'joinDate' | 'totalOrders' | 'totalSpent'>) {
-        // Chú ý: BE hiện tại chưa có hàm create trong Controller bạn gửi
-        console.log(data) 
-        const response = await privateApi.post('/customer', data);
+    static async createCustomer(data: CustomerPayload) {
+        const payload = {
+            name: data.name,
+            email: data.email,
+            phone: data.phone,
+            password: data.password ?? '',
+            grade: data.grade,
+        };
+        const response = await privateApi.post('/customer', payload);
         return response.data;
     }
 
-    static async updateCustomer(id: number, data: Partial<Customer>) {
-        const updateData: Partial<Customer> & { grade?: string } = {};
-        if (data.email) updateData.email = data.email;
-        if (data.name) updateData.name = data.name;
-        if (data.phone) updateData.phone = data.phone;
-        if (data.grade
-        ) updateData.grade = data.grade;
+    static async updateCustomer(id: number, data: Partial<CustomerPayload>) {
+        const updateData: Partial<CustomerPayload> = {};
+        if (typeof data.email === 'string') updateData.email = data.email;
+        if (typeof data.name === 'string') updateData.name = data.name;
+        if (typeof data.phone === 'string') updateData.phone = data.phone;
+        if (typeof data.grade === 'string') updateData.grade = data.grade;
         const response = await privateApi.put(`/customer/${id}`, updateData);
         return response.data;
     }

@@ -7,7 +7,7 @@ interface CustomerTableBodyProps {
     onView: (customer: Customer) => void;
     onEdit: (customer: Customer) => void;
     onDelete: (customer: Customer) => void;
-    getLevelColor: (level: Customer['level']) => string;
+    getLevelColor: (grade: Customer['grade']) => string;
 }
 
 export function CustomerTableBody({

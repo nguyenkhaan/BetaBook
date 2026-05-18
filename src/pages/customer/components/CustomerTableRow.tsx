@@ -2,13 +2,13 @@ import React from 'react';
 import { Customer } from '../CustomersPage';
 import { Button } from '../../../components/ui/button';
 import { Mail, Phone, Eye, Edit, Trash2 } from 'lucide-react';
-
+import { MemberGradeLabel } from '../../../utilis/label_mapper';
 interface CustomerTableRowProps {
     customer: Customer;
     onView: (customer: Customer) => void;
     onEdit: (customer: Customer) => void;
     onDelete: (customer: Customer) => void;
-    getLevelColor: (level: Customer['level']) => string;
+    getLevelColor: (grade: Customer['grade']) => string;
 }
 
 export function CustomerTableRow({
@@ -18,10 +18,11 @@ export function CustomerTableRow({
     onDelete,
     getLevelColor,
 }: CustomerTableRowProps) {
+    console.log(customer) 
     return (
         <tr className="hover:bg-gray-50">
             <td className="px-6 py-4 text-orange-600 font-medium">
-                {customer.customerCode}
+                {customer.code}
             </td>
             <td className="px-6 py-4 font-medium text-gray-900">
                 {customer.name}
@@ -42,10 +43,10 @@ export function CustomerTableRow({
             <td className="px-6 py-4">
                 <span
                     className={`px-3 py-1 rounded-full text-xs font-medium ${getLevelColor(
-                        customer.level,
+                        customer.grade,
                     )}`}
                 >
-                    {customer.level}
+                    {MemberGradeLabel[customer.grade] || 'Chưa xếp hạng'}
                 </span>
             </td>
             <td className="px-6 py-4 flex gap-1">

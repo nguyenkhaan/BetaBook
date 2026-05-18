@@ -8,13 +8,13 @@ export class CustomerService {
 
         return data.map((item: any) => ({
             id: item.id,
-            customerCode: item.code,
+            code: item.code,
             name: item.name,
             email: item.email,
             phone: item.phone,
             totalOrders: 0,
             totalSpent: item.totalPaid,
-            level: MemberGradeLabel[item.grade], 
+            grade: item.grade, 
             joinDate: new Date().toISOString().split('T')[0],
         }));
     }
@@ -30,8 +30,9 @@ export class CustomerService {
         return response.data;
     }
 
-    static async createCustomer(data: Omit<Customer, 'id'>) {
+    static async createCustomer(data: Omit<Customer, 'id' | 'code' | 'joinDate' | 'totalOrders' | 'totalSpent'>) {
         // Chú ý: BE hiện tại chưa có hàm create trong Controller bạn gửi
+        console.log(data) 
         const response = await privateApi.post('/customer', data);
         return response.data;
     }
@@ -41,7 +42,8 @@ export class CustomerService {
         if (data.email) updateData.email = data.email;
         if (data.name) updateData.name = data.name;
         if (data.phone) updateData.phone = data.phone;
-        if (data.level) updateData.grade = data.level;
+        if (data.grade
+        ) updateData.grade = data.grade;
         const response = await privateApi.put(`/customer/${id}`, updateData);
         return response.data;
     }

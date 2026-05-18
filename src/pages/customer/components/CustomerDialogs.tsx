@@ -33,7 +33,7 @@ interface CustomerDialogsProps {
     handleCreateCustomer: () => void;
     handleEditCustomer: () => void;
     handleDeleteCustomer: () => void;
-    calculateLevel: (totalSpent: number) => Customer['level'];
+    calculateLevel: (totalSpent: number) => Customer['grade'];
 }
 
 export function CustomerDialogs({
@@ -134,7 +134,7 @@ export function CustomerDialogs({
                                     onValueChange={(value) =>
                                         setFormData({
                                             ...formData,
-                                            level: value,
+                                            grade: value,
                                         })
                                     }
                                 >

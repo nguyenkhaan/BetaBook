@@ -9,6 +9,7 @@ import { CustomerDialogs } from './components/CustomerDialogs';
 import { CustomerService } from '../../services/customer.service';
 export interface Customer {
     id: number;
+    code : string; 
     name: string;
     email: string;
     phone: string;
@@ -16,14 +17,14 @@ export interface Customer {
     totalOrders: number;
     totalSpent: number;
     joinDate: string;
-    level: 'BRONZE' | 'SILVER' | 'GOLD' | 'DIAMOND';
+    grade: 'BRONZE' | 'SILVER' | 'GOLD' | 'DIAMOND';
 }
 
 export function CustomersPage() {
     // khởi tạo một state rỗng
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedLevel, setSelectedLevel] = useState<string>('Tất cả');
+    const [selectedGrade, setSelectedGrade] = useState<string>('Tất cả');
     const [selectedDate, setSelectedDate] = useState<string>('');
     // UI state
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -37,10 +38,7 @@ export function CustomersPage() {
         password : '', 
         email: '',
         phone: '',
-        joinDate: new Date().toISOString().split('T')[0],
-        totalOrders: 0,
-        totalSpent: 0,
-        level: 'Đồng' as Customer['level'],
+        grade: 'BRONZE' as Customer['grade'],
     });
 
     // hàm lấy dữ liệu từ be
@@ -122,7 +120,7 @@ export function CustomersPage() {
 
     const handleResetFilters = () => {
         setSearchTerm('');
-        setSelectedLevel('Tất cả');
+        setSelectedGrade('Tất cả');
         setSelectedDate('');
     };
 
@@ -132,12 +130,12 @@ export function CustomersPage() {
             customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
             customer.phone.includes(searchTerm);
         const matchesLevel =
-            selectedLevel === 'Tất cả' || customer.level === selectedLevel;
+            selectedGrade === 'Tất cả' || customer.grade === selectedGrade;
         const matchesDate = !selectedDate || customer.joinDate === selectedDate;
         return matchesSearch && matchesLevel && matchesDate;
     });
 
-    const calculateLevel = (totalSpent: number): Customer['level'] => {
+    const calculateLevel = (totalSpent: number): Customer['grade'] => {
         if (totalSpent >= 5000000) return 'DIAMOND';
         if (totalSpent >= 2500000) return 'GOLD';
         if (totalSpent >= 1000000) return 'SILVER';
@@ -151,14 +149,18 @@ export function CustomersPage() {
         return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) <= 30;
     };
 
-    const getLevelColor = (level: Customer['level']) => {
-        switch (level) {
+    const getLevelColor = (grade: Customer['grade']) => {
+        switch (grade) {
             case 'GOLD':
                 return 'bg-yellow-100 text-yellow-800';
             case 'DIAMOND':
                 return 'bg-blue-100 text-blue-800';
+            case 'SILVER': 
+                return 'bg-gray-100 text-gray-800' 
+            case 'BRONZE': 
+                return 'bg-orange-100 text-orange-800'
             default:
-                return 'bg-gray-100 text-gray-800';
+                return 'text-black';
         }
     };
 
@@ -200,7 +202,7 @@ export function CustomersPage() {
             <Statistic
                 totalCustomers={customers.length}
                 vipCustomers={
-                    customers.filter((c) => c.level === 'DIAMOND').length
+                    customers.filter((c) => c.grade === 'DIAMOND').length
                 }
                 totalRevenue={customers.reduce(
                     (sum, c) => sum + c.totalSpent,
@@ -214,8 +216,8 @@ export function CustomersPage() {
             <FilterBar
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
-                selectedLevel={selectedLevel}
-                setSelectedLevel={setSelectedLevel}
+                selectedLevel={selectedGrade}
+                setSelectedLevel={setSelectedGrade}
                 selectedDate={selectedDate}
                 setSelectedDate={setSelectedDate}
                 handleResetFilters={handleResetFilters}

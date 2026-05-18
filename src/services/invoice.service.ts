@@ -11,7 +11,6 @@ export interface VoucherUsage {
 }
 
 export interface CreateInvoiceDto {
-    code: string;
     customerId?: number;
     customerPhone: string;
     status: string;
@@ -43,7 +42,8 @@ export class InvoiceService {
         return response.data;
     }
 
-    static async create(dto: CreateInvoiceDto): Promise<{ bill: Invoice }> {
+    static async create(dto: CreateInvoiceDto) {
+        console.log("Du lieu hoa don la: " , dto) 
         const response = await privateApi.post(this.BASE_URL, dto);
         return response.data;
     }

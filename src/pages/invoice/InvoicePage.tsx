@@ -58,8 +58,8 @@ export function InvoicePage() {
     const [isLoading, setIsLoading] = useState(true);
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
-    const [priceFilter, setPriceFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState('Tất cả');
+    const [priceFilter, setPriceFilter] = useState('Tất cả');
 
     const [isViewBooksOpen, setIsViewBooksOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -70,7 +70,6 @@ export function InvoicePage() {
     );
 
     const [formData, setFormData] = useState({
-        code: '',
         customer: '',
         customerPhone: '',
         date: '',
@@ -81,6 +80,8 @@ export function InvoicePage() {
 
     const [createFormData, setCreateFormData] = useState({
         invoiceNumber: '',
+        temporaryCost : 0, 
+        cost : 0, 
         customer: '',
         phoneNumber: '',
         customerId: '',
@@ -248,8 +249,8 @@ export function InvoicePage() {
     };
 
     const handleCreateInvoice = async () => {
-        if (!createFormData.customerId) {
-            toast.error('Vui lòng chọn khách hàng');
+        if (!createFormData.phoneNumber) {
+            toast.error('Vui lòng nhập số điện thoại khách hàng');
             return;
         }
 
@@ -259,59 +260,13 @@ export function InvoicePage() {
         }
 
         const selectedCustomer = customers.find(
-            (customer) => customer.id.toString() === createFormData.customerId,
+            (customer) => customer.phone.toString() === createFormData.phoneNumber,
         );
-
-        if (!selectedCustomer) {
-            toast.error('Thông tin khách hàng không hợp lệ');
-            return;
-        }
 
         try {
             setIsLoading(true);
-
-            const generateInvoiceCode = (): string => {
-                const latestInvoice = [...invoices]
-                    .filter((invoice) => /^HD\d+$/i.test(invoice.code || ''))
-                    .sort((a, b) => {
-                        const aMatch = (a.code || '')
-                            .toUpperCase()
-                            .match(/^HD(\d+)$/);
-                        const bMatch = (b.code || '')
-                            .toUpperCase()
-                            .match(/^HD(\d+)$/);
-                        const aNum = aMatch ? Number(aMatch[1]) : 0;
-                        const bNum = bMatch ? Number(bMatch[1]) : 0;
-                        return bNum - aNum;
-                    })[0];
-
-                if (!latestInvoice) {
-                    return 'HD001';
-                }
-
-                const nextNumber =
-                    (Number(
-                        (latestInvoice.code || '')
-                            .toUpperCase()
-                            .replace('HD', ''),
-                    ) || 0) + 1;
-
-                return `HD${nextNumber.toString().padStart(3, '0')}`;
-            };
-
-            const invoiceInput = createFormData.invoiceNumber.trim();
-            const invoiceCode = invoiceInput
-                ? formatInvoiceCode(invoiceInput)
-                : generateInvoiceCode();
-
-            if (!/^HD\d{3}$/.test(invoiceCode)) {
-                toast.error('Mã hóa đơn phải có định dạng HD001');
-                return;
-            }
-
             const payload: CreateInvoiceDto = {
-                code: invoiceCode,
-                customerPhone: selectedCustomer.phone,
+                customerPhone: selectedCustomer?.phone || createFormData.phoneNumber,
                 status:
                     createFormData.status === 'Đã thanh toán'
                         ? 'COMPLETE'
@@ -331,15 +286,16 @@ export function InvoicePage() {
                               },
                           ]
                         : [],
-                temporaryCost: createFormData.books.reduce(
+                cost: createFormData.books.reduce(
                     (total, book) => total + book.quantity * book.price,
                     0,
                 ),
+                temporaryCost : createFormData.temporaryCost 
             };
 
-            await InvoiceService.create(payload);
+            const invoice = await InvoiceService.create(payload);
 
-            toast.success(`Tạo hóa đơn ${invoiceCode} thành công`);
+            toast.success(`Tạo hóa đơn ${invoice.bill.code} thành công`);
             setIsCreateDialogOpen(false);
             resetCreateForm();
             await fetchData();
@@ -356,6 +312,8 @@ export function InvoicePage() {
 
     const resetCreateForm = () => {
         setCreateFormData({
+            cost : 0, 
+            temporaryCost : 0, 
             invoiceNumber: '',
             customer: '',
             phoneNumber: '',
@@ -548,8 +506,8 @@ export function InvoicePage() {
                         onPriceFilterChange={setPriceFilter}
                         onResetFilters={() => {
                             setSearchTerm('');
-                            setStatusFilter('all');
-                            setPriceFilter('all');
+                            setStatusFilter('Tất cả');
+                            setPriceFilter('Tất cả');
                         }}
                     />
                     <div className="bg-white rounded-lg shadow-sm">
@@ -563,17 +521,17 @@ export function InvoicePage() {
                                         .toLowerCase()
                                         .includes(searchTerm.toLowerCase());
                                 const matchesStatus =
-                                    statusFilter === 'all' ||
+                                    statusFilter === 'Tất cả' ||
                                     inv.status === statusFilter;
                                 let matchesPrice = true;
-                                if (priceFilter !== 'all') {
+                                if (priceFilter !== 'Tất cả') {
                                     const cost = inv.cost;
-                                    if (priceFilter === 'low') {
+                                    if (priceFilter === 'Dưới 100k') {
                                         matchesPrice = cost < 100;
-                                    } else if (priceFilter === 'medium') {
+                                    } else if (priceFilter === '100k - 500k') {
                                         matchesPrice =
                                             cost >= 100 && cost <= 500;
-                                    } else if (priceFilter === 'high') {
+                                    } else if (priceFilter === 'Trên 500k') {
                                         matchesPrice = cost > 500;
                                     }
                                 }
@@ -603,7 +561,6 @@ export function InvoicePage() {
                                 }
 
                                 setFormData({
-                                    code: inv.code || '',
                                     customer: inv.customer,
                                     customerPhone: inv.customerPhone,
                                     date: inv.date,

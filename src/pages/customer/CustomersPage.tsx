@@ -7,17 +7,16 @@ import { FilterBar } from './components/FilterBar';
 import { CustomerTable } from './components/CustomerTable';
 import { CustomerDialogs } from './components/CustomerDialogs';
 import { CustomerService } from '../../services/customer.service';
-import { mockCustomers } from '../customer/CustomerData';
 export interface Customer {
     id: number;
-    customerCode: string;
     name: string;
     email: string;
     phone: string;
+    password : string; 
     totalOrders: number;
     totalSpent: number;
     joinDate: string;
-    level: 'Đồng' | 'Bạc' | 'Vàng' | 'Kim cương';
+    level: 'BRONZE' | 'SILVER' | 'GOLD' | 'DIAMOND';
 }
 
 export function CustomersPage() {
@@ -34,8 +33,8 @@ export function CustomersPage() {
     const [isLoading, setIsLoading] = useState(false);
 
     const [formData, setFormData] = useState({
-        customerCode: '',
         name: '',
+        password : '', 
         email: '',
         phone: '',
         joinDate: new Date().toISOString().split('T')[0],
@@ -139,10 +138,10 @@ export function CustomersPage() {
     });
 
     const calculateLevel = (totalSpent: number): Customer['level'] => {
-        if (totalSpent >= 5000000) return 'Kim cương';
-        if (totalSpent >= 2500000) return 'Vàng';
-        if (totalSpent >= 1000000) return 'Bạc';
-        return 'Đồng';
+        if (totalSpent >= 5000000) return 'DIAMOND';
+        if (totalSpent >= 2500000) return 'GOLD';
+        if (totalSpent >= 1000000) return 'SILVER';
+        return 'BRONZE';
     };
 
     const isNewCustomer = (joinDate: string): boolean => {
@@ -154,9 +153,9 @@ export function CustomersPage() {
 
     const getLevelColor = (level: Customer['level']) => {
         switch (level) {
-            case 'Vàng':
+            case 'GOLD':
                 return 'bg-yellow-100 text-yellow-800';
-            case 'Kim cương':
+            case 'DIAMOND':
                 return 'bg-blue-100 text-blue-800';
             default:
                 return 'bg-gray-100 text-gray-800';
@@ -201,7 +200,7 @@ export function CustomersPage() {
             <Statistic
                 totalCustomers={customers.length}
                 vipCustomers={
-                    customers.filter((c) => c.level === 'Kim cương').length
+                    customers.filter((c) => c.level === 'DIAMOND').length
                 }
                 totalRevenue={customers.reduce(
                     (sum, c) => sum + c.totalSpent,

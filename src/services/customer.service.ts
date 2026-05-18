@@ -1,6 +1,6 @@
 import { privateApi } from '../api/api';
 import { Customer } from '../pages/customer/CustomersPage';
-
+import { MemberGradeLabel } from '../utilis/label_mapper';
 export class CustomerService {
     static async getAllCustomers(): Promise<Customer[]> {
         const response = await privateApi.get('/customer');
@@ -14,7 +14,7 @@ export class CustomerService {
             phone: item.phone,
             totalOrders: 0,
             totalSpent: item.totalPaid,
-            level: this.mapGradeToLevel(item.grade),
+            level: MemberGradeLabel[item.grade], 
             joinDate: new Date().toISOString().split('T')[0],
         }));
     }
@@ -49,20 +49,5 @@ export class CustomerService {
     static async deleteCustomer(id: number) {
         const response = await privateApi.delete(`/customer/${id}`);
         return response.data;
-    }
-
-    private static mapGradeToLevel(grade: string): Customer['level'] {
-        switch (grade?.toUpperCase()) {
-            case 'DIAMOND':
-                return 'Kim cương';
-            case 'GOLD':
-                return 'Vàng';
-            case 'SILVER':
-                return 'Bạc';
-            case 'BRONZE':
-                return 'Đồng';
-            default:
-                return 'Đồng';
-        }
     }
 }

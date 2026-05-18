@@ -114,6 +114,20 @@ export function CustomerDialogs({
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
+                                <Label className='text-red-600 font-bold'>Mật khẩu</Label>
+                                <Input
+                                    type="password"
+                                    value={formData.password}
+                                    
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            password: e.target.value,
+                                        })
+                                    }
+                                />
+                            </div>
+                            <div className="space-y-2">
                                 <Label>Hạng thành viên</Label>
                                 <Select
                                     value={formData.level}
@@ -144,7 +158,6 @@ export function CustomerDialogs({
                                 </Select>
                             </div>
                         </div>
-                        
                     </div>
                     <DialogFooter>
                         <Button

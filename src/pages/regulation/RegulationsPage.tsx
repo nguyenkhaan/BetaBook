@@ -9,9 +9,22 @@ import {
 import { Search, Plus, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '../../components/ui/dialog';
 import { toast } from 'sonner';
 import { Toaster } from '../../components/ui/sonner';
 import { RegulationService, Rule, RuleStatistic } from '../../services/regulation.service';
+import {
+    SettingsService,
+    SystemSetting,
+    UpdateSystemSettingDto,
+} from '../../services/settings.service';
 
 export function RegulationsPage() {
     const navigate = useNavigate();
@@ -24,6 +37,10 @@ export function RegulationsPage() {
         useState<RegulationFormData | null>(null);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [ruleTypes, setRuleTypes] = useState<string[]>([]);
+    const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+    const [settings, setSettings] = useState<SystemSetting[]>([]);
+    const [isLoadingSettings, setIsLoadingSettings] = useState(false);
+    const [isSavingSettings, setIsSavingSettings] = useState(false);
 
     useEffect(() => {
         fetchRegulations();
@@ -53,6 +70,19 @@ export function RegulationsPage() {
             setRuleTypes(options.type);
         } catch (error) {
             console.error('Error fetching options:', error);
+        }
+    };
+
+    const fetchSettings = async () => {
+        try {
+            setIsLoadingSettings(true);
+            const data = await SettingsService.getAll();
+            setSettings(data);
+        } catch (error) {
+            toast.error('Không thể tải cấu hình hệ thống');
+            console.error(error);
+        } finally {
+            setIsLoadingSettings(false);
         }
     };
 
@@ -119,6 +149,48 @@ export function RegulationsPage() {
 
     const handleView = (id: number) => {
         navigate(`/regulation/${id}`);
+    };
+
+    const handleOpenSettingsDialog = async () => {
+        setSettingsDialogOpen(true);
+        await fetchSettings();
+    };
+
+    const handleSettingChange = (
+        key: string,
+        field: 'description' | 'value',
+        value: string,
+    ) => {
+        setSettings((currentSettings) =>
+            currentSettings.map((setting) =>
+                setting.key === key ? { ...setting, [field]: value } : setting,
+            ),
+        );
+    };
+
+    const handleSaveSettings = async () => {
+        const payload: UpdateSystemSettingDto[] = settings.map((setting) => ({
+            key: setting.key,
+            description: setting.description?.trim() || '',
+            value: setting.value.trim(),
+        }));
+
+        if (payload.some((setting) => !setting.key || !setting.value)) {
+            toast.error('Vui lòng nhập đầy đủ giá trị cấu hình');
+            return;
+        }
+
+        try {
+            setIsSavingSettings(true);
+            await SettingsService.updateAll(payload);
+            toast.success('Cập nhật cấu hình hệ thống thành công!');
+            setSettingsDialogOpen(false);
+        } catch (error) {
+            toast.error('Không thể cập nhật cấu hình hệ thống');
+            console.error(error);
+        } finally {
+            setIsSavingSettings(false);
+        }
     };
 
     const filterOptions = [
@@ -192,16 +264,24 @@ export function RegulationsPage() {
                                         thống Beta Book
                                     </p>
                                 </div>
-                                <Button
-                                    onClick={() => {
-                                        setEditingRegulation(null);
-                                        setDialogOpen(true);
-                                    }}
-                                    className="bg-orange-500 font-medium"
-                                >
-                                    <Plus className="w-4 h-4 mr-2" /> Thêm quy
-                                    định
-                                </Button>
+                                <div className="flex items-center gap-3">
+                                    <Button
+                                        variant="outline"
+                                        onClick={handleOpenSettingsDialog}
+                                    >
+                                        Cấu hình hệ thống
+                                    </Button>
+                                    <Button
+                                        onClick={() => {
+                                            setEditingRegulation(null);
+                                            setDialogOpen(true);
+                                        }}
+                                        className="bg-orange-500 font-medium"
+                                    >
+                                        <Plus className="w-4 h-4 mr-2" /> Thêm
+                                        quy định
+                                    </Button>
+                                </div>
                             </div>
 
                             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-8">
@@ -292,6 +372,124 @@ export function RegulationsPage() {
                     regulation={editingRegulation}
                     onSave={handleSave}
                 />
+                <Dialog
+                    open={settingsDialogOpen}
+                    onOpenChange={setSettingsDialogOpen}
+                >
+                    <DialogContent className="sm:max-w-5xl max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>Bảng chỉnh sửa cấu hình</DialogTitle>
+                            <DialogDescription>
+                                Cập nhật mô tả và giá trị cho các cấu hình hệ
+                                thống.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="py-2">
+                            {isLoadingSettings ? (
+                                <div className="flex justify-center py-12">
+                                    <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+                                </div>
+                            ) : settings.length === 0 ? (
+                                <div className="rounded-lg border border-dashed border-gray-300 py-10 text-center text-sm text-gray-500">
+                                    Không có cấu hình hệ thống để chỉnh sửa
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+                                    <table className="w-full min-w-[860px] border-collapse">
+                                        <thead className="bg-gray-50">
+                                            <tr className="border-b border-gray-200 text-left">
+                                                <th className="px-4 py-3 text-sm font-semibold text-gray-600">
+                                                    Key
+                                                </th>
+                                                <th className="px-4 py-3 text-sm font-semibold text-gray-600">
+                                                    Description
+                                                </th>
+                                                <th className="px-4 py-3 text-sm font-semibold text-gray-600">
+                                                    Value
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {settings.map((setting) => (
+                                                <tr
+                                                    key={setting.key}
+                                                    className="border-b border-gray-100 align-top last:border-b-0"
+                                                >
+                                                    <td className="px-4 py-3">
+                                                        <Input
+                                                            value={
+                                                                setting.key
+                                                            }
+                                                            readOnly
+                                                            className="bg-gray-50 font-medium text-gray-700"
+                                                        />
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <Input
+                                                            value={
+                                                                setting.description ||
+                                                                ''
+                                                            }
+                                                            onChange={(e) =>
+                                                                handleSettingChange(
+                                                                    setting.key,
+                                                                    'description',
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            placeholder="Nhập mô tả cấu hình"
+                                                        />
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <Input
+                                                            value={
+                                                                setting.value
+                                                            }
+                                                            onChange={(e) =>
+                                                                handleSettingChange(
+                                                                    setting.key,
+                                                                    'value',
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            placeholder="Nhập giá trị"
+                                                        />
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+
+                        <DialogFooter className="gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setSettingsDialogOpen(false)}
+                                disabled={isSavingSettings}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="button"
+                                onClick={handleSaveSettings}
+                                className="bg-orange-500 font-medium"
+                                disabled={
+                                    isSavingSettings ||
+                                    isLoadingSettings ||
+                                    settings.length === 0
+                                }
+                            >
+                                {isSavingSettings ? 'Saving...' : 'Save'}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
                 <Toaster position="top-right" />
             </div>
         </SidebarProvider>

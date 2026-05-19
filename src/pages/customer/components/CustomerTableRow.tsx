@@ -1,7 +1,7 @@
 import React from 'react';
 import { Customer } from '../CustomersPage';
 import { Button } from '../../../components/ui/button';
-import { Mail, Phone, Eye, Edit, Trash2 } from 'lucide-react';
+import { Mail, Phone, Eye, Edit, Trash2, Key } from 'lucide-react';
 import { MemberGradeLabel } from '../../../utilis/label_mapper';
 interface CustomerTableRowProps {
     customer: Customer;
@@ -9,6 +9,7 @@ interface CustomerTableRowProps {
     onEdit: (customer: Customer) => void;
     onDelete: (customer: Customer) => void;
     getLevelColor: (grade: Customer['grade']) => string;
+    onResetPassword : (customer : Customer) => void 
 }
 
 export function CustomerTableRow({
@@ -17,8 +18,9 @@ export function CustomerTableRow({
     onEdit,
     onDelete,
     getLevelColor,
+    onResetPassword
 }: CustomerTableRowProps) {
-    console.log(customer) 
+    console.log(customer);
     return (
         <tr className="hover:bg-gray-50">
             <td className="px-6 py-4 text-orange-600 font-medium">
@@ -56,13 +58,20 @@ export function CustomerTableRow({
                     onClick={() => onView(customer)}
                 >
                     <Eye className="w-4 h-4" />
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onEdit(customer)}
+                    >
+                        <Edit className="w-4 h-4" />
+                    </Button>
+                </Button>
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onEdit(customer)}
+                    onClick={() => onResetPassword(customer)}
                 >
-                    <Edit className="w-4 h-4" />
-                </Button>
+                    <Key className="w-4 h-4 text-red-500" />
                 </Button>
                 <Button
                     variant="ghost"

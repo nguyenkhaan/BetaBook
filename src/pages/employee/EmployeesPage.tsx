@@ -9,6 +9,7 @@ import {
     Download,
     Mail,
     Phone,
+    Key 
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import {
@@ -30,9 +31,10 @@ import {
 } from '../../components/ui/select';
 import { toast } from 'sonner';
 import { EmployeesService, Employees } from '../../services/employees.service';
-import { mockEmployees } from '../employee/EmployeeData';
 import { privateApi } from '../../api/api';
 import { useParams } from 'react-router-dom';
+import { EmployeeStatusLabel } from '../../utilis/label_mapper';
+import { AdminService } from '../../services/admin.service';
 
 export const EmployeeProfile = () => {
     const { id } = useParams();
@@ -75,13 +77,13 @@ export function EmployeesPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [password, setPassword] = useState('');
     const [editPassword, setEditPassword] = useState('');
-    
+
     // Dropdown data
     const [departments, setDepartments] = useState<Department[]>([]);
     const [positions, setPositions] = useState<Position[]>([]);
     const [statusOptions, setStatusOptions] = useState<string[]>([]);
     const [isLoadingOptions, setIsLoadingOptions] = useState(false);
-    
+
     //UI state
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -106,7 +108,9 @@ export function EmployeesPage() {
         setIsLoadingOptions(true);
         try {
             // Fetch departments and positions
-            const deptPosResponse = await privateApi.get('/employee/department-position');
+            const deptPosResponse = await privateApi.get(
+                '/employee/department-position',
+            );
             setDepartments(deptPosResponse.data?.departments || []);
             setPositions(deptPosResponse.data?.positions || []);
 
@@ -176,7 +180,9 @@ export function EmployeesPage() {
             }
 
             const createData = {
-                code: formData.code || `NV${String(employees.length + 1).padStart(3, '0')}`,
+                code:
+                    formData.code ||
+                    `NV${String(employees.length + 1).padStart(3, '0')}`,
                 name: formData.name,
                 email: formData.email,
                 phone: formData.phone,
@@ -188,7 +194,10 @@ export function EmployeesPage() {
                 password: password,
             };
 
-            const result = await EmployeesService.createEmployeeAccount(createData, password);
+            const result = await EmployeesService.createEmployeeAccount(
+                createData,
+                password,
+            );
             if (result) {
                 toast.success('Nhân viên đã được thêm thành công!');
                 setIsCreateDialogOpen(false);
@@ -198,7 +207,10 @@ export function EmployeesPage() {
                 toast.error('Tạo tài khoản thất bại. Hãy thử lại');
             }
         } catch (err: any) {
-            toast.error('Lỗi khi tạo tài khoản: ' + (err.response?.data?.message || err.message));
+            toast.error(
+                'Lỗi khi tạo tài khoản: ' +
+                    (err.response?.data?.message || err.message),
+            );
             console.log(err);
         }
     };
@@ -227,13 +239,19 @@ export function EmployeesPage() {
                     updateData.password = editPassword;
                 }
 
-                await EmployeesService.updateEmployee(selectedEmployee.id, updateData);
+                await EmployeesService.updateEmployee(
+                    selectedEmployee.id,
+                    updateData,
+                );
                 setIsEditDialogOpen(false);
                 resetFormData();
                 toast.success('Thông tin nhân viên đã được cập nhật!');
                 fetchData();
             } catch (err: any) {
-                toast.error('Lỗi khi cập nhật: ' + (err.response?.data?.message || err.message));
+                toast.error(
+                    'Lỗi khi cập nhật: ' +
+                        (err.response?.data?.message || err.message),
+                );
                 console.log(err);
             }
         }
@@ -258,13 +276,28 @@ export function EmployeesPage() {
         setSelectedEmployee(employee);
         setIsViewDialogOpen(true);
     };
-
+    const handleResetPassword = async (employee : Employee) => {
+        setIsLoading(true) 
+        try {
+            const result = await AdminService.resetEmployeePassword(Number(employee.id)) 
+            if (result.message) 
+                toast.success(result.message)
+        } 
+        catch (err) {
+            toast.error("Yêu cầu cập nhật mật khẩu thất bại")
+        }
+        finally {
+            setIsLoading(false) 
+        }
+    }
     const handleEditEmployeeOpen = (employee: Employee) => {
         setSelectedEmployee(employee);
         // Find the position and department IDs from the fetched options
-        const positionId = positions.find(p => p.name === employee.position)?.id || 0;
-        const departmentId = departments.find(d => d.name === employee.department)?.id || 0;
-        
+        const positionId =
+            positions.find((p) => p.name === employee.position)?.id || 0;
+        const departmentId =
+            departments.find((d) => d.name === employee.department)?.id || 0;
+
         setFormData({
             code: employee.code,
             name: employee.name,
@@ -484,7 +517,8 @@ export function EmployeesPage() {
                                     <span
                                         className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(emp.status)}`}
                                     >
-                                        {emp.status}
+                                        {EmployeeStatusLabel[emp.status]
+                                        }
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -506,6 +540,15 @@ export function EmployeesPage() {
                                             }
                                         >
                                             <Edit className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() =>
+                                                handleResetPassword(emp)
+                                            }
+                                        >
+                                            <Key className="w-4 h-4 text-yellow-700" />
                                         </Button>
                                         <Button
                                             variant="ghost"
@@ -681,11 +724,11 @@ export function EmployeesPage() {
                                                         (p) =>
                                                             p.id ===
                                                             formData.positionId,
-                                                    )?.name
+                                                    )?.name  
                                                 }
                                             </span>
                                         ) : (
-                                            <SelectValue placeholder="Chọn chức vụ" />
+                                            <span>Chọn chức vụ</span>
                                         )}
                                     </SelectTrigger>
                                     <SelectContent>
@@ -788,7 +831,7 @@ export function EmployeesPage() {
                                                 val === '' ? 0 : parseInt(val),
                                         });
                                     }}
-                                    placeholder="10000000"
+                                    placeholder="10000"
                                 />
                             </div>
 
@@ -1039,24 +1082,6 @@ export function EmployeesPage() {
                                         ))}
                                     </SelectContent>
                                 </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label
-                                    htmlFor="editPassword"
-                                    className="text-sm font-medium"
-                                >
-                                    Mật khẩu (tùy chọn)
-                                </Label>
-                                <Input
-                                    id="editPassword"
-                                    type="password"
-                                    value={editPassword}
-                                    onChange={(e) =>
-                                        setEditPassword(e.target.value)
-                                    }
-                                    placeholder="Để trống nếu không thay đổi"
-                                />
                             </div>
 
                             <div className="space-y-2">

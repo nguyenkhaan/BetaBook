@@ -10,6 +10,7 @@ import {
     CustomerPayload,
     CustomerService,
 } from '../../services/customer.service';
+import { AdminService } from '../../services/admin.service';
 export interface Customer {
     id: number;
     code : string; 
@@ -47,7 +48,7 @@ export function CustomersPage() {
     const [formData, setFormData] = useState<CustomerPayload>(defaultFormData);
 
     // hàm lấy dữ liệu từ be
-
+    
     const fetchData = async () => {
         setIsLoading(true);
         try {
@@ -86,7 +87,21 @@ export function CustomersPage() {
             );
         }
     };
-
+    const onResetPassword = async (customer : Customer) => { 
+        setIsLoading(true) 
+        try {
+            const result = await AdminService.resetCustomerPassword(customer.id) 
+            if (result.message) 
+                toast.success(result.message) 
+            else toast.error("Yêu cầu đặt mật khẩu thất bại")
+        } 
+        catch (err) {
+            toast.error("Lỗi khi đặt lại mật khẩu")
+        } 
+        finally {
+            setIsLoading(false) 
+        }
+    }
     const handleEditCustomer = async () => {
         
         if (selectedCustomer) {
@@ -250,6 +265,7 @@ export function CustomersPage() {
                 onEdit={handleEditAction}
                 onDelete={handleDeleteAction}
                 getLevelColor={getLevelColor}
+                onResetPassword={onResetPassword}
             />
 
             <CustomerDialogs

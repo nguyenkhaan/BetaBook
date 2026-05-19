@@ -32,7 +32,7 @@ export class EmployeesService {
         }));
     }
 
-   
+
     static async getMyProfile(): Promise<Employees> {
         const response = await privateApi.get('/employee/profile');
         return response.data;

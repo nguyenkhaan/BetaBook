@@ -9,6 +9,7 @@ interface CustomerTableProps {
     onEdit: (customer: Customer) => void;
     onDelete: (customer: Customer) => void;
     getLevelColor: (grade: Customer['grade']) => string;
+    onResetPassword: (customer : Customer) => void 
 }
 
 export function CustomerTable({
@@ -17,6 +18,7 @@ export function CustomerTable({
     onEdit,
     onDelete,
     getLevelColor,
+    onResetPassword
 }: CustomerTableProps) {
     return (
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -28,6 +30,7 @@ export function CustomerTable({
                     onEdit={onEdit}
                     onDelete={onDelete}
                     getLevelColor={getLevelColor}
+                    onResetPassword={onResetPassword}
                 />
             </table>
         </div>

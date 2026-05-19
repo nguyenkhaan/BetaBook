@@ -56,13 +56,13 @@ export function CustomerTableRow({
                     onClick={() => onView(customer)}
                 >
                     <Eye className="w-4 h-4" />
-                </Button>
                 <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => onEdit(customer)}
                 >
                     <Edit className="w-4 h-4" />
+                </Button>
                 </Button>
                 <Button
                     variant="ghost"

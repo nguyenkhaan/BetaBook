@@ -199,20 +199,9 @@ export function CustomerDialogs({
                                 <Input value={selectedCustomer?.code ?? ''} readOnly />
                             </div>
                             <div className="space-y-2">
-                                <Label>Hạng thành viên</Label>
-                                <Input
-                                    value={
-                                        selectedCustomer
-                                            ? MemberGradeLabel[selectedCustomer.grade]
-                                            : ''
-                                    }
-                                    readOnly
-                                />
+                                <Label>Tên khách hàng</Label>
+                                <Input value={selectedCustomer?.name ?? ''} readOnly />
                             </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Tên khách hàng</Label>
-                            <Input value={selectedCustomer?.name ?? ''} readOnly />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
@@ -242,14 +231,14 @@ export function CustomerDialogs({
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Tổng đơn hàng</Label>
+                                <Label>Số đơn đặt</Label>
                                 <Input
                                     value={String(selectedCustomer?.totalOrders ?? 0)}
                                     readOnly
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Hạng theo chi tiêu</Label>
+                                <Label>Hạng thành viên</Label>
                                 <Input
                                     value={
                                         selectedCustomer

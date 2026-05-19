@@ -66,6 +66,14 @@ export function InvoiceTableRow({
                     <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => onViewBooks(invoice)}
+                        title="Xem danh sách sách"
+                    >
+                        <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => onEdit(invoice)}
                         title="Chỉnh sửa"
                     >
@@ -78,14 +86,6 @@ export function InvoiceTableRow({
                         title="Xóa"
                     >
                         <Trash2 className="w-4 h-4" />
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onViewBooks(invoice)}
-                        title="Xem danh sách sách"
-                    >
-                        <Eye className="w-4 h-4" />
                     </Button>
                 </div>
             </td>

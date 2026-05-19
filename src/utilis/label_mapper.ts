@@ -84,7 +84,7 @@ export const BillStatusLabel: Record<string, string> = {
 };
 
 // PAYMENT TYPE
-export const IncomePaymentTypeLabel: Record<string, string> = {
+export const ReceiptPaymentTypeLabel: Record<string, string> = {
 	CASH: 'Tiền mặt',
 	TRANSFER: 'Chuyển khoản',
 	CARD: 'Thẻ',

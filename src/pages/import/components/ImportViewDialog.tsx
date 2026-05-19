@@ -11,6 +11,7 @@ import { Label } from '../../../components/ui/label';
 import { Button } from '../../../components/ui/button';
 import { BOOK_CATEGORIES_LABEL } from '../../../bases/constants/book.constants';
 import { ImportBookItem } from '../ImportPage';
+import { BookCategoryLabel } from '../../../utilis/label_mapper';
 
 interface ImportOrder {
     importNumber: string;
@@ -143,7 +144,7 @@ export const ImportViewDialog: React.FC<ImportViewDialogProps> = ({
                                                 </td>
                                                 <td className="px-3 py-2">
                                                     {item.category
-                                                        ? BOOK_CATEGORIES_LABEL[
+                                                        ? BookCategoryLabel[
                                                               item.category as keyof typeof BOOK_CATEGORIES_LABEL
                                                           ] || item.category
                                                         : '-'}

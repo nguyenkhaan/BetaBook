@@ -91,7 +91,7 @@ export function PromotionDialogs({
                 </h4>
                 <div className="space-y-2">
                     <Label htmlFor={`${isEdit ? 'edit-' : ''}code`}>
-                        Mã khuyến mãi (Unique)
+                        Mã khuyến mãi 
                     </Label>
                     <Input
                         id={`${isEdit ? 'edit-' : ''}code`}
@@ -102,7 +102,7 @@ export function PromotionDialogs({
                                 code: e.target.value.toUpperCase(),
                             })
                         }
-                        placeholder="VD: PHUTAN2026"
+                        placeholder="KM2026"
                     />
                 </div>
                 <div className="space-y-2">
@@ -120,7 +120,7 @@ export function PromotionDialogs({
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor={`${isEdit ? 'edit-' : ''}eventName`}>
-                        Tên chương trình (Event)
+                        Tên chương trình
                     </Label>
                     <Input
                         id={`${isEdit ? 'edit-' : ''}eventName`}

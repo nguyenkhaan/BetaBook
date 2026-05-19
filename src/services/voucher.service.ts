@@ -76,7 +76,7 @@ export class VoucherService {
         return response.data;
     }
 
-    static async createVoucher(data: VoucherData): Promise<Voucher> {
+    static async createVoucher(data: Omit<VoucherData , 'code'>): Promise<Voucher> {
         const response = await privateApi.post(this.BASE_URL, data);
         return response.data;
     }

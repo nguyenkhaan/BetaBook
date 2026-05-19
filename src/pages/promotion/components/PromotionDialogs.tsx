@@ -7,6 +7,10 @@ import {
     DialogHeader,
     DialogTitle,
 } from '../../../components/ui/dialog';
+import {
+    VoucherStatusLabel,
+    VoucherTypeLabel,
+} from '../../../utilis/label_mapper';
 import { Label } from '../../../components/ui/label';
 import { Input } from '../../../components/ui/input';
 import {
@@ -73,8 +77,10 @@ export function PromotionDialogs({
         async function fetchOptions() {
             try {
                 const voucherOptions = await VoucherService.getOptions();
+                console.log(voucherOptions.status);
                 setPromotionStatusOptions(voucherOptions.status);
                 setPromotionTypeOptions(voucherOptions.type);
+                console.log(voucherOptions.status);
             } catch (error) {
                 console.error('Lỗi khi lấy options từ server:', error);
             }
@@ -86,25 +92,6 @@ export function PromotionDialogs({
     const renderFormFields = (isEdit: boolean) => (
         <div className="grid gap-5 py-4">
             <div className="space-y-4">
-                <h4 className="text-sm font-semibold text-gray-700">
-                    Thông tin cơ bản
-                </h4>
-                <div className="space-y-2">
-                    <Label htmlFor={`${isEdit ? 'edit-' : ''}code`}>
-                        Mã khuyến mãi 
-                    </Label>
-                    <Input
-                        id={`${isEdit ? 'edit-' : ''}code`}
-                        value={formData.code || ''}
-                        onChange={(e) =>
-                            setFormData({
-                                ...formData,
-                                code: e.target.value.toUpperCase(),
-                            })
-                        }
-                        placeholder="KM2026"
-                    />
-                </div>
                 <div className="space-y-2">
                     <Label htmlFor={`${isEdit ? 'edit-' : ''}name`}>
                         Tên Voucher
@@ -165,12 +152,14 @@ export function PromotionDialogs({
                         }
                     >
                         <SelectTrigger>
-                            <SelectValue placeholder="Chọn loại giảm giá" />
+                            {!formData.type
+                                ? 'Chọn loại giảm giá'
+                                : VoucherTypeLabel[formData.type]}
                         </SelectTrigger>
                         <SelectContent>
                             {promotionTypeOptions?.map((opt) => (
                                 <SelectItem key={opt} value={opt}>
-                                    {opt}
+                                    {VoucherTypeLabel[opt]}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -179,7 +168,7 @@ export function PromotionDialogs({
                 <div className="space-y-2">
                     <Label>
                         Giá trị giảm{' '}
-                        {formData.type === 'Percent' ? '(%)' : '(VNĐ)'}
+                        {formData.type === 'PERCENT' ? '(%)' : '(VNĐ)'}
                     </Label>
                     <Input
                         type="number"
@@ -271,12 +260,16 @@ export function PromotionDialogs({
                         }
                     >
                         <SelectTrigger>
-                            <SelectValue placeholder="Chọn trạng thái" />
+                            {!formData.status
+                                ? 'Chọn loại trạng thái'
+                                : VoucherStatusLabel[formData.status]
+                                  ? VoucherStatusLabel[formData.status]
+                                  : 'Chọn trạng thái'}
                         </SelectTrigger>
                         <SelectContent>
                             {promotionStatusOptions.map((status) => (
                                 <SelectItem key={status} value={status}>
-                                    {status}
+                                    {VoucherStatusLabel[status]}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -367,9 +360,17 @@ export function PromotionDialogs({
                                 </span>
                             </div>
                             <div className="flex justify-between py-2 text-sm">
+                                <span className="text-gray-500">
+                                    Tên chương trình:
+                                </span>
+                                <span className="font-medium">
+                                    {selectedPromotion?.eventName}
+                                </span>
+                            </div>
+                            <div className="flex justify-between py-2 text-sm">
                                 <span className="text-gray-500">Giảm giá:</span>
                                 <span className="font-bold text-orange-600">
-                                    {selectedPromotion?.type === 'Percent'
+                                    {selectedPromotion?.type === 'PERCENT'
                                         ? `${selectedPromotion?.sale}%`
                                         : `${selectedPromotion?.sale?.toLocaleString()}đ`}
                                 </span>
@@ -403,6 +404,14 @@ export function PromotionDialogs({
                                     {selectedPromotion?.status}
                                 </span>
                             </div>
+                            <div className="flex justify-between py-2 text-sm items-center">
+                                <span className="text-gray-500">Nội dung</span>
+                                <span
+                                    className={`px-2 py-0.5 rounded text-xs font-bold ${selectedPromotion && getStatusColor(selectedPromotion.status)}`}
+                                >
+                                    {selectedPromotion?.description}
+                                </span>
+                            </div>
                         </div>
                     </div>
                     <DialogFooter>
@@ -432,9 +441,7 @@ export function PromotionDialogs({
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle className="text-red-600">
-                            Xác nhận xóa
-                        </DialogTitle>
+                        <DialogTitle>Xác nhận xóa</DialogTitle>
                         <DialogDescription>
                             Bạn đang chuẩn bị xóa voucher{' '}
                             <strong>{selectedPromotion?.code}</strong>. Hành
@@ -443,16 +450,18 @@ export function PromotionDialogs({
                     </DialogHeader>
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="outline" 
+                            className="cursor-pointer"
                             onClick={() => setIsDeleteDialogOpen(false)}
                         >
                             Hủy
                         </Button>
                         <Button
                             onClick={handleDeletePromotion}
-                            className="bg-red-600 text-white hover:bg-red-700"
+                            variant="outline"
+                            className="cursor-pointer bg-red-400"
                         >
-                            Tôi chắc chắn, hãy xóa
+                            Xóa voucher 
                         </Button>
                     </DialogFooter>
                 </DialogContent>

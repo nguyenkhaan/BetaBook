@@ -11,7 +11,21 @@ import {
     Voucher,
     VoucherData,
 } from '../../services/voucher.service';
-
+export interface Promotion {
+    description: string; 
+    code : string; 
+    name: string; 
+    eventName: string; 
+    sale: string | number; 
+    type : 'PERCENT' | 'VND', 
+    usedNumber : number; 
+    quantity: number; 
+    status: 'APPLYING' | 'UPCOMING' | 'ENDED' 
+    startDate: string; 
+    endDate : string; 
+    expiresAt: string; 
+    id : number | string; 
+}
 export function PromotionsPage() {
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [loading, setLoading] = useState(true);

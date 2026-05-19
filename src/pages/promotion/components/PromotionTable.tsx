@@ -60,7 +60,7 @@ export function PromotionTable({
                                 {promo.name}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                {promo.type === 'Phần trăm'
+                                {promo.type === 'PERCENT'
                                     ? `${promo.sale}%`
                                     : `${promo.sale.toLocaleString('vi-VN')}đ`}
                             </td>

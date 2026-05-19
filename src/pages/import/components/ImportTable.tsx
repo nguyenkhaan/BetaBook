@@ -10,8 +10,8 @@ interface ImportOrder {
     time: string;
     totalAmount: number;
     totalItems: number;
-    status: 'Hoàn thành' | 'Đang xử lý' | 'Đã hủy';
-    createdBy: string;
+    createdBy : string; 
+    status: 'COMPLETE' | 'PENDING' | 'CANCEL';
     note?: string;
 }
 

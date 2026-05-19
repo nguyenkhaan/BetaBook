@@ -329,15 +329,8 @@ export function BooksPage() {
                         className="border-orange-500 text-orange-600 hover:bg-orange-50"
                         onClick={() => setIsExcelDialogOpen(true)}
                     >
-                        <FileText className="w-4 h-4 mr-2" />
-                        Thêm danh sách sách
-                    </Button>
-                    <Button
-                        className="bg-orange-500 hover:bg-orange-600"
-                        onClick={() => setIsAddDialogOpen(true)}
-                    >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Thêm sách mới
+                        <FileText className="w-4 cursor-pointer h-4 mr-2" />
+                        Xuất danh sách sách
                     </Button>
                 </div>
             </div>

@@ -22,7 +22,7 @@ import { MemberGradeLabel } from '../../../utilis/label_mapper';
 
 interface CustomerFormData {
     name: string;
-    password: string;
+
     email: string;
     phone: string;
     grade: Customer['grade'];
@@ -125,33 +125,6 @@ export function CustomerDialogs({
                         </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label
-                                    className={
-                                        isEditDialogOpen
-                                            ? ''
-                                            : 'text-red-600 font-bold'
-                                    }
-                                >
-                                    Mật khẩu
-                                </Label>
-                                <Input
-                                    type="password"
-                                    value={formData.password}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            password: e.target.value,
-                                        })
-                                    }
-                                    placeholder={
-                                        isEditDialogOpen
-                                            ? 'Không cập nhật mật khẩu tại đây'
-                                            : 'Nhập mật khẩu'
-                                    }
-                                    disabled={isEditDialogOpen}
-                                />
-                            </div>
                             <div className="space-y-2">
                                 <Label>Hạng thành viên</Label>
                                 <Select

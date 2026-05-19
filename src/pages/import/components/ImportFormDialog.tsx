@@ -25,6 +25,15 @@ import {
 } from '../../../components/common/SearchableMultiSelect';
 import { BOOK_CATEGORIES_LABEL } from '../../../bases/constants/book.constants';
 import { Trash2 } from 'lucide-react';
+import { ImportStatusLabel } from '../../../utilis/label_mapper';
+import { toast } from 'sonner';
+
+interface ExistingBookOption {
+    id: number;
+    code: string;
+    title: string;
+    cost?: number;
+}
 
 interface ImportFormDialogProps {
     isOpen: boolean;
@@ -49,18 +58,17 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
     submitLabel,
     isEdit = false,
 }) => {
-    const [searchSupplier, setSearchSupplier] = useState('');
-    const [showDropdown, setShowDropdown] = useState(false);
-    const [suppliers, setSuppliers] = useState<string[]>([]);
-    const [loading, setLoading] = useState(false);
-
     const [authorOptions, setAuthorOptions] = useState<SearchableOption[]>([]);
     const [publisherOptions, setPublisherOptions] = useState<
         SearchableOption[]
     >([]);
+    const [existingBooks, setExistingBooks] = useState<ExistingBookOption[]>(
+        [],
+    );
     const [categories, setCategories] = useState<string[]>([]);
     const [isLoadingAuthors, setIsLoadingAuthors] = useState(false);
     const [isLoadingPublishers, setIsLoadingPublishers] = useState(false);
+    const [isLoadingBooks, setIsLoadingBooks] = useState(false);
 
     const [bookInput, setBookInput] = useState({
         type: 'existing' as 'existing' | 'new',
@@ -68,8 +76,8 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
         newBookCode: '',
         bookName: '',
         category: '',
-        authorIds: [] as string[],
-        publisherIds: [] as string[],
+        authorIds: [] as number[],
+        publisherIds: [] as number[],
         year: new Date().getFullYear().toString(),
         importPrice: '' as number | string,
         quantity: '' as number | string,
@@ -77,35 +85,9 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
 
     useEffect(() => {
         loadAuthorsAndPublishers();
+        loadExistingBooks();
         loadCategories();
     }, []);
-
-    useEffect(() => {
-        setSearchSupplier(formData.supplier || '');
-    }, [formData.supplier]);
-
-    useEffect(() => {
-        const delay = setTimeout(() => {
-            if (searchSupplier.trim() === '') {
-                setSuppliers([]);
-                return;
-            }
-
-            setLoading(true);
-
-            fetch(`/api/suppliers?keyword=${searchSupplier}`)
-                .then((res) => res.json())
-                .then((data) => {
-                    setSuppliers(data);
-                })
-                .catch(() => {
-                    setSuppliers([]);
-                })
-                .finally(() => setLoading(false));
-        }, 300);
-
-        return () => clearTimeout(delay);
-    }, [searchSupplier]);
 
     const loadAuthorsAndPublishers = async () => {
         try {
@@ -130,11 +112,29 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
             );
         } catch (error) {
             console.error(error);
-        }
-        window.finally(() => {
+        } finally {
             setIsLoadingAuthors(false);
             setIsLoadingPublishers(false);
-        });
+        }
+    };
+
+    const loadExistingBooks = async () => {
+        try {
+            setIsLoadingBooks(true);
+            const books = await BookService.getAllBook();
+            setExistingBooks(
+                (books || []).map((book: any) => ({
+                    id: book.id,
+                    code: book.code,
+                    title: book.title,
+                    cost: Number(book.cost || 0),
+                })),
+            );
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoadingBooks(false);
+        }
     };
 
     const loadCategories = async () => {
@@ -196,17 +196,21 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
         });
     };
 
+    const selectedExistingBook = existingBooks.find(
+        (book) => book.code === bookInput.bookCode,
+    );
+
     const handleAddBookToList = () => {
         const qty = Number(bookInput.quantity);
         const price = Number(bookInput.importPrice);
 
         if (!qty || qty <= 0 || !bookInput.importPrice || price < 0) {
-            alert('Vui lòng nhập số lượng và giá nhập hợp lệ');
+            toast.error('Vui lòng nhập số lượng và giá nhập hợp lệ');
             return;
         }
 
         if (bookInput.type === 'existing' && !bookInput.bookCode.trim()) {
-            alert('Vui lòng nhập mã sách');
+            toast.error('Vui lòng nhập mã sách');
             return;
         }
 
@@ -214,10 +218,10 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
             bookInput.type === 'new' &&
             (!bookInput.newBookCode.trim() || !bookInput.bookName.trim())
         ) {
-            alert('Vui lòng nhập đầy đủ mã sách và tên sách mới');
+            toast.error('Vui lòng nhập đầy đủ mã sách và tên sách mới');
             return;
         }
-
+    
         const currentDetails = formData.details || [];
         const existingIndex = currentDetails.findIndex(
             (item: any) =>
@@ -253,6 +257,8 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
             importPrice: '',
             quantity: '',
         });
+
+        toast.success('Đã thêm sách vào phiếu nhập');
     };
 
     const handleUpdateBookInList = (
@@ -272,7 +278,6 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
         currentDetails.splice(index, 1);
         updateFormDataTotals(currentDetails);
     };
-
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[850px] max-h-[90vh] overflow-y-auto">
@@ -281,71 +286,53 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-6 py-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                         <div className="space-y-2">
-                            <Label
-                                htmlFor={`${isEdit ? 'edit-' : ''}importNumber`}
-                                className="text-sm font-medium"
-                            >
-                                Số phiếu nhập
-                            </Label>
-                            <Input
-                                id={`${isEdit ? 'edit-' : ''}importNumber`}
-                                value={formData.importNumber || ''}
-                                className="bg-gray-50"
-                                placeholder="Tự động tạo"
-                                readOnly
-                            />
-                        </div>
-
-                        <div className="space-y-2 relative">
                             <Label className="text-sm font-medium">
                                 Nhà cung cấp
                             </Label>
-                            <Input
-                                value={searchSupplier}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    setSearchSupplier(value);
+                            <Select
+                                value={
+                                    formData.supplierId
+                                        ? String(formData.supplierId)
+                                        : undefined
+                                }
+                                onValueChange={(value) => {
+                                    const selectedPublisher =
+                                        publisherOptions.find(
+                                            (publisher) =>
+                                                String(publisher.id) === value,
+                                        );
+
                                     setFormData({
                                         ...formData,
-                                        supplier: value,
+                                        supplier:
+                                            selectedPublisher?.label || '',
+                                        supplierId: Number(value),
                                     });
-                                    setShowDropdown(true);
                                 }}
-                                placeholder="Nhập tên nhà cung cấp"
-                            />
-                            {showDropdown && (
-                                <div className="absolute z-50 w-full bg-white border rounded-md shadow-md max-h-40 overflow-y-auto mt-1">
-                                    {loading && (
-                                        <div className="px-3 py-2 text-gray-500">
-                                            Đang tìm...
-                                        </div>
-                                    )}
-                                    {!loading && suppliers.length === 0 && (
-                                        <div className="px-3 py-2 text-gray-500">
-                                            Không tìm thấy
-                                        </div>
-                                    )}
-                                    {!loading &&
-                                        suppliers.map((supplier, index) => (
-                                            <div
-                                                key={index}
-                                                className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
-                                                onClick={() => {
-                                                    setFormData({
-                                                        ...formData,
-                                                        supplier: supplier,
-                                                    });
-                                                    setSearchSupplier(supplier);
-                                                    setShowDropdown(false);
-                                                }}
-                                            >
-                                                {supplier}
-                                            </div>
-                                        ))}
-                                </div>
-                            )}
+                            >
+                                <SelectTrigger className="w-full bg-white">
+                                    {/* <SelectValue
+                                        placeholder={
+                                            isLoadingPublishers
+                                                ? 'Đang tải nhà cung cấp...'
+                                                : 'Chọn nhà cung cấp'
+                                        }
+                                    /> */}
+                                    {formData.supplier? formData.supplier : 'Chọn nhà cung cấp'}
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {publisherOptions.map((publisher) => (
+                                        <SelectItem
+                                            key={publisher.id}
+                                            value={String(publisher.id)}
+                                        >
+                                            {publisher.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
 
@@ -405,18 +392,57 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
                                                     *
                                                 </span>
                                             </Label>
-                                            <Input
-                                                id="bookCode"
-                                                value={bookInput.bookCode}
-                                                onChange={(e) =>
+                                            <Select
+                                                value={
+                                                    bookInput.bookCode ||
+                                                    undefined
+                                                }
+                                                onValueChange={(value) => {
+                                                    const selectedBook =
+                                                        existingBooks.find(
+                                                            (book) =>
+                                                                book.code ===
+                                                                value,
+                                                        );
                                                     setBookInput({
                                                         ...bookInput,
-                                                        bookCode:
-                                                            e.target.value,
-                                                    })
-                                                }
-                                                placeholder="Mã sách..."
-                                            />
+                                                        bookCode: value,
+                                                        bookName:
+                                                            selectedBook?.title ||
+                                                            '',
+                                                    });
+                                                }}
+                                            >
+                                                <SelectTrigger className="w-full bg-white">
+                                                    <SelectValue
+                                                        placeholder={
+                                                            isLoadingBooks
+                                                                ? 'Đang tải sách...'
+                                                                : 'Chọn mã sách'
+                                                        }
+                                                    />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {existingBooks.map(
+                                                        (book) => (
+                                                            <SelectItem
+                                                                key={book.id}
+                                                                value={
+                                                                    book.code
+                                                                }
+                                                            >
+                                                                {book.code} -{' '}
+                                                                {book.title}
+                                                            </SelectItem>
+                                                        ),
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                            {selectedExistingBook && (
+                                                <p className="text-xs text-gray-500">
+                                                    {selectedExistingBook.title}
+                                                </p>
+                                            )}
                                         </div>
                                         <div className="space-y-2">
                                             <Label
@@ -444,6 +470,15 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
                                                 }
                                                 placeholder="0"
                                             />
+                                            {selectedExistingBook?.cost ? (
+                                                <p className="text-xs text-gray-500">
+                                                    Giá bán hiện tại:{' '}
+                                                    {selectedExistingBook.cost.toLocaleString(
+                                                        'vi-VN',
+                                                    )}
+                                                    đ
+                                                </p>
+                                            ) : null}
                                         </div>
                                         <div className="space-y-2">
                                             <Label
@@ -736,12 +771,12 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
                                                             : 'Mới'}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-3">
+                                                <td className="py-3">
                                                     <div className="flex justify-end">
                                                         <Input
                                                             type="number"
                                                             min="1"
-                                                            className="w-full max-w-[80px] text-right h-9 text-sm font-semibold border-gray-300 focus:border-orange-500"
+                                                            className="w-full max-w-14 text-right h-9 text-sm font-semibold border-gray-300 focus:border-orange-500"
                                                             value={
                                                                 item.quantity
                                                             }
@@ -758,7 +793,7 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
                                                         />
                                                     </div>
                                                 </td>
-                                                <td className="px-4 py-3">
+                                                <td className="px-2 py-3">
                                                     <div className="flex justify-end">
                                                         <Input
                                                             type="number"
@@ -864,26 +899,30 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
                                 }
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Chọn trạng thái" />
+                                    
+                                    {   
+                                        !formData.status ? <SelectValue placeholder=''/>  : ImportStatusLabel[formData.status]
+                                    }
+                                     
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Hoàn thành">
+                                    <SelectItem value="COMPLETE">
                                         Hoàn thành
                                     </SelectItem>
-                                    <SelectItem value="Đang xử lý">
-                                        Đang xử lý
+                                    <SelectItem value="PENDING">
+                                        Chờ xử lý
                                     </SelectItem>
-                                    <SelectItem value="Đã hủy">
+                                    <SelectItem value="CANCEL">
                                         Đã hủy
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2">
+                        {/* <div className="space-y-2">
                             <Label
                                 htmlFor={`${isEdit ? 'edit-' : ''}createdBy`}
                                 className="text-sm font-medium"
-                            >
+                            >k
                                 Người tạo
                             </Label>
                             <Input
@@ -895,9 +934,8 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
                                         createdBy: e.target.value,
                                     })
                                 }
-                                placeholder="Nhập tên người tạo"
                             />
-                        </div>
+                        </div> */}
                         <div className="space-y-2 col-span-2">
                             <Label
                                 htmlFor={`${isEdit ? 'edit-' : ''}note`}

@@ -61,8 +61,8 @@ export const IncomeService = {
 
     async create(dto: CreateIncomeDto) {
         console.log('Du lieu gui di: ', dto);
-        const response = await privateApi.post('/income', dto);
-        return response.data;
+        // const response = await privateApi.post('/income', dto);
+        // return response.data;
     },
 
     async update(id: number, dto: UpdateIncomeDto) {

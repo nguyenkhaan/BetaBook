@@ -42,7 +42,6 @@ export class CustomerService {
             name: data.name,
             email: data.email,
             phone: data.phone,
-            password: data.password ?? '',
             grade: data.grade,
         };
         const response = await privateApi.post('/customer', payload);

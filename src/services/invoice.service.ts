@@ -43,7 +43,6 @@ export class InvoiceService {
     }
 
     static async create(dto: CreateInvoiceDto) {
-        // console.log("Du lieu hoa don la: " , dto) 
         const response = await privateApi.post(this.BASE_URL, dto);
         return response.data;
     }

@@ -34,7 +34,6 @@ export function EmployeeProfile() {
             try {
                 const employeeProfile =
                     (await EmployeesService.getMyProfile()) as any;
-                console.log(employeeProfile);
                 const workInfo = [
                     {
                         icon: Building,

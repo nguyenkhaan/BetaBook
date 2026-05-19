@@ -77,10 +77,8 @@ export function PromotionDialogs({
         async function fetchOptions() {
             try {
                 const voucherOptions = await VoucherService.getOptions();
-                console.log(voucherOptions.status);
                 setPromotionStatusOptions(voucherOptions.status);
                 setPromotionTypeOptions(voucherOptions.type);
-                console.log(voucherOptions.status);
             } catch (error) {
                 console.error('Lỗi khi lấy options từ server:', error);
             }

@@ -9,9 +9,10 @@ import {
     Download,
     Mail,
     Phone,
-    Key 
+    Key,
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
+import { extractGoogleDriveFileId } from '../../utilis/extractDrive';
 import {
     Dialog,
     DialogContent,
@@ -57,6 +58,7 @@ export interface Employee {
     position: string; // Map từ 'positionName'
     department: string; // Map từ 'departmentName'
     createdAt: string;
+    resume: string;
     status: 'WORKING' | 'RETIRED' | 'LEAVE';
     salary: number;
 }
@@ -97,6 +99,7 @@ export function EmployeesPage() {
         name: '',
         email: '',
         phone: '',
+        resume: '',
         positionId: 0,
         departmentId: 0,
         createdAt: new Date().toISOString().split('T')[0],
@@ -136,6 +139,7 @@ export function EmployeesPage() {
                 code: emp.code,
                 name: emp.name || emp.email.split('@')[0],
                 email: emp.email,
+                resume: emp.resume,
                 phone: emp.phone || 'N/A',
                 position: emp.positionName || 'N/A',
                 department: emp.departmentName || 'N/A',
@@ -145,7 +149,6 @@ export function EmployeesPage() {
                 salary: Number(emp.salary),
                 status: emp.status,
             }));
-            console.log(mappedData);
             setEmployees(mappedData);
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Không thể tải dữ liệu');
@@ -186,6 +189,7 @@ export function EmployeesPage() {
                 name: formData.name,
                 email: formData.email,
                 phone: formData.phone,
+                resume: formData.resume,
                 positionId: formData.positionId,
                 departmentId: formData.departmentId,
                 createdAt: formData.createdAt,
@@ -226,6 +230,7 @@ export function EmployeesPage() {
                 const updateData: any = {
                     name: formData.name,
                     email: formData.email,
+                    resume: formData.resume,
                     phone: formData.phone,
                     positionId: formData.positionId,
                     departmentId: formData.departmentId,
@@ -268,28 +273,44 @@ export function EmployeesPage() {
     };
 
     const handleDownloadEmployee = (employee: Employee) => {
-        toast.success(`Đang tải thông tin nhân viên ${employee.code}...`);
+        if (!employee.resume) {
+            toast.error('Nhân viên chưa upload hồ sơ');
+            return;
+        }
         // Logic để tải thông tin nhân viên
+        const driveFieldID = extractGoogleDriveFileId(employee.resume);
+        if (!driveFieldID) {
+            toast.error('Hồ sơ không hợp lệ hoặc đã hết hạn');
+            return;
+        }
+        const downloadUrl = `https://drive.google.com/uc?export=download&id=${driveFieldID}`;
+
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success('Đã tải hồ sơ');
     };
 
     const handleViewEmployee = (employee: Employee) => {
         setSelectedEmployee(employee);
         setIsViewDialogOpen(true);
     };
-    const handleResetPassword = async (employee : Employee) => {
-        setIsLoading(true) 
+    const handleResetPassword = async (employee: Employee) => {
+        setIsLoading(true);
         try {
-            const result = await AdminService.resetEmployeePassword(Number(employee.id)) 
-            if (result.message) 
-                toast.success(result.message)
-        } 
-        catch (err) {
-            toast.error("Yêu cầu cập nhật mật khẩu thất bại")
+            const result = await AdminService.resetEmployeePassword(
+                Number(employee.id),
+            );
+            if (result.message) toast.success(result.message);
+        } catch (err) {
+            toast.error('Yêu cầu cập nhật mật khẩu thất bại');
+        } finally {
+            setIsLoading(false);
         }
-        finally {
-            setIsLoading(false) 
-        }
-    }
+    };
     const handleEditEmployeeOpen = (employee: Employee) => {
         setSelectedEmployee(employee);
         // Find the position and department IDs from the fetched options
@@ -302,6 +323,7 @@ export function EmployeesPage() {
             code: employee.code,
             name: employee.name,
             email: employee.email,
+            resume: employee.resume,
             phone: employee.phone,
             positionId,
             departmentId,
@@ -324,6 +346,7 @@ export function EmployeesPage() {
             name: '',
             email: '',
             phone: '',
+            resume: '',
             positionId: 0,
             departmentId: 0,
             createdAt: new Date().toISOString().split('T')[0],
@@ -517,8 +540,7 @@ export function EmployeesPage() {
                                     <span
                                         className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(emp.status)}`}
                                     >
-                                        {EmployeeStatusLabel[emp.status]
-                                        }
+                                        {EmployeeStatusLabel[emp.status]}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -692,6 +714,24 @@ export function EmployeesPage() {
                                     placeholder="0901234567"
                                 />
                             </div>
+                            <div className="space-y-2">
+                                <Label
+                                    htmlFor="resume"
+                                    className="text-sm font-medium"
+                                >
+                                    Hồ sơ nhân viên (Link Google Drive)
+                                </Label>
+                                <Input
+                                    id="resume"
+                                    value={formData.resume}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            resume: e.target.value,
+                                        })
+                                    }
+                                />
+                            </div>
                         </div>
 
                         {/* Thông tin công việc */}
@@ -724,7 +764,7 @@ export function EmployeesPage() {
                                                         (p) =>
                                                             p.id ===
                                                             formData.positionId,
-                                                    )?.name  
+                                                    )?.name
                                                 }
                                             </span>
                                         ) : (
@@ -986,6 +1026,24 @@ export function EmployeesPage() {
                                         })
                                     }
                                     placeholder="0901234567"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label
+                                    htmlFor="ediResume"
+                                    className="text-sm font-medium"
+                                >
+                                    Hồ sơ nhân viên (Link Google Drive)
+                                </Label>
+                                <Input
+                                    id="ediResume"
+                                    value={formData.resume}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            resume: e.target.value,
+                                        })
+                                    }
                                 />
                             </div>
                         </div>

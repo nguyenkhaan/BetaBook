@@ -21,7 +21,6 @@ interface RecentOrdersProps {
 }
 
 export const RecentOrders: React.FC<RecentOrdersProps> = ({ orders }) => {
-    console.log(orders);
     return (
         <Card className="border-0 shadow-md">
             <CardHeader>

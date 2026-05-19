@@ -67,7 +67,6 @@ export function BookDialogs({
     // State management for images and search results
     const [addCoverImage, setAddCoverImage] = useState<File | null>(null);
     const [addCoverPreview, setAddCoverPreview] = useState<string>('');
-    console.log(addCoverImage , addCoverPreview)
     const [editCoverImage, setEditCoverImage] = useState<File | null>(null);
     const [editCoverPreview, setEditCoverPreview] = useState<string>('');
 

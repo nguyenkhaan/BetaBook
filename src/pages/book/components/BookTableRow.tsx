@@ -2,7 +2,7 @@ import React from 'react';
 import { BookItem } from '../BooksPage';
 import { Button } from '../../../components/ui/button';
 import { Edit, Trash2, Eye } from 'lucide-react';
-
+import { BookCategoryLabel } from '../../../utilis/label_mapper';
 interface BookTableRowProps {
     book: BookItem;
     onEdit: (book: BookItem) => void;
@@ -29,7 +29,7 @@ export function BookTableRow({
                 {book.authors}
             </td>
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                {book.category}
+                {BookCategoryLabel[book.category]}
             </td>
             <td className="px-6 py-4 text-sm flex flex-col text-gray-600">
                 {book.publishers?.map((pub) => (

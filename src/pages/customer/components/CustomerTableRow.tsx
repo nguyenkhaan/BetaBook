@@ -20,7 +20,6 @@ export function CustomerTableRow({
     getLevelColor,
     onResetPassword
 }: CustomerTableRowProps) {
-    console.log(customer);
     return (
         <tr className="hover:bg-gray-50">
             <td className="px-6 py-4 text-orange-600 font-medium">

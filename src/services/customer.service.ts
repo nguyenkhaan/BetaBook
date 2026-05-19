@@ -13,7 +13,6 @@ export class CustomerService {
     static async getAllCustomers(): Promise<Customer[]> {
         const response = await privateApi.get('/customer');
         const data = response.data;
-        console.log(data) 
         return data.map((item: any) => ({
             id: item.id,
             code: item.code,

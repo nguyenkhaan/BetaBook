@@ -100,7 +100,6 @@ export const ImportService = {
     },
 
     create: async (dto: CreateOutcomePayload): Promise<ImportOrder[]> => {
-        console.log("Data gui ve la: " , dto) 
         const response = await privateApi.post('/outcome', dto);
         const payload = extractPayload<BackendOutcome[]>(response);
         return Array.isArray(payload)

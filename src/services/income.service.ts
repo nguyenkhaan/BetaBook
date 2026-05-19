@@ -153,7 +153,6 @@ export const IncomeService = {
 
     async getById(id: number): Promise<IncomeReceipt> {
         const response = await privateApi.get(`/income/${id}`);
-        console.log("Chi tiet: " , response.data)
         return normalizeIncomeReceipt(response.data);
     },
 

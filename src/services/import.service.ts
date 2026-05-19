@@ -17,7 +17,7 @@ export interface BackendOutcome {
     id: number;
     code: string;
     cost: number | string;
-    status: 'Hoàn thành' | 'Đang xử lý' | 'Đã hủy';
+    status: 'COMPLETE' | 'PENDING' | 'CANCEL';
     quantity?: number;
     publisherId?: number;
     publisherName?: string;
@@ -97,7 +97,7 @@ export const ImportService = {
     getById: async (id: number): Promise<ImportOrder> => {
         const response = await privateApi.get(`/outcome/${id}`);
         return mapOutcomeToImportOrder(extractPayload<BackendOutcome>(response));
-    },
+    }, 
 
     create: async (dto: CreateOutcomePayload): Promise<ImportOrder[]> => {
         const response = await privateApi.post('/outcome', dto);

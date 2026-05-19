@@ -892,7 +892,15 @@ export function EmployeesPage() {
                                     }
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Chọn trạng thái" />
+                                        {!formData.status
+                                            ? 'Chọn trạng thái'
+                                            : EmployeeStatusLabel[
+                                                    formData.status
+                                                ]
+                                              ? EmployeeStatusLabel[
+                                                    formData.status
+                                                ]
+                                              : 'Chọn trạng thái'}
                                     </SelectTrigger>
                                     <SelectContent>
                                         {statusOptions.map((status) => (
@@ -900,7 +908,7 @@ export function EmployeesPage() {
                                                 key={status}
                                                 value={status}
                                             >
-                                                {status}
+                                                {EmployeeStatusLabel[status]}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -1201,7 +1209,15 @@ export function EmployeesPage() {
                                     }
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Chọn trạng thái" />
+                                        {!formData.status
+                                            ? 'Chọn trạng thái'
+                                            : EmployeeStatusLabel[
+                                                    formData.status
+                                                ]
+                                              ? EmployeeStatusLabel[
+                                                    formData.status
+                                                ]
+                                              : 'Chọn trạng thái'}
                                     </SelectTrigger>
                                     <SelectContent>
                                         {statusOptions.map((status) => (
@@ -1209,7 +1225,7 @@ export function EmployeesPage() {
                                                 key={status}
                                                 value={status}
                                             >
-                                                {status}
+                                                {EmployeeStatusLabel[status]}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>

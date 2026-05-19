@@ -25,6 +25,7 @@ import {
     SystemSetting,
     UpdateSystemSettingDto,
 } from '../../services/settings.service';
+import { useAuth } from '../../contexts/AuthContext';
 
 export function RegulationsPage() {
     const navigate = useNavigate();
@@ -101,7 +102,7 @@ export function RegulationsPage() {
             setDialogOpen(true);
         }
     };
-
+    const {isAdmin} = useAuth() 
     const handleSave = async (data: RegulationFormData) => {
         try {
             if (data.id) {
@@ -265,13 +266,13 @@ export function RegulationsPage() {
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <Button
+                                    {isAdmin && <Button
                                         variant="outline"
                                         onClick={handleOpenSettingsDialog}
                                     >
                                         Cấu hình hệ thống
-                                    </Button>
-                                    <Button
+                                    </Button>} 
+                                    {isAdmin && <Button
                                         onClick={() => {
                                             setEditingRegulation(null);
                                             setDialogOpen(true);
@@ -280,7 +281,7 @@ export function RegulationsPage() {
                                     >
                                         <Plus className="w-4 h-4 mr-2" /> Thêm
                                         quy định
-                                    </Button>
+                                    </Button>} 
                                 </div>
                             </div>
 

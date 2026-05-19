@@ -1,6 +1,7 @@
 import React from 'react';
 import { Eye, Edit, Trash2, Download } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface ImportOrder {
     id: number;
@@ -34,6 +35,8 @@ export const ImportTable: React.FC<ImportTableProps> = ({
     getStatusColor,
     formatDateTime,
 }) => {
+    const { isAdmin } = useAuth();
+
     return (
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <table className="w-full">
@@ -113,13 +116,13 @@ export const ImportTable: React.FC<ImportTableProps> = ({
                                     >
                                         <Edit className="w-4 h-4" />
                                     </Button>
-                                    <Button
+                                    {isAdmin && <Button
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => onDelete(imp)}
                                     >
                                         <Trash2 className="w-4 h-4 text-red-500" />
-                                    </Button>
+                                    </Button>} 
                                     <Button
                                         variant="ghost"
                                         size="sm"

@@ -7,7 +7,7 @@ import { QuickActions } from './components/QuickActions';
 import { RecentOrders } from './components/RecentOrders';
 import { TopBooks } from './components/TopBooks';
 import { DashboardService } from '../../services/dashboard.service';
-
+import { LocalStorageService } from '../../services/local-store.service';
 export function DashboardPage() {
     const navigate = useNavigate();
 
@@ -28,7 +28,6 @@ export function DashboardPage() {
                 DashboardService.getRecentOrders(5),
                 DashboardService.getTopBooks(4),
             ]);
-
             setStats([
                 {
                     title: 'Tổng doanh thu',
@@ -118,10 +117,12 @@ export function DashboardPage() {
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <RecentOrders orders={recentOrders} />
-                <TopBooks books={topBooks} />
-            </div>
+            {
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <RecentOrders orders={recentOrders} />
+                    <TopBooks books={topBooks} />
+                </div>
+            }
         </div>
     );
 }

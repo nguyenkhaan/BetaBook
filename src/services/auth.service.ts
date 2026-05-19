@@ -31,9 +31,12 @@ export class AuthService {
             return true;
         return false;
     }
-    static async logout() 
-    {
-        const responseData = await privateApi.get('auth/logout') 
-        return responseData.data 
+    static async getMyProfile() {
+        const response = await privateApi.get('/auth/profile');
+        return response.data;
+    }
+    static async logout() {
+        const responseData = await privateApi.get('auth/logout');
+        return responseData.data;
     }
 }

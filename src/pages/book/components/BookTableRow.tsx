@@ -3,6 +3,7 @@ import { BookItem } from '../BooksPage';
 import { Button } from '../../../components/ui/button';
 import { Edit, Trash2, Eye } from 'lucide-react';
 import { BookCategoryLabel } from '../../../utilis/label_mapper';
+import { useAuth } from '../../../contexts/AuthContext';
 interface BookTableRowProps {
     book: BookItem;
     onEdit: (book: BookItem) => void;
@@ -17,6 +18,8 @@ export function BookTableRow({
     onDelete,
     onView,
 }: BookTableRowProps) {
+    const { isAdmin } = useAuth();
+
     return (
         <tr className="hover:bg-gray-50">
             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-orange-600">
@@ -61,20 +64,20 @@ export function BookTableRow({
                     >
                         <Eye className="w-4 h-4 text-blue-500" />
                     </Button>
-                    <Button
+                    {isAdmin && <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => onEdit(book)}
                     >
                         <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
+                    </Button>} 
+                    {isAdmin && <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => onDelete(book)}
                     >
                         <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
+                    </Button>} 
                 </div>
             </td>
         </tr>

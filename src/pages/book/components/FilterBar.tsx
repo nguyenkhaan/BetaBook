@@ -335,7 +335,8 @@ export function FilterBar({
                         <option value="">Trạng thái kho</option>
                         <option value="Dưới 30">Dưới 30 cuốn</option>
                         <option value="30 - 100">30 - 100 cuốn</option>
-                        <option value="Trên 100">Trên 100 cuốn</option>
+                        <option value="100-200">100 - 200 cuốn</option>
+                        <option value="Trên 200">Trên 200 cuốn</option>
                     </select>
                     <ChevronDown
                         className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${selectedStockStatus ? 'text-orange-500' : 'text-gray-400'}`}

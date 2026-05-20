@@ -214,7 +214,7 @@ export function InvoicePage() {
                         discountCode: bill.voucherUsage?.[0]?.code || '',
                     };
                 },
-            );
+            ).sort((a, b) => b.id - a.id);
 
             setInvoices(formattedInvoices);
             setCustomers(safeCustomers);

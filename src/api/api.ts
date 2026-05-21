@@ -2,12 +2,14 @@ import axios from 'axios';
 import { CookiesService } from '../services/cookies.service';
 import { TokenType } from '../bases/enums/jwt.enum';
 import toast from 'react-hot-toast'
+const BASE_URL = import.meta.env.VITE_BACKEND_URL 
+console.log(BASE_URL) 
 const publicApi = axios.create({
-    baseURL: 'http://localhost:4000/api',
+    baseURL: BASE_URL,
     timeout: 10000,
 });
 const privateApi = axios.create({
-    baseURL: 'http://localhost:4000/api',
+    baseURL: BASE_URL,
     timeout: 10000,
 });
 

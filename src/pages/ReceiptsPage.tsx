@@ -8,6 +8,7 @@ import {
     Trash2,
     Download,
 } from 'lucide-react';
+import { ReceiptPaymentTypeLabel } from '../utilis/label_mapper';
 import { Button } from '../components/ui/button';
 import {
     Dialog,
@@ -28,11 +29,13 @@ import {
 } from '../components/ui/select';
 import { toast } from 'sonner';
 import {
+    BillLookupResponse,
     IncomePaymentMethod,
     IncomeReceipt,
     IncomeService,
     IncomeStatus,
 } from '../services/income.service';
+import { useAuth } from '../contexts/AuthContext';
 
 type Receipt = IncomeReceipt;
 
@@ -52,8 +55,9 @@ interface ReceiptFormData {
     };
 }
 
-const initialFormData: ReceiptFormData = {
-    code: '',
+type ReceiptFormState = Omit<ReceiptFormData, 'code'>;
+
+const initialFormData: ReceiptFormState = {
     cost: 0,
     paymentMethod: 'CASH',
     status: 'COMPLETE',
@@ -68,9 +72,37 @@ const initialFormData: ReceiptFormData = {
     },
 };
 
+const PAYMENT_METHODS_MAP = {
+    CASH: 'Tiền mặt',
+    TRANSFER: 'Chuyển khoản',
+    CARD: 'Thẻ',
+};
+
+const STATUS_MAP = {
+    COMPLETE: 'Hoàn thành',
+    PENDING: 'Chờ xác nhận',
+    CANCEL: 'Đã hủy',
+};
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+    if (
+        error &&
+        typeof error === 'object' &&
+        'message' in error &&
+        typeof error.message === 'string' &&
+        error.message.trim()
+    ) {
+        return error.message;
+    }
+
+    return fallback;
+};
+
 export function ReceiptsPage() {
+    const { isAdmin } = useAuth();
     const [receipts, setReceipts] = useState<Receipt[]>([]);
-    const [loading , setLoading] = useState(false) 
+    const [isLoading, setIsLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -79,20 +111,22 @@ export function ReceiptsPage() {
     const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(
         null,
     );
-    const [formData, setFormData] = useState<ReceiptFormData>(initialFormData);
+    const [bill, setBill] = useState<BillLookupResponse | null>(null);
+    const [formData, setFormData] = useState<ReceiptFormState>(initialFormData);
     const [isLookingUpBill, setIsLookingUpBill] = useState(false);
     const [billLookupError, setBillLookupError] = useState('');
     const latestLookupIdRef = useRef(0);
+    const currentOutstanding = Math.max(0, Number(bill?.debit ?? bill?.cost ?? 0));
 
     const filteredReceipts = receipts.filter(
         (receipt) =>
-            receipt.code
-                .toLowerCase()
-                .includes(searchTerm.toLowerCase()) ||
+            receipt.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
             receipt.customer.customerName
                 .toLowerCase()
                 .includes(searchTerm.toLowerCase()) ||
-            receipt.employee.employeeName.toLowerCase().includes(searchTerm.toLowerCase()),
+            receipt.employee.employeeName
+                .toLowerCase()
+                .includes(searchTerm.toLowerCase()),
     );
     const fetchAllReceipts = async () => {
         try 
@@ -121,6 +155,36 @@ export function ReceiptsPage() {
         setBillLookupError('');
     };
 
+    const fetchAllReceipts = async () => {
+        try {
+            setIsLoading(true);
+            const receipts = await IncomeService.getAll();
+            setReceipts(receipts);
+        } catch (err) {
+            toast.error(getErrorMessage(err, 'Không thể tải phiếu thu'));
+            setReceipts([]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleBillCodeChange = (billCode: string) => {
+        setBill(null);
+        setFormData((currentFormData) => ({
+            ...currentFormData,
+            bill: {
+                billCode,
+
+                billId: null,
+            },
+            customer: {
+                customerId: null,
+                customerName: '',
+            },
+        }));
+        setBillLookupError('');
+    };
+
     const getPaymentMethodColor = (method: Receipt['paymentMethod']) => {
         switch (method) {
             case 'CASH':
@@ -129,6 +193,8 @@ export function ReceiptsPage() {
                 return 'bg-blue-100 text-blue-800';
             case 'CARD':
                 return 'bg-purple-100 text-purple-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
         }
     };
 
@@ -140,98 +206,117 @@ export function ReceiptsPage() {
                 return 'bg-yellow-100 text-yellow-800';
             case 'CANCEL':
                 return 'bg-red-100 text-red-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
         }
     };
 
     const handleCreateReceipt = async () => {
-        if (!formData.bill.billCode || !formData.customer.customerId) {
-            toast.error('Vui lòng nhập mã hóa đơn hợp lệ để tự động chọn khách hàng');
+        const amount = Number(formData.cost);
+
+        if (!formData.bill.billCode.trim() || !formData.customer.customerId) {
+            toast.error(
+                'Vui lòng nhập mã hóa đơn hợp lệ để tự động chọn khách hàng',
+            );
+            return;
+        }
+
+        if (!Number.isFinite(amount) || amount <= 0) {
+            toast.error('Vui lòng nhập số tiền hợp lệ');
+            return;
+        }
+
+        if (currentOutstanding > 0 && amount > currentOutstanding) {
+            toast.error('Số tiền thu không được vượt quá số nợ còn lại');
             return;
         }
 
         const sendData = {
-            code : formData.code || `INC${String(receipts.length + 1).padStart(3, '0')}`, 
-            cost : formData.cost, 
-            status : formData.status, 
-            billCode : formData.bill.billCode, 
-            shortDescription : formData.shortDescription,
+            cost: amount,
+            status: formData.status,
+            billCode: formData.bill.billCode.trim(),
+            shortDescription: formData.shortDescription.trim(),
             paymentMethod: formData.paymentMethod,
         };
-        setLoading(true) 
-        try 
-        {
-            const response = await IncomeService.create(sendData) 
-            setReceipts((currentReceipts) => [...currentReceipts, response]);
+        setIsSubmitting(true);
+        try {
+            await IncomeService.create(sendData);
+            await fetchAllReceipts();
             setIsCreateDialogOpen(false);
             resetFormData();
             toast.success('Phiếu thu đã được tạo thành công!');
-        } 
-        catch (err) {
-            console.log("Create income error" , err) 
-        } 
-        finally {
-            setLoading(false) 
+        } catch (err) {
+            toast.error(
+                getErrorMessage(err, 'Không thể tạo phiếu thu. Vui lòng thử lại'),
+            );
+        } finally {
+            setIsSubmitting(false);
         }
-        
     };
 
     const handleEditReceipt = async () => {
         if (!selectedReceipt) return;
-        if (!formData.bill.billCode || !formData.customer.customerId) {
-            toast.error('Vui lòng nhập mã hóa đơn hợp lệ để tự động chọn khách hàng');
+        const amount = Number(formData.cost);
+
+        if (!formData.bill.billCode.trim() || !formData.customer.customerId) {
+            toast.error('Vui lòng nhập mã hóa đơn hợp lệ');
             return;
         }
 
-        setLoading(true);
+        if (!Number.isFinite(amount) || amount <= 0) {
+            toast.error('Vui lòng nhập số tiền hợp lệ');
+            return;
+        }
+
+        setIsSubmitting(true);
         try {
-            const updateData : any = {} 
-            if (formData.code) 
-                updateData.code = formData.code 
-            if (formData.cost) 
-                updateData.cost = formData.cost 
-            if (formData.status) 
-                updateData.status = formData.status 
-            if (formData.paymentMethod) 
-                updateData.paymentMethod = formData.paymentMethod 
-            if (formData.shortDescription) 
-                updateData.shortDescription = formData.shortDescription
-            if (formData.bill.billCode)
-                updateData.billCode = formData.bill.billCode
+            const updateData = {
+                cost: amount,
+                status: formData.status,
+                paymentMethod: formData.paymentMethod,
+                shortDescription: formData.shortDescription.trim(),
+                billCode: formData.bill.billCode.trim(),
+            };
             await IncomeService.update(selectedReceipt.id, updateData);
             await fetchAllReceipts();
             setIsEditDialogOpen(false);
             resetFormData();
             toast.success('Phiếu thu đã được cập nhật thành công!');
         } catch (err) {
-            console.log('Update income error', err);
+            toast.error(
+                getErrorMessage(
+                    err,
+                    'Không thể cập nhật phiếu thu. Vui lòng thử lại',
+                ),
+            );
         } finally {
-            setLoading(false);
+            setIsSubmitting(false);
         }
     };
 
     const handleDeleteReceipt = async () => {
-        try 
-        {
-            if (selectedReceipt) {
-                const response = await IncomeService.delete(Number(selectedReceipt.id))
-                setReceipts(
-                    receipts.filter((receipt) => receipt.id !== selectedReceipt.id),
-                );
-                setIsDeleteDialogOpen(false);
-                toast.success('Phiếu thu đã được xóa thành công!');
-            }
-
+        if (!selectedReceipt) {
+            return;
         }
-        catch (err : any) 
-        {
-            toast.error("Lỗi khi xóa phiếu thu" + err.response) 
-            throw err 
+
+        try {
+            setIsSubmitting(true);
+            await IncomeService.delete(Number(selectedReceipt.id));
+            await fetchAllReceipts();
+            setIsDeleteDialogOpen(false);
+            setSelectedReceipt(null);
+            toast.success('Phiếu thu đã được xóa thành công!');
+        } catch (err: unknown) {
+            toast.error(
+                getErrorMessage(err, 'Không thể xóa phiếu thu. Vui lòng thử lại'),
+            );
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     const handleDownloadReceipt = (receipt: Receipt) => {
         toast.success(`Đang tải phiếu thu ${receipt.code}...`);
-        // Logic để tải phiếu thu
     };
 
     const handleViewReceipt = (receipt: Receipt) => {
@@ -242,11 +327,10 @@ export function ReceiptsPage() {
     const handleEditReceiptOpen = (receipt: Receipt) => {
         setSelectedReceipt(receipt);
         setFormData({
-            code: receipt.code,
             cost: receipt.cost,
             paymentMethod: receipt.paymentMethod,
-            status: receipt.status, 
-            shortDescription : receipt.shortDescription || '', 
+            status: receipt.status,
+            shortDescription: receipt.shortDescription || '',
             bill: {
                 billCode: receipt.bill.billCode,
                 billId: receipt.bill.billId,
@@ -266,13 +350,22 @@ export function ReceiptsPage() {
 
     const resetFormData = () => {
         setFormData(initialFormData);
+        setBill(null);
         setBillLookupError('');
         setIsLookingUpBill(false);
     };
 
-    const formatDateTime = (date: string, time: string) => {
-        const [year, month, day] = date.split('-');
-        return `${day}/${month}/${year} ${time}`;
+    const formatDateTime = (date: string | Date) => {
+        const parsedDate = new Date(date);
+
+        if (Number.isNaN(parsedDate.getTime())) {
+            return 'N/A';
+        }
+
+        return parsedDate.toLocaleString('vi-VN', {
+            timeZone: 'Asia/Ho_Chi_Minh',
+            hour12: false,
+        });
     };
 
     useEffect(() => {
@@ -285,6 +378,7 @@ export function ReceiptsPage() {
         if (!billCode) {
             setBillLookupError('');
             setIsLookingUpBill(false);
+            setBill(null);
             setFormData((currentFormData) => ({
                 ...currentFormData,
                 bill: {
@@ -312,11 +406,13 @@ export function ReceiptsPage() {
                 }
 
                 if (!bill?.customer) {
+                    setBill(null);
                     setBillLookupError('Không tìm thấy hóa đơn phù hợp');
                     setFormData((currentFormData) => ({
                         ...currentFormData,
                         bill: {
                             ...currentFormData.bill,
+
                             billId: null,
                         },
                         customer: {
@@ -326,7 +422,7 @@ export function ReceiptsPage() {
                     }));
                     return;
                 }
-
+                setBill(bill);
                 setFormData((currentFormData) => ({
                     ...currentFormData,
                     bill: {
@@ -343,6 +439,7 @@ export function ReceiptsPage() {
                     return;
                 }
 
+                setBill(null);
                 setBillLookupError('Không tìm thấy hóa đơn phù hợp');
                 setFormData((currentFormData) => ({
                     ...currentFormData,
@@ -366,15 +463,17 @@ export function ReceiptsPage() {
             window.clearTimeout(timeoutId);
         };
     }, [formData.bill.billCode, isCreateDialogOpen, isEditDialogOpen]);
+
     useEffect(() => {
-        fetchAllReceipts() 
-    } , [])
+        fetchAllReceipts();
+    }, []);
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">
-                        Quản lý phiếu thu tiền 
+                        Quản lý phiếu thu tiền
                     </h1>
                     <p className="text-gray-600 mt-1">
                         Quản lý các phiếu thu của Beta Book
@@ -392,7 +491,6 @@ export function ReceiptsPage() {
                 </Button>
             </div>
 
-            {/* Search */}
             <div className="bg-white p-4 rounded-lg shadow-sm">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -406,7 +504,6 @@ export function ReceiptsPage() {
                 </div>
             </div>
 
-            {/* Statistics */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="bg-white p-6 rounded-lg shadow-sm">
                     <div className="flex items-center justify-between">
@@ -458,14 +555,11 @@ export function ReceiptsPage() {
                         <div>
                             <p className="text-gray-600 text-sm">Tổng thu</p>
                             <p className="text-2xl font-bold text-gray-900 mt-1">
-                                {(
-                                    receipts
-                                        .filter(
-                                            (r) => r.status === 'COMPLETE',
-                                        )
-                                        .reduce((sum, r) => sum + Number(r.cost), 0)
-                                ).toFixed(1)}
-                                M
+                                {receipts
+                                    .filter((r) => r.status === 'COMPLETE')
+                                    .reduce((sum, r) => sum + Number(r.cost), 0)
+                                    .toLocaleString()}
+                                đ
                             </p>
                         </div>
                         <FileText className="w-10 h-10 text-blue-500" />
@@ -473,7 +567,6 @@ export function ReceiptsPage() {
                 </div>
             </div>
 
-            {/* Receipts Table */}
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 <table className="w-full">
                     <thead className="bg-gray-50 border-b border-gray-200">
@@ -505,7 +598,28 @@ export function ReceiptsPage() {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredReceipts.map((receipt) => (
+                        {isLoading && (
+                            <tr>
+                                <td
+                                    colSpan={8}
+                                    className="px-6 py-8 text-center text-sm text-gray-500"
+                                >
+                                    Đang tải phiếu thu...
+                                </td>
+                            </tr>
+                        )}
+                        {!isLoading && filteredReceipts.length === 0 && (
+                            <tr>
+                                <td
+                                    colSpan={8}
+                                    className="px-6 py-8 text-center text-sm text-gray-500"
+                                >
+                                    Không có phiếu thu phù hợp
+                                </td>
+                            </tr>
+                        )}
+                        {!isLoading &&
+                            filteredReceipts.map((receipt) => (
                             <tr key={receipt.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="text-sm font-medium text-orange-600">
@@ -518,16 +632,18 @@ export function ReceiptsPage() {
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                    {formatDateTime(receipt.createdAt, receipt.updatedAt)}
+                                    {formatDateTime(receipt.createdAt)}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {receipt.cost}đ
+                                    {receipt.cost.toLocaleString()}đ
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <span
                                         className={`px-3 py-1 rounded-full text-xs font-medium ${getPaymentMethodColor(receipt.paymentMethod)}`}
                                     >
-                                        {receipt.paymentMethod}
+                                        {PAYMENT_METHODS_MAP[
+                                            receipt.paymentMethod as keyof typeof PAYMENT_METHODS_MAP
+                                        ] || receipt.paymentMethod}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
@@ -537,7 +653,9 @@ export function ReceiptsPage() {
                                     <span
                                         className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(receipt.status)}`}
                                     >
-                                        {receipt.status}
+                                        {STATUS_MAP[
+                                            receipt.status as keyof typeof STATUS_MAP
+                                        ] || receipt.status}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -551,7 +669,7 @@ export function ReceiptsPage() {
                                         >
                                             <Eye className="w-4 h-4" />
                                         </Button>
-                                        <Button
+                                        {isAdmin && <Button
                                             variant="ghost"
                                             size="sm"
                                             onClick={() =>
@@ -559,8 +677,8 @@ export function ReceiptsPage() {
                                             }
                                         >
                                             <Edit className="w-4 h-4" />
-                                        </Button>
-                                        <Button
+                                        </Button>} 
+                                        {isAdmin && <Button
                                             variant="ghost"
                                             size="sm"
                                             onClick={() =>
@@ -568,7 +686,7 @@ export function ReceiptsPage() {
                                             }
                                         >
                                             <Trash2 className="w-4 h-4 text-red-500" />
-                                        </Button>
+                                        </Button>} 
                                         <Button
                                             variant="ghost"
                                             size="sm"
@@ -586,7 +704,6 @@ export function ReceiptsPage() {
                 </table>
             </div>
 
-            {/* Create Receipt Dialog */}
             <Dialog
                 open={isCreateDialogOpen}
                 onOpenChange={setIsCreateDialogOpen}
@@ -599,52 +716,23 @@ export function ReceiptsPage() {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-5 py-4">
-                        {/* Số phiếu thu */}
-                        <div className="space-y-2">
-                            <Label
-                                htmlFor="receiptNumber"
-                                className="text-sm font-medium"
-                            >
-                                Số phiếu thu
-                            </Label>
-                            <Input
-                                id="receiptNumber"
-                                value={
-                                    formData.code ||
-                                    `INC${String(receipts.length + 1).padStart(3, '0')}`
-                                }
-                                onChange={(e) =>
-                                    setFormData({
-                                        ...formData,
-                                        code: e.target.value,
-                                    })
-                                }
-                                className="bg-gray-50"
-                                placeholder="Tự động tạo"
-                            />
-                        </div>
-
-                        {/* Thông tin khách hàng */}
                         <div className="space-y-4 pt-2 border-t">
-                            <h4 className="text-sm font-semibold text-gray-700">
-                                Thông tin khách hàng 
-                            </h4>
-
                             <div className="space-y-2">
                                 <Label
                                     htmlFor="customerName"
                                     className="text-sm font-medium"
                                 >
-                                    Mã hóa đơn 
+                                    Mã hóa đơn
                                 </Label>
                                 <Input
                                     id="customerName"
                                     value={formData.bill.billCode}
-                                    onChange={(e) => handleBillCodeChange(e.target.value)}
+                                    onChange={(e) =>
+                                        handleBillCodeChange(e.target.value)
+                                    }
                                     placeholder="Nhập mã hóa đơn"
                                 />
                             </div>
-
                             <div className="space-y-2">
                                 <Label
                                     htmlFor="createCustomerName"
@@ -669,15 +757,22 @@ export function ReceiptsPage() {
                                         {billLookupError}
                                     </p>
                                 )}
+                                <p
+                                    className="text-sm font-medium text-right my-2"
+                                >
+                                    Số tiền cần thanh toán:{' '}
+                                    <span className="text-red-600 font-bold">
+                                        {currentOutstanding.toLocaleString()}
+                                    </span>
+                                </p>
+
                             </div>
                         </div>
 
-                        {/* Thông tin thanh toán */}
                         <div className="space-y-4 pt-2 border-t">
                             <h4 className="text-sm font-semibold text-gray-700">
                                 Thông tin thanh toán
                             </h4>
-
                             <div className="space-y-2">
                                 <Label
                                     htmlFor="amount"
@@ -692,14 +787,12 @@ export function ReceiptsPage() {
                                     onChange={(e) =>
                                         setFormData({
                                             ...formData,
-                                            cost:
-                                                parseInt(e.target.value) || 0,
+                                            cost: parseInt(e.target.value) || 0,
                                         })
                                     }
                                     placeholder="0"
                                 />
                             </div>
-
                             <div className="space-y-2">
                                 <Label
                                     htmlFor="paymentMethod"
@@ -718,7 +811,11 @@ export function ReceiptsPage() {
                                     }
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Chọn hình thức" />
+                                        {!formData.paymentMethod
+                                            ? 'Chọn hình thức thanh toán'
+                                            : ReceiptPaymentTypeLabel[
+                                                  formData.paymentMethod
+                                              ]}
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="CASH">
@@ -727,11 +824,12 @@ export function ReceiptsPage() {
                                         <SelectItem value="TRANSFER">
                                             Chuyển khoản
                                         </SelectItem>
-                                        <SelectItem value="CARD">Thẻ</SelectItem>
+                                        <SelectItem value="CARD">
+                                            Thẻ
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
-
                             <div className="space-y-2">
                                 <Label
                                     htmlFor="status"
@@ -753,18 +851,17 @@ export function ReceiptsPage() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="COMPLETE">
-                                            COMPLETE
+                                            Hoàn thành
                                         </SelectItem>
                                         <SelectItem value="PENDING">
-                                            PENDING
+                                            Chờ xác nhận
                                         </SelectItem>
                                         <SelectItem value="CANCEL">
-                                            CANCEL 
+                                            Đã hủy
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
-
                             <div className="space-y-2">
                                 <Label
                                     htmlFor="note"
@@ -801,15 +898,14 @@ export function ReceiptsPage() {
                             type="button"
                             onClick={handleCreateReceipt}
                             className="bg-orange-500 hover:bg-orange-600"
-                            disabled={loading}
+                            disabled={isSubmitting || isLookingUpBill}
                         >
-                            Tạo phiếu thu
+                            {isSubmitting ? 'Đang tạo...' : 'Tạo phiếu thu'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            {/* Edit Receipt Dialog */}
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
@@ -819,43 +915,24 @@ export function ReceiptsPage() {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-5 py-4">
-                        {/* Số phiếu thu */}
-                        <div className="space-y-2">
-                            <Label
-                                htmlFor="editReceiptNumber"
-                                className="text-sm font-medium"
-                            >
-                                Số phiếu thu
-                            </Label>
-                            <Input
-                                id="editReceiptNumber"
-                                value={formData.code}
-                                className="bg-gray-50"
-                                readOnly
-                            />
-                        </div>
 
-                        {/* Thông tin khách hàng */}
-                        <div className="space-y-4 pt-2 border-t">
-                            <h4 className="text-sm font-semibold text-gray-700">
-                                Thông tin hóa đơn 
-                            </h4>
-
+                        <div className="space-y-4">
                             <div className="space-y-2">
                                 <Label
                                     htmlFor="editCustomerName"
                                     className="text-sm font-medium"
                                 >
-                                    Mã hóa đơn 
+                                    Mã hóa đơn
                                 </Label>
                                 <Input
                                     id="editCustomerName"
                                     value={formData.bill.billCode}
-                                    onChange={(e) => handleBillCodeChange(e.target.value)}
+                                    onChange={(e) =>
+                                        handleBillCodeChange(e.target.value)
+                                    }
                                     placeholder="Nhập mã hóa đơn"
                                 />
                             </div>
-
                             <div className="space-y-2">
                                 <Label
                                     htmlFor="editReadonlyCustomerName"
@@ -883,12 +960,10 @@ export function ReceiptsPage() {
                             </div>
                         </div>
 
-                        {/* Thông tin thanh toán */}
                         <div className="space-y-4 pt-2 border-t">
                             <h4 className="text-sm font-semibold text-gray-700">
                                 Thông tin thanh toán
                             </h4>
-
                             <div className="space-y-2">
                                 <Label
                                     htmlFor="editAmount"
@@ -903,14 +978,12 @@ export function ReceiptsPage() {
                                     onChange={(e) =>
                                         setFormData({
                                             ...formData,
-                                            cost:
-                                                parseInt(e.target.value) || 0,
+                                            cost: parseInt(e.target.value) || 0,
                                         })
                                     }
                                     placeholder="0"
                                 />
                             </div>
-
                             <div className="space-y-2">
                                 <Label
                                     htmlFor="editPaymentMethod"
@@ -938,12 +1011,12 @@ export function ReceiptsPage() {
                                         <SelectItem value="TRANSFER">
                                             Chuyển khoản
                                         </SelectItem>
-                                        <SelectItem value="CARD">Thẻ</SelectItem>
+                                        <SelectItem value="CARD">
+                                            Thẻ
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
-
-
                             <div className="space-y-2">
                                 <Label
                                     htmlFor="editStatus"
@@ -976,7 +1049,6 @@ export function ReceiptsPage() {
                                     </SelectContent>
                                 </Select>
                             </div>
-
                             <div className="space-y-2">
                                 <Label
                                     htmlFor="editNote"
@@ -1010,15 +1082,14 @@ export function ReceiptsPage() {
                             type="button"
                             onClick={handleEditReceipt}
                             className="bg-orange-500 hover:bg-orange-600"
-                            disabled={loading}
+                            disabled={isSubmitting || isLookingUpBill}
                         >
-                            Cập nhật
+                            {isSubmitting ? 'Đang cập nhật...' : 'Cập nhật'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            {/* View Receipt Dialog */}
             <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
@@ -1036,7 +1107,6 @@ export function ReceiptsPage() {
                                 {selectedReceipt?.code}
                             </div>
                         </div>
-
                         <div className="border-t pt-4 space-y-3">
                             <div className="flex justify-between">
                                 <span className="text-sm text-gray-500">
@@ -1054,7 +1124,6 @@ export function ReceiptsPage() {
                                     {selectedReceipt &&
                                         formatDateTime(
                                             selectedReceipt.createdAt,
-                                            selectedReceipt.updatedAt,
                                         )}
                                 </span>
                             </div>
@@ -1063,7 +1132,9 @@ export function ReceiptsPage() {
                                     Số tiền:
                                 </span>
                                 <span className="text-sm font-semibold text-orange-600">
-                                    {selectedReceipt?.cost}đ
+                                    {selectedReceipt
+                                        ? `${selectedReceipt.cost.toLocaleString()}đ`
+                                        : '0đ'}
                                 </span>
                             </div>
                             <div className="flex justify-between">
@@ -1073,7 +1144,11 @@ export function ReceiptsPage() {
                                 <span
                                     className={`px-3 py-1 rounded-full text-xs font-medium ${selectedReceipt && getPaymentMethodColor(selectedReceipt.paymentMethod)}`}
                                 >
-                                    {selectedReceipt?.paymentMethod}
+                                    {selectedReceipt &&
+                                        (PAYMENT_METHODS_MAP[
+                                            selectedReceipt.paymentMethod as keyof typeof PAYMENT_METHODS_MAP
+                                        ] ||
+                                            selectedReceipt.paymentMethod)}
                                 </span>
                             </div>
                             <div className="flex justify-between">
@@ -1091,7 +1166,11 @@ export function ReceiptsPage() {
                                 <span
                                     className={`px-3 py-1 rounded-full text-xs font-medium ${selectedReceipt && getStatusColor(selectedReceipt.status)}`}
                                 >
-                                    {selectedReceipt?.status}
+                                    {selectedReceipt &&
+                                        (STATUS_MAP[
+                                            selectedReceipt.status as keyof typeof STATUS_MAP
+                                        ] ||
+                                            selectedReceipt.status)}
                                 </span>
                             </div>
                             {selectedReceipt?.shortDescription && (
@@ -1114,22 +1193,10 @@ export function ReceiptsPage() {
                         >
                             Đóng
                         </Button>
-                        <Button
-                            type="button"
-                            onClick={() =>
-                                selectedReceipt &&
-                                handleDownloadReceipt(selectedReceipt)
-                            }
-                            className="bg-blue-500 hover:bg-blue-600"
-                        >
-                            <Download className="w-4 h-4 mr-2" />
-                            Tải phiếu thu
-                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            {/* Delete Receipt Dialog */}
             <Dialog
                 open={isDeleteDialogOpen}
                 onOpenChange={setIsDeleteDialogOpen}
@@ -1164,7 +1231,9 @@ export function ReceiptsPage() {
                                     Số tiền:
                                 </span>
                                 <span className="text-sm font-semibold">
-                                    {selectedReceipt?.cost}đ
+                                    {selectedReceipt
+                                        ? `${selectedReceipt.cost.toLocaleString()}đ`
+                                        : '0đ'}
                                 </span>
                             </div>
                         </div>
@@ -1181,8 +1250,9 @@ export function ReceiptsPage() {
                             type="button"
                             onClick={handleDeleteReceipt}
                             className="bg-red-500 hover:bg-red-600"
+                            disabled={isSubmitting}
                         >
-                            Xóa phiếu thu
+                            {isSubmitting ? 'Đang xóa...' : 'Xóa phiếu thu'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

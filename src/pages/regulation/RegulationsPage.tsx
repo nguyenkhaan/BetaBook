@@ -9,9 +9,27 @@ import {
 import { Search, Plus, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '../../components/ui/dialog';
 import { toast } from 'sonner';
 import { Toaster } from '../../components/ui/sonner';
-import { RegulationService, Rule, RuleStatistic } from '../../services/regulation.service';
+import {
+    RegulationService,
+    Rule,
+    RuleStatistic,
+} from '../../services/regulation.service';
+import {
+    SettingsService,
+    SystemSetting,
+    UpdateSystemSettingDto,
+} from '../../services/settings.service';
+import { useAuth } from '../../contexts/AuthContext';
 
 export function RegulationsPage() {
     const navigate = useNavigate();
@@ -24,6 +42,10 @@ export function RegulationsPage() {
         useState<RegulationFormData | null>(null);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [ruleTypes, setRuleTypes] = useState<string[]>([]);
+    const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+    const [settings, setSettings] = useState<SystemSetting[]>([]);
+    const [isLoadingSettings, setIsLoadingSettings] = useState(false);
+    const [isSavingSettings, setIsSavingSettings] = useState(false);
 
     useEffect(() => {
         fetchRegulations();
@@ -56,6 +78,19 @@ export function RegulationsPage() {
         }
     };
 
+    const fetchSettings = async () => {
+        try {
+            setIsLoadingSettings(true);
+            const data = await SettingsService.getAll();
+            setSettings(data);
+        } catch (error) {
+            toast.error('Không thể tải cấu hình hệ thống');
+            console.error(error);
+        } finally {
+            setIsLoadingSettings(false);
+        }
+    };
+
     const handleEdit = (id: number) => {
         const rule = regulations.find((r) => r.id === id);
         if (rule) {
@@ -71,7 +106,7 @@ export function RegulationsPage() {
             setDialogOpen(true);
         }
     };
-
+    const {isAdmin} = useAuth() 
     const handleSave = async (data: RegulationFormData) => {
         try {
             if (data.id) {
@@ -121,9 +156,74 @@ export function RegulationsPage() {
         navigate(`/regulation/${id}`);
     };
 
+    const handleOpenSettingsDialog = async () => {
+        setSettingsDialogOpen(true);
+        await fetchSettings();
+    };
+
+    const handleSettingChange = (
+        key: string,
+        field: 'description' | 'value',
+        value: string,
+    ) => {
+        setSettings((currentSettings) =>
+            currentSettings.map((setting) =>
+                setting.key === key ? { ...setting, [field]: value } : setting,
+            ),
+        );
+    };
+
+    const handleSaveSettings = async () => {
+        const payload: UpdateSystemSettingDto[] = settings.map((setting) => ({
+            key: setting.key,
+            description: setting.description?.trim() || '',
+            value: setting.value.trim(),
+        }));
+
+        if (payload.some((setting) => !setting.key || !setting.value)) {
+            toast.error('Vui lòng nhập đầy đủ giá trị cấu hình');
+            return;
+        }
+
+        try {
+            setIsSavingSettings(true);
+            await SettingsService.updateAll(payload);
+            toast.success('Cập nhật cấu hình hệ thống thành công!');
+            setSettingsDialogOpen(false);
+        } catch (error) {
+            toast.error('Không thể cập nhật cấu hình hệ thống');
+            console.error(error);
+        } finally {
+            setIsSavingSettings(false);
+        }
+    };
+
+    const translateType = (type: string) => {
+        switch (type.toUpperCase()) {
+            case 'HUMAN':
+                return 'Nhân sự';
+            case 'BOOK':
+                return 'Sách & Kho';
+            case 'CUSTOMER':
+                return 'Khách hàng';
+            case 'BILL':
+                return 'Hóa đơn';
+            case 'REPORT':
+                return 'Báo cáo';
+            case 'VOUCHER':
+                return 'Ưu đãi';
+            default:
+                return type;
+        }
+    };
+
     const filterOptions = [
         { id: 'all', label: 'Tất cả', type: 'all' },
-        ...ruleTypes.map((type) => ({ id: type, label: type, type })),
+        ...ruleTypes.map((type) => ({
+            id: type,
+            label: translateType(type),
+            type,
+        })),
     ];
 
     const filteredRegulations = regulations.filter((reg) => {
@@ -132,7 +232,8 @@ export function RegulationsPage() {
             reg.shortDescription
                 ?.toLowerCase()
                 .includes(searchQuery.toLowerCase());
-        const matchesFilter = activeFilter === 'all' || reg.type === activeFilter;
+        const matchesFilter =
+            activeFilter === 'all' || reg.type === activeFilter;
         return matchesSearch && matchesFilter;
     });
 
@@ -192,16 +293,24 @@ export function RegulationsPage() {
                                         thống Beta Book
                                     </p>
                                 </div>
-                                <Button
-                                    onClick={() => {
-                                        setEditingRegulation(null);
-                                        setDialogOpen(true);
-                                    }}
-                                    className="bg-orange-500 font-medium"
-                                >
-                                    <Plus className="w-4 h-4 mr-2" /> Thêm quy
-                                    định
-                                </Button>
+                                <div className="flex items-center gap-3">
+                                    {isAdmin && <Button
+                                        variant="outline"
+                                        onClick={handleOpenSettingsDialog}
+                                    >
+                                        Cấu hình hệ thống
+                                    </Button>} 
+                                    {isAdmin && <Button
+                                        onClick={() => {
+                                            setEditingRegulation(null);
+                                            setDialogOpen(true);
+                                        }}
+                                        className="bg-orange-500 font-medium"
+                                    >
+                                        <Plus className="w-4 h-4 mr-2" /> Thêm
+                                        quy định
+                                    </Button>} 
+                                </div>
                             </div>
 
                             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-8">
@@ -223,9 +332,9 @@ export function RegulationsPage() {
                                             onClick={() =>
                                                 setActiveFilter(opt.id)
                                             }
-                                            className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all ${
+                                            className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
                                                 activeFilter === opt.id
-                                                    ? 'bg-orange-500 p-2 text-white'
+                                                    ? 'bg-orange-500 text-white shadow-sm'
                                                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                             }`}
                                         >
@@ -292,6 +401,124 @@ export function RegulationsPage() {
                     regulation={editingRegulation}
                     onSave={handleSave}
                 />
+                <Dialog
+                    open={settingsDialogOpen}
+                    onOpenChange={setSettingsDialogOpen}
+                >
+                    <DialogContent className="sm:max-w-5xl max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>Bảng chỉnh sửa cấu hình</DialogTitle>
+                            <DialogDescription>
+                                Cập nhật mô tả và giá trị cho các cấu hình hệ
+                                thống.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="py-2">
+                            {isLoadingSettings ? (
+                                <div className="flex justify-center py-12">
+                                    <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+                                </div>
+                            ) : settings.length === 0 ? (
+                                <div className="rounded-lg border border-dashed border-gray-300 py-10 text-center text-sm text-gray-500">
+                                    Không có cấu hình hệ thống để chỉnh sửa
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+                                    <table className="w-full min-w-[860px] border-collapse">
+                                        <thead className="bg-gray-50">
+                                            <tr className="border-b border-gray-200 text-left">
+                                                <th className="px-4 py-3 text-sm font-semibold text-gray-600">
+                                                    Khóa (Key)
+                                                </th>
+                                                <th className="px-4 py-3 text-sm font-semibold text-gray-600">
+                                                    Mô tả (Description)
+                                                </th>
+                                                <th className="px-4 py-3 text-sm font-semibold text-gray-600">
+                                                    Giá trị (Value)
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {settings.map((setting) => (
+                                                <tr
+                                                    key={setting.key}
+                                                    className="border-b border-gray-100 align-top last:border-b-0"
+                                                >
+                                                    <td className="px-4 py-3">
+                                                        <Input
+                                                            value={setting.key}
+                                                            readOnly
+                                                            className="bg-gray-50 font-medium text-gray-700"
+                                                        />
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <Input
+                                                            value={
+                                                                setting.description ||
+                                                                ''
+                                                            }
+                                                            onChange={(e) =>
+                                                                handleSettingChange(
+                                                                    setting.key,
+                                                                    'description',
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            placeholder="Nhập mô tả cấu hình"
+                                                        />
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <Input
+                                                            value={
+                                                                setting.value
+                                                            }
+                                                            onChange={(e) =>
+                                                                handleSettingChange(
+                                                                    setting.key,
+                                                                    'value',
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            placeholder="Nhập giá trị"
+                                                        />
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+
+                        <DialogFooter className="gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setSettingsDialogOpen(false)}
+                                disabled={isSavingSettings}
+                            >
+                                Hủy bỏ
+                            </Button>
+                            <Button
+                                type="button"
+                                onClick={handleSaveSettings}
+                                className="bg-orange-500 font-medium"
+                                disabled={
+                                    isSavingSettings ||
+                                    isLoadingSettings ||
+                                    settings.length === 0
+                                }
+                            >
+                                {isSavingSettings
+                                    ? 'Đang lưu...'
+                                    : 'Lưu thay đổi'}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
                 <Toaster position="top-right" />
             </div>
         </SidebarProvider>

@@ -40,7 +40,7 @@ export function InvoiceFilterBar({
                 />
             </div>
 
-            <div className="w-48">
+            <div className="w-100">
                 <Select
                     value={statusFilter}
                     onValueChange={onStatusFilterChange}
@@ -49,7 +49,7 @@ export function InvoiceFilterBar({
                         <SelectValue placeholder="Trạng thái" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                        <SelectItem value="Tất cả">Tất cả</SelectItem>
                         <SelectItem value="Đã thanh toán">Đã thanh toán</SelectItem>
                         <SelectItem value="Chưa thanh toán">Chưa thanh toán</SelectItem>
                         <SelectItem value="Quá hạn">Quá hạn</SelectItem>
@@ -57,17 +57,16 @@ export function InvoiceFilterBar({
                 </Select>
             </div>
 
-            <div className="w-70">
+            <div className="w-[200px]">
                 <Select value={priceFilter} onValueChange={onPriceFilterChange}>
                     <SelectTrigger className="h-10 border-gray-200 text-sm">
                         <SelectValue placeholder="Khoảng giá" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">Tất cả giá</SelectItem>
-                        <SelectItem value="under100">Dưới 100k</SelectItem>
-                        <SelectItem value="100-200">100k - 200k</SelectItem>
-                        <SelectItem value="200-500">200k - 500k</SelectItem>
-                        <SelectItem value="over500">Trên 500k</SelectItem>
+                        <SelectItem value="Tất cả">Tất cả</SelectItem>
+                        <SelectItem value="Dưới 100k">Dưới 100k</SelectItem>
+                        <SelectItem value="100k - 500k">100k - 500k</SelectItem>
+                        <SelectItem value="Trên 500k">Trên 500k</SelectItem>
                     </SelectContent>
                 </Select>
             </div>

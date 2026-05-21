@@ -11,7 +11,6 @@ import {
 } from '../../../components/ui/dialog';
 import { Label } from '../../../components/ui/label';
 import { Input } from '../../../components/ui/input';
-// Import Select components
 import {
     Select,
     SelectContent,
@@ -19,21 +18,32 @@ import {
     SelectTrigger,
     SelectValue,
 } from '../../../components/ui/select';
+import { MemberGradeLabel } from '../../../utilis/label_mapper';
+
+interface CustomerFormData {
+    name: string;
+
+    email: string;
+    phone: string;
+    grade: Customer['grade'];
+}
 
 interface CustomerDialogsProps {
     isCreateDialogOpen: boolean;
     setIsCreateDialogOpen: (isOpen: boolean) => void;
     isEditDialogOpen: boolean;
     setIsEditDialogOpen: (isOpen: boolean) => void;
+    isViewDialogOpen: boolean;
+    setIsViewDialogOpen: (isOpen: boolean) => void;
     isDeleteDialogOpen: boolean;
     setIsDeleteDialogOpen: (isOpen: boolean) => void;
     selectedCustomer: Customer | null;
-    formData: any;
-    setFormData: (data: any) => void;
+    formData: CustomerFormData;
+    setFormData: (data: CustomerFormData) => void;
     handleCreateCustomer: () => void;
     handleEditCustomer: () => void;
     handleDeleteCustomer: () => void;
-    calculateLevel: (totalSpent: number) => Customer['level'];
+    calculateLevel: (totalSpent: number) => Customer['grade'];
 }
 
 export function CustomerDialogs({
@@ -41,6 +51,8 @@ export function CustomerDialogs({
     setIsCreateDialogOpen,
     isEditDialogOpen,
     setIsEditDialogOpen,
+    isViewDialogOpen,
+    setIsViewDialogOpen,
     isDeleteDialogOpen,
     setIsDeleteDialogOpen,
     selectedCustomer,
@@ -108,37 +120,37 @@ export function CustomerDialogs({
                                             phone: e.target.value,
                                         })
                                     }
-                                    placeholder="090..."
-                                />
-                            </div>
+                                placeholder="090..."
+                            />
+                        </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Hạng thành viên</Label>
                                 <Select
-                                    value={formData.level}
+                                    value={formData.grade}
                                     onValueChange={(value) =>
                                         setFormData({
                                             ...formData,
-                                            level: value,
+                                            grade: value as Customer['grade'],
                                         })
                                     }
                                 >
                                     <SelectTrigger className="w-full bg-orange-50 font-bold text-orange-700 border-orange-200">
-                                        <SelectValue placeholder="Chọn hạng" />
+                                        {!formData.grade ? 'Chọn hạng' : MemberGradeLabel[formData.grade]}
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="BRONZE">
-                                            BRONZE
+                                            Đồng 
                                         </SelectItem>
                                         <SelectItem value="SILVER">
-                                            SILVER
+                                            Bạc 
                                         </SelectItem>
                                         <SelectItem value="GOLD">
-                                            GOLD
+                                            Vàng 
                                         </SelectItem>
                                         <SelectItem value="DIAMOND">
-                                            DIAMOND
+                                            Kim cương 
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -169,7 +181,90 @@ export function CustomerDialogs({
                 </DialogContent>
             </Dialog>
 
-            {/* Delete Dialog remains the same */}
+            <Dialog
+                open={isViewDialogOpen}
+                onOpenChange={setIsViewDialogOpen}
+            >
+                <DialogContent className="sm:max-w-[520px]">
+                    <DialogHeader>
+                        <DialogTitle>Chi tiết khách hàng</DialogTitle>
+                        <DialogDescription>
+                            Thông tin chi tiết của khách hàng trong hệ thống
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-2">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Mã khách hàng</Label>
+                                <Input value={selectedCustomer?.code ?? ''} readOnly />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Tên khách hàng</Label>
+                                <Input value={selectedCustomer?.name ?? ''} readOnly />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Email</Label>
+                                <Input value={selectedCustomer?.email ?? ''} readOnly />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Số điện thoại</Label>
+                                <Input value={selectedCustomer?.phone ?? ''} readOnly />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Ngày tham gia</Label>
+                                <Input
+                                    value={selectedCustomer?.joinDate ?? ''}
+                                    readOnly
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Tổng chi tiêu</Label>
+                                <Input
+                                    value={selectedCustomer?.totalSpent?.toLocaleString('vi-VN') ?? '0'}
+                                    readOnly
+                                />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Số đơn đặt</Label>
+                                <Input
+                                    value={String(selectedCustomer?.totalOrders ?? 0)}
+                                    readOnly
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Hạng thành viên</Label>
+                                <Input
+                                    value={
+                                        selectedCustomer
+                                            ? MemberGradeLabel[
+                                                  calculateLevel(
+                                                      selectedCustomer.totalSpent,
+                                                  )
+                                              ]
+                                            : ''
+                                    }
+                                    readOnly
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsViewDialogOpen(false)}
+                        >
+                            Đóng
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             <Dialog
                 open={isDeleteDialogOpen}
                 onOpenChange={setIsDeleteDialogOpen}

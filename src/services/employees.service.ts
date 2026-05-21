@@ -22,6 +22,7 @@ export class EmployeesService {
             email: emp.email,
             phone: emp.phone,
             avatar: emp.avatar,
+            resume: emp.resume || '', 
             status: emp.status, 
             departmentName: emp.department?.name || 'N/A',
             positionName: emp.position?.name || 'N/A',
@@ -31,7 +32,7 @@ export class EmployeesService {
         }));
     }
 
-   
+
     static async getMyProfile(): Promise<Employees> {
         const response = await privateApi.get('/employee/profile');
         return response.data;
@@ -59,7 +60,7 @@ export class EmployeesService {
     }
 
     static async updateEmployee(id: number, data: any) {
-        const response = await privateApi.patch(`/employee/${id}`, data);
+        const response = await privateApi.put(`/employee/${id}`, data);
         return response.data;
     }
 

@@ -1,14 +1,16 @@
 import React from 'react';
 import { Customer } from '../CustomersPage';
 import { Button } from '../../../components/ui/button';
-import { Mail, Phone, Eye, Edit, Trash2 } from 'lucide-react';
-
+import { Mail, Phone, Eye, Edit, Trash2, Key } from 'lucide-react';
+import { MemberGradeLabel } from '../../../utilis/label_mapper';
+import { useAuth } from '../../../contexts/AuthContext';
 interface CustomerTableRowProps {
     customer: Customer;
     onView: (customer: Customer) => void;
     onEdit: (customer: Customer) => void;
     onDelete: (customer: Customer) => void;
-    getLevelColor: (level: Customer['level']) => string;
+    getLevelColor: (grade: Customer['grade']) => string;
+    onResetPassword : (customer : Customer) => void 
 }
 
 export function CustomerTableRow({
@@ -17,11 +19,14 @@ export function CustomerTableRow({
     onEdit,
     onDelete,
     getLevelColor,
+    onResetPassword
 }: CustomerTableRowProps) {
+    const { isAdmin } = useAuth();
+
     return (
         <tr className="hover:bg-gray-50">
             <td className="px-6 py-4 text-orange-600 font-medium">
-                {customer.customerCode}
+                {customer.code}
             </td>
             <td className="px-6 py-4 font-medium text-gray-900">
                 {customer.name}
@@ -42,10 +47,10 @@ export function CustomerTableRow({
             <td className="px-6 py-4">
                 <span
                     className={`px-3 py-1 rounded-full text-xs font-medium ${getLevelColor(
-                        customer.level,
+                        customer.grade,
                     )}`}
                 >
-                    {customer.level}
+                    {MemberGradeLabel[customer.grade] || 'Chưa xếp hạng'}
                 </span>
             </td>
             <td className="px-6 py-4 flex gap-1">
@@ -55,21 +60,28 @@ export function CustomerTableRow({
                     onClick={() => onView(customer)}
                 >
                     <Eye className="w-4 h-4" />
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onEdit(customer)}
+                    >
+                        <Edit className="w-4 h-4" />
+                    </Button>
                 </Button>
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onEdit(customer)}
+                    onClick={() => onResetPassword(customer)}
                 >
-                    <Edit className="w-4 h-4" />
+                    <Key className="w-4 h-4 text-yellow-700" />
                 </Button>
-                <Button
+                {isAdmin && <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => onDelete(customer)}
                 >
                     <Trash2 className="w-4 h-4 text-red-500" />
-                </Button>
+                </Button>} 
             </td>
         </tr>
     );

@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useCallback } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '../../components/ui/button';
@@ -7,26 +9,45 @@ import { PromotionFilterBar } from './components/PromotionFilterBar';
 import { PromotionTable } from './components/PromotionTable';
 import { PromotionDialogs } from './components/PromotionDialogs';
 import {
-    PromotionService,
+    VoucherService,
     Voucher,
     VoucherData,
-} from '../../services/promotion.service';
-export type Promotion =  {
-    id : number; 
-    code: string; 
-    sale: string; 
-    quantity: number; 
-    status : string; 
-    type : string, 
-    eventName: string;  
-    name: string 
-    description: string; 
-    startDate: string; 
-    expiresAt: string; 
-    usedNumber: number 
+} from '../../services/voucher.service';
+
+export type VoucherStatus = 'APPLYING' | 'UPCOMING' | 'ENDED';
+export type VoucherType = 'PERCENT' | 'VND';
+
+export const VoucherStatusLabel: Record<VoucherStatus, string> = {
+    APPLYING: 'Đang áp dụng',
+    UPCOMING: 'Sắp diễn ra',
+    ENDED: 'Đã kết thúc',
+};
+
+export const VoucherTypeLabel: Record<VoucherType, string> = {
+    VND: 'Tiền mặt',
+    PERCENT: 'Phần trăm',
+};
+
+export interface Promotion {
+    description: string;
+    code: string;
+    name: string;
+    eventName: string;
+    sale: string | number;
+    type: string;
+    originalType?: VoucherType;
+    usedNumber: number;
+    quantity: number;
+    status: string;
+    originalStatus?: VoucherStatus;
+    startDate: string;
+    endDate: string;
+    expiresAt: string;
+    id: number | string;
 }
+
 export function PromotionsPage() {
-    const [vouchers, setVouchers] = useState<Voucher[]>([]);
+    const [vouchers, setVouchers] = useState<Promotion[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -34,16 +55,20 @@ export function PromotionsPage() {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(
+    const [selectedVoucher, setSelectedVoucher] = useState<Promotion | null>(
         null,
     );
 
     const initialFormData: VoucherData = {
         name: '',
+        code: '',
         eventName: '',
+        description: '',
         sale: 0,
         type: 'PERCENT',
         quantity: 100,
+        usedNumber: 0,
+        startDate: new Date().toISOString().split('T')[0],
         expiresAt: new Date().toISOString().split('T')[0],
         status: 'APPLYING',
     };
@@ -53,11 +78,20 @@ export function PromotionsPage() {
     const loadVouchers = useCallback(async () => {
         try {
             setLoading(true);
-            const data = await PromotionService.getAllVoucher();
-            setVouchers(data);
+            const data = await VoucherService.getAllVoucher();
+
+            const normalizedVouchers = data.map((v: any) => ({
+                ...v,
+                originalStatus: v.status,
+                originalType: v.type,
+                status:
+                    VoucherStatusLabel[v.status as VoucherStatus] || v.status,
+                type: VoucherTypeLabel[v.type as VoucherType] || v.type,
+            }));
+
+            setVouchers(normalizedVouchers);
         } catch (error) {
             toast.error('Không thể tải danh sách khuyến mãi');
-            console.error(error);
         } finally {
             setLoading(false);
         }
@@ -70,89 +104,122 @@ export function PromotionsPage() {
     const filteredVouchers = vouchers.filter(
         (v) =>
             v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            v.eventName.toLowerCase().includes(searchTerm.toLowerCase()),
+            v.eventName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            v.code.toLowerCase().includes(searchTerm.toLowerCase()),
     );
 
-    const getStatusColor = (status: any) => {  //Fix 
-        switch (status) {
-            case 'APPLYING':
-                return 'bg-green-100 text-green-800';
-            case 'UPCOMING':
-                return 'bg-gray-100 text-gray-800';
-            case 'ENDED':
-                return 'bg-red-100 text-red-800';
-            default:
-                return 'bg-blue-100 text-blue-800';
+    const getStatusColor = (status: string) => {
+        if (status === 'APPLYING' || status === VoucherStatusLabel.APPLYING) {
+            return 'bg-green-100 text-green-800';
         }
+        if (status === 'UPCOMING' || status === VoucherStatusLabel.UPCOMING) {
+            return 'bg-blue-100 text-blue-800';
+        }
+        if (status === 'ENDED' || status === VoucherStatusLabel.ENDED) {
+            return 'bg-red-100 text-red-800';
+        }
+        return 'bg-gray-100 text-gray-800';
     };
 
     const handleCreatePromotion = async () => {
         try {
-            await PromotionService.createVoucher(formData);
-            toast.success('Khuyến mãi đã được tạo thành công!');
+            const payload = {
+                ...formData,
+                sale: Number(formData.sale),
+                quantity: Number(formData.quantity),
+                usedNumber: Number(formData.usedNumber || 0),
+                startDate: new Date(
+                    formData.startDate || new Date(),
+                ).toISOString(),
+                expiresAt: new Date(
+                    formData.expiresAt || new Date(),
+                ).toISOString(),
+            };
+
+            await VoucherService.createVoucher(payload);
+            toast.success('Tạo khuyến mãi thành công!');
             setIsCreateDialogOpen(false);
+            resetFormData();
             loadVouchers();
-        } catch (error : any) 
-        {
-            console.log(error) 
-            toast.error('Xảy ra lỗi khi tạo khuyến mãi: ' + error.message);
+        } catch (error: any) {
+            const msg = error.response?.data?.message;
+            toast.error(Array.isArray(msg) ? msg[0] : msg || 'Lỗi khi tạo');
         }
     };
 
     const handleEditPromotion = async () => {
-        if (selectedVoucher) {
-            try {
-                await PromotionService.updateVoucher(
-                    selectedVoucher.id,
-                    formData,
-                );
-                toast.success('Cập nhật thành công!');
-                setIsEditDialogOpen(false);
-                loadVouchers();
-            } catch (error) {
-                toast.error('Lỗi khi cập nhật');
-            }
+        if (!selectedVoucher) return;
+        try {
+            const payload = {
+                ...formData,
+                sale: Number(formData.sale),
+                quantity: Number(formData.quantity),
+                usedNumber: Number(formData.usedNumber || 0),
+                startDate: new Date(
+                    formData.startDate || new Date(),
+                ).toISOString(),
+                expiresAt: new Date(
+                    formData.expiresAt || new Date(),
+                ).toISOString(),
+            };
+
+            await VoucherService.updateVoucher(selectedVoucher.id, payload);
+            toast.success('Cập nhật thành công!');
+            setIsEditDialogOpen(false);
+            loadVouchers();
+        } catch (error: any) {
+            const msg = error.response?.data?.message;
+            toast.error(
+                Array.isArray(msg) ? msg[0] : msg || 'Lỗi khi cập nhật',
+            );
         }
     };
 
     const handleDeletePromotion = async () => {
-        if (selectedVoucher) {
-            try {
-                await PromotionService.deleteVoucher(selectedVoucher.id);
-                toast.success('Đã xóa khuyến mãi');
-                setIsDeleteDialogOpen(false);
-                loadVouchers();
-            } catch (error) {
-                toast.error('Lỗi khi xóa');
-            }
+        if (!selectedVoucher) return;
+        try {
+            await VoucherService.deleteVoucher(selectedVoucher.id);
+            toast.success('Đã xóa khuyến mãi');
+            setIsDeleteDialogOpen(false);
+            loadVouchers();
+        } catch (error) {
+            toast.error('Lỗi khi xóa');
         }
     };
 
-    const handleDownloadPromotion = (voucher: any) => {
-        toast.success(`Đang tải khuyến mãi ${voucher.name}...`);
+    const handleDownloadPromotion = (promo: any) => {
+        toast.info(`Đang xuất dữ liệu ${promo.code}...`);
     };
 
-    const handleViewPromotion = (voucher: any) => {
-        setSelectedVoucher(voucher);
+    const handleViewPromotion = (promo: any) => {
+        setSelectedVoucher(promo);
         setIsViewDialogOpen(true);
     };
 
-    const handleEditPromotionOpen = (voucher: any) => {
-        setSelectedVoucher(voucher);
+    const handleEditPromotionOpen = (promo: any) => {
+        setSelectedVoucher(promo);
         setFormData({
-            name: voucher.name,
-            eventName: voucher.eventName,
-            sale: voucher.sale,
-            type: voucher.type,
-            quantity: voucher.quantity,
-            expiresAt: new Date(voucher.expiresAt).toISOString().split('T')[0],
-            status: voucher.status,
+            name: promo.name || '',
+            code: promo.code || '',
+            eventName: promo.eventName || '',
+            description: promo.description || '',
+            sale: promo.sale || 0,
+            type: promo.originalType || promo.type || 'PERCENT',
+            quantity: promo.quantity || 0,
+            usedNumber: promo.usedNumber || 0,
+            startDate: promo.startDate
+                ? new Date(promo.startDate).toISOString().split('T')[0]
+                : '',
+            expiresAt: promo.expiresAt
+                ? new Date(promo.expiresAt).toISOString().split('T')[0]
+                : '',
+            status: promo.originalStatus || promo.status || 'APPLYING',
         });
         setIsEditDialogOpen(true);
     };
 
-    const handleDeletePromotionOpen = (voucher: any) => {
-        setSelectedVoucher(voucher);
+    const handleDeletePromotionOpen = (promo: any) => {
+        setSelectedVoucher(promo);
         setIsDeleteDialogOpen(true);
     };
 
@@ -160,8 +227,7 @@ export function PromotionsPage() {
 
     const formatDate = (dateString: string) => {
         if (!dateString) return 'N/A';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('vi-VN');
+        return new Date(dateString).toLocaleDateString('vi-VN');
     };
 
     return (
@@ -172,11 +238,11 @@ export function PromotionsPage() {
                         Quản lý khuyến mãi
                     </h1>
                     <p className="text-gray-600 mt-1">
-                        Quản lý các chương trình khuyến mãi của Beta Book
+                        Hệ thống quản lý Voucher Beta Book
                     </p>
                 </div>
                 <Button
-                    className="bg-orange-500 hover:bg-orange-600"
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
                     onClick={() => {
                         resetFormData();
                         setIsCreateDialogOpen(true);
@@ -192,7 +258,7 @@ export function PromotionsPage() {
                 onSearchChange={setSearchTerm}
             />
 
-            <PromotionStats promotions={vouchers as any} />
+            {!loading && <PromotionStats promotions={vouchers as any} />}
 
             <PromotionTable
                 promotions={filteredVouchers as any}

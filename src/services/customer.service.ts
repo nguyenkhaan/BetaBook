@@ -1,21 +1,28 @@
 import { privateApi } from '../api/api';
 import { Customer } from '../pages/customer/CustomersPage';
 
+export interface CustomerPayload {
+    name: string;
+    email: string;
+    phone: string;
+    grade: Customer['grade'];
+    password: string;
+}
+
 export class CustomerService {
     static async getAllCustomers(): Promise<Customer[]> {
         const response = await privateApi.get('/customer');
         const data = response.data;
-
         return data.map((item: any) => ({
             id: item.id,
-            customerCode: item.code,
+            code: item.code,
             name: item.name,
             email: item.email,
             phone: item.phone,
-            totalOrders: 0, 
-            totalSpent: item.totalPaid, 
-            level: this.mapGradeToLevel(item.grade), 
-            joinDate: new Date().toISOString().split('T')[0], 
+            totalOrders: item.totalBills,
+            totalSpent: item.totalPaid,
+            grade: item.grade, 
+            joinDate: new Date().toISOString().split('T')[0],
         }));
     }
 
@@ -29,22 +36,23 @@ export class CustomerService {
         return response.data;
     }
 
-    static async createCustomer(data: Omit<Customer, 'id'>) {
-        // Chú ý: BE hiện tại chưa có hàm create trong Controller bạn gửi
-        const response = await privateApi.post('/customer', data);
+    static async createCustomer(data: CustomerPayload) {
+        const payload = {
+            name: data.name,
+            email: data.email,
+            phone: data.phone,
+            grade: data.grade,
+        };
+        const response = await privateApi.post('/customer', payload);
         return response.data;
     }
 
-    static async updateCustomer(id: number, data: Partial<Customer>) {
-        const updateData : Partial<Customer> & {grade? : string}  = {} 
-        if (data.email) 
-            updateData.email = data.email 
-        if (data.name) 
-            updateData.name = data.name 
-        if (data.phone) 
-            updateData.phone = data.phone 
-        if (data.level) 
-            updateData.grade = data.level
+    static async updateCustomer(id: number, data: Partial<CustomerPayload>) {
+        const updateData: Partial<CustomerPayload> = {};
+        if (typeof data.email === 'string') updateData.email = data.email;
+        if (typeof data.name === 'string') updateData.name = data.name;
+        if (typeof data.phone === 'string') updateData.phone = data.phone;
+        if (typeof data.grade === 'string') updateData.grade = data.grade;
         const response = await privateApi.put(`/customer/${id}`, updateData);
         return response.data;
     }
@@ -52,20 +60,5 @@ export class CustomerService {
     static async deleteCustomer(id: number) {
         const response = await privateApi.delete(`/customer/${id}`);
         return response.data;
-    }
-
-    private static mapGradeToLevel(grade: string): Customer['level'] {
-        switch (grade?.toUpperCase()) {
-            case 'DIAMOND':
-                return 'Kim cương';
-            case 'GOLD':
-                return 'Vàng';
-            case 'SILVER':
-                return 'Bạc';
-            case 'BRONZE':
-                return 'Đồng';
-            default:
-                return 'Đồng';
-        }
     }
 }

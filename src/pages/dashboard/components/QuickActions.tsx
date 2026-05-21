@@ -48,7 +48,7 @@ const QuickActionButton: React.FC<QuickActionProps> = ({ icon: Icon, label, subL
 
     return (
         <button
-            className={`group p-4 bg-gradient-to-br ${scheme.bg} rounded-xl transition-all duration-200 text-center border-2 border-transparent ${scheme.border} hover:shadow-lg`}
+            className={`group p-4 cursor-pointer bg-gradient-to-br ${scheme.bg} rounded-xl transition-all duration-200 text-center border-2 border-transparent ${scheme.border} hover:shadow-lg`}
             onClick={onClick}
         >
             <div className={`w-12 h-12 ${scheme.iconBg} rounded-lg mx-auto mb-3 flex items-center justify-center group-hover:scale-110 transition-transform`}>
@@ -80,7 +80,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
     return (
         <Card className="border-0 shadow-md">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center cursor-pointer gap-2">
                     <TrendingUp className="w-5 h-5 text-orange-500" />
                     Thao tác nhanh
                 </CardTitle>

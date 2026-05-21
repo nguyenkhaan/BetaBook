@@ -78,12 +78,12 @@ const menuItems: MenuItem[] = [
         path: '/employees',
         roles: routePermission.employees,
     },
-    {
-        icon: UserCircle,
-        label: 'Hồ sơ cá nhân',
-        path: '/eProfile',
-        roles: routePermission.eProfile,
-    },
+    // {
+    //     icon: UserCircle,
+    //     label: 'Hồ sơ cá nhân',
+    //     path: '/eProfile',
+    //     roles: routePermission.eProfile,
+    // },
     {
         icon: ClipboardList,
         label: 'Báo cáo',

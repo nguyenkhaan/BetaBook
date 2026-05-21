@@ -1,8 +1,5 @@
-import { useState } from 'react';
-import {
-    Plus,
-    Search,
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Search } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { toast } from 'sonner';
 import { ImportStats } from './components/ImportStats';
@@ -10,24 +7,42 @@ import { ImportTable } from './components/ImportTable';
 import { ImportFormDialog } from './components/ImportFormDialog';
 import { ImportViewDialog } from './components/ImportViewDialog';
 import { ImportDeleteDialog } from './components/ImportDeleteDialog';
-import { mockImports } from '../import/ImportData';
+import {
+    CreateOutcomePayload,
+    ImportService,
+} from '../../services/import.service';
+
+export interface ImportBookItem {
+    type: 'existing' | 'new';
+    bookId?: number;
+    bookCode?: string;
+    newBookCode?: string;
+    bookName?: string;
+    importPrice: number;
+    quantity: number;
+    lineTotal?: number;
+    year?: number;
+    category?: string;
+    bookCost?: number;
+}
 
 export interface ImportOrder {
     id: number;
     importNumber: string;
     supplier: string;
+    supplierId?: number;
     date: string;
     time: string;
     totalAmount: number;
     totalItems: number;
-    status: 'Hoàn thành' | 'Đang xử lý' | 'Đã hủy';
+    status: 'COMPLETE' | 'PENDING' | 'CANCEL';
     createdBy: string;
     note?: string;
+    details?: ImportBookItem[];
 }
 
-
 export function ImportPage() {
-    const [imports, setImports] = useState<ImportOrder[]>(mockImports);
+    const [imports, setImports] = useState<ImportOrder[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -36,85 +51,154 @@ export function ImportPage() {
     const [selectedImport, setSelectedImport] = useState<ImportOrder | null>(
         null,
     );
+    const [isLoading, setIsLoading] = useState(false);
+
     const [formData, setFormData] = useState({
         importNumber: '',
         supplier: '',
+        supplierId: undefined as number | undefined,
         date: new Date().toISOString().split('T')[0],
         time: new Date().toTimeString().slice(0, 5),
         totalAmount: 0,
         totalItems: 0,
-        status: 'Đang xử lý' as ImportOrder['status'],
-        createdBy: 'A Nguyen Van',
+        createdBy: '',
+        status: 'PENDING' as ImportOrder['status'],
         note: '',
+        details: [] as any[],
     });
+
+    useEffect(() => {
+        loadImports();
+    }, []);
+
+    const loadImports = async () => {
+        try {
+            const data = await ImportService.getAll();
+            setImports(data || []);
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
     const filteredImports = imports.filter(
         (imp) =>
-            imp.importNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            imp.supplier.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            imp.createdBy.toLowerCase().includes(searchTerm.toLowerCase()),
+            imp.importNumber
+                ?.toLowerCase()
+                .includes(searchTerm.toLowerCase()) ||
+            imp.supplier?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            imp.createdBy?.toLowerCase().includes(searchTerm.toLowerCase()),
     );
 
     const getStatusColor = (status: ImportOrder['status']) => {
         switch (status) {
-            case 'Hoàn thành':
+            case 'COMPLETE':
                 return 'bg-green-100 text-green-800';
-            case 'Đang xử lý':
+            case 'PENDING':
                 return 'bg-yellow-100 text-yellow-800';
-            case 'Đã hủy':
+            case 'CANCEL':
                 return 'bg-red-100 text-red-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
         }
     };
 
-    const handleCreateImport = () => {
-        const newImport: ImportOrder = {
-            id: imports.length + 1,
-            importNumber:
-                formData.importNumber ||
-                `PN${String(imports.length + 1).padStart(3, '0')}`,
-            supplier: formData.supplier,
-            date: formData.date,
-            time: formData.time,
-            totalAmount: formData.totalAmount,
-            totalItems: formData.totalItems,
-            status: formData.status,
-            createdBy: formData.createdBy,
-            note: formData.note,
-        };
-        setImports([...imports, newImport]);
-        setIsCreateDialogOpen(false);
-        resetFormData();
-        toast.success('Phiếu nhập đã được tạo thành công!');
+    const handleCreateImport = async () => {
+        if (!formData.supplierId) {
+            toast.error('Vui lòng chọn nhà cung cấp');
+            return;
+        }
+
+        if (!formData.details || formData.details.length === 0) {
+            toast.error('Vui lòng thêm ít nhất một sách vào phiếu nhập');
+            return;
+        }
+        if (isNaN(Number(formData.totalAmount))) {
+            toast.error('Vui lòng nhập số tiền hợp lệ');
+            return;
+        }
+        if (isNaN(Number(formData.totalItems))) {
+            toast.error('Vui lòng nhập số lượng hợp lệ');
+            return;
+        }
+
+        try {
+            setIsLoading(true);
+            const payload = buildBackendPayload();
+
+            await ImportService.create(payload);
+
+            toast.success('Phiếu nhập đã được tạo thành công!');
+            setIsCreateDialogOpen(false);
+            resetFormData();
+            await loadImports();
+        } catch (error) {
+            console.error(error);
+            toast.error('Có lỗi xảy ra khi tạo phiếu nhập');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const handleEditImport = () => {
-        if (selectedImport) {
-            const updatedImport: ImportOrder = {
-                ...selectedImport,
-                supplier: formData.supplier,
-                date: formData.date,
-                time: formData.time,
-                totalAmount: formData.totalAmount,
-                totalItems: formData.totalItems,
-                status: formData.status,
-                createdBy: formData.createdBy,
-                note: formData.note,
-            };
-            setImports(
-                imports.map((imp) =>
-                    imp.id === selectedImport.id ? updatedImport : imp,
-                ),
-            );
-            setIsEditDialogOpen(false);
+    const handleEditImport = async () => {
+        if (!selectedImport) return;
+
+        if (!formData.supplierId) {
+            toast.error('Vui lòng chọn nhà cung cấp');
+            return;
+        }
+
+        if (!formData.details || formData.details.length === 0) {
+            toast.error('Vui lòng thêm ít nhất một sách vào phiếu nhập');
+            return;
+        }
+
+        try {
+            setIsLoading(true);
+            const firstDetail = formData.details?.[0];
+            const bookCode =
+                firstDetail?.type === 'existing'
+                    ? firstDetail.bookCode
+                    : firstDetail?.newBookCode;
+
+            if (!bookCode || !firstDetail?.quantity) {
+                toast.error(
+                    'Backend hiện tại chỉ hỗ trợ chỉnh sửa theo từng dòng phiếu nhập',
+                );
+                return;
+            }
+
+            await ImportService.update(selectedImport.id, {
+                code: bookCode,
+                baseCost: Number(firstDetail.importPrice || 0),
+                quantity: Number(firstDetail.quantity || 0),
+                publisherId: formData.supplierId,
+                status: mapStatusToBackend(formData.status),
+            });
             toast.success('Phiếu nhập đã được cập nhật thành công!');
+            setIsEditDialogOpen(false);
+            await loadImports();
+        } catch (error) {
+            console.error(error);
+            toast.error('Có lỗi xảy ra khi cập nhật phiếu nhập');
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const handleDeleteImport = () => {
-        if (selectedImport) {
-            setImports(imports.filter((imp) => imp.id !== selectedImport.id));
-            setIsDeleteDialogOpen(false);
+    const handleDeleteImport = async () => {
+        if (!selectedImport) return;
+
+        try {
+            setIsLoading(true);
+            await ImportService.delete(selectedImport.id);
             toast.success('Phiếu nhập đã được xóa thành công!');
+            setIsDeleteDialogOpen(false);
+            await loadImports();
+        } catch (error) {
+            console.error(error);
+            toast.error('Có lỗi xảy ra khi xóa phiếu nhập');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -122,23 +206,47 @@ export function ImportPage() {
         toast.success(`Đang tải phiếu nhập ${importOrder.importNumber}...`);
     };
 
-    const handleViewImport = (importOrder: ImportOrder) => {
-        setSelectedImport(importOrder);
+    const handleViewImport = async (importOrder: ImportOrder) => {
+        try {
+            setIsLoading(true);
+            const detailImport = await ImportService.getById(importOrder.id);
+            setSelectedImport(detailImport);
+        } catch (error) {
+            console.error(error);
+            setSelectedImport(importOrder);
+            toast.error('Không tải được chi tiết phiếu nhập');
+        } finally {
+            setIsLoading(false);
+        }
         setIsViewDialogOpen(true);
     };
 
-    const handleEditImportOpen = (importOrder: ImportOrder) => {
-        setSelectedImport(importOrder);
+    const handleEditImportOpen = async (importOrder: ImportOrder) => {
+        let importData = importOrder;
+        try {
+            setIsLoading(true);
+            importData = await ImportService.getById(importOrder.id);
+            setSelectedImport(importData);
+        } catch (error) {
+            console.error(error);
+            setSelectedImport(importOrder);
+            toast.error('Không tải được chi tiết phiếu nhập');
+        } finally {
+            setIsLoading(false);
+        }
+
         setFormData({
-            importNumber: importOrder.importNumber,
-            supplier: importOrder.supplier,
-            date: importOrder.date,
-            time: importOrder.time,
-            totalAmount: importOrder.totalAmount,
-            totalItems: importOrder.totalItems,
-            status: importOrder.status,
-            createdBy: importOrder.createdBy,
-            note: importOrder.note || '',
+            importNumber: importData.importNumber,
+            supplier: importData.supplier,
+            supplierId: importData.supplierId,
+            date: importData.date,
+            time: importData.time,
+            totalAmount: importData.totalAmount,
+            totalItems: importData.totalItems,
+            status: importData.status,
+            createdBy: importData.createdBy,
+            note: importData.note || '',
+            details: importData.details || [],
         });
         setIsEditDialogOpen(true);
     };
@@ -152,19 +260,71 @@ export function ImportPage() {
         setFormData({
             importNumber: '',
             supplier: '',
+            supplierId: undefined,
             date: new Date().toISOString().split('T')[0],
             time: new Date().toTimeString().slice(0, 5),
             totalAmount: 0,
             totalItems: 0,
-            status: 'Đang xử lý',
-            createdBy: 'A Nguyen Van',
+            createdBy: '',
+            status: 'PENDING',
             note: '',
+            details: [],
         });
     };
 
+    const mapStatusToBackend = (
+        status: ImportOrder['status'],
+    ): 'COMPLETE' | 'PENDING' | 'CANCEL' => {
+        switch (status) {
+            case 'COMPLETE':
+                return 'COMPLETE';
+            case 'CANCEL':
+                return 'CANCEL';
+            case 'PENDING':
+            default:
+                return 'PENDING';
+        }
+    };
+
+    const buildBackendPayload = (): CreateOutcomePayload => {
+        return {
+            publisherId: Number(formData.supplierId),
+            status: mapStatusToBackend(formData.status),
+            items: (formData.details || []).map((item: any) => ({
+                code:
+                    item.type === 'existing'
+                        ? item.bookCode?.trim()
+                        : item.newBookCode?.trim(),
+                baseCost: Number(item.importPrice || 0),
+                quantity: Number(item.quantity || 0),
+                ...(item.type === 'new' && item.bookName?.trim()
+                    ? { bookTitle: item.bookName.trim() }
+                    : {}),
+                ...(item.type === 'new' && item.year
+                    ? { year: Number(item.year) }
+                    : {}),
+                ...(item.authorIds && item.type === 'new'
+                    ? {
+                          authorIds: item.authorIds,
+                      }
+                    : {}),
+                ...(item.publisherIds && item.type === 'new'
+                    ? {
+                          publisherIds: item.publisherIds,
+                      }
+                    : {}),
+            })),
+        };
+    };
+
     const formatDateTime = (date: string, time: string) => {
-        const [year, month, day] = date.split('-');
-        return `${day}/${month}/${year} ${time}`;
+        if (!date || !time) return '';
+        const parts = date.split('-');
+        if (parts.length === 3) {
+            const [year, month, day] = parts;
+            return `${day}/${month}/${year} ${time}`;
+        }
+        return `${date} ${time}`;
     };
 
     return (
@@ -180,14 +340,17 @@ export function ImportPage() {
                 </div>
                 <Button
                     className="bg-orange-500 hover:bg-orange-600"
-                    onClick={() => setIsCreateDialogOpen(true)}
+                    onClick={() => {
+                        resetFormData();
+                        setIsCreateDialogOpen(true);
+                    }}
+                    disabled={isLoading}
                 >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4 h-4 mr-2" />
                     Tạo phiếu nhập
                 </Button>
             </div>
 
-            {/* Search */}
             <div className="bg-white p-4 rounded-lg shadow-sm">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -201,15 +364,20 @@ export function ImportPage() {
                 </div>
             </div>
 
-            {/* Statistics */}
             <ImportStats
                 totalCount={imports.length}
-                totalAmount={imports.reduce((sum, imp) => sum + imp.totalAmount, 0)}
-                completedCount={imports.filter((i) => i.status === 'Hoàn thành').length}
-                processingCount={imports.filter((i) => i.status === 'Đang xử lý').length}
+                totalAmount={imports.reduce(
+                    (sum, imp) => sum + (imp.totalAmount || 0),
+                    0,
+                )}
+                completedCount={
+                    imports.filter((i) => i.status === 'COMPLETE').length
+                }
+                processingCount={
+                    imports.filter((i) => i.status === 'PENDING').length
+                }
             />
 
-            {/* Imports Table */}
             <ImportTable
                 imports={filteredImports}
                 onView={handleViewImport}
@@ -220,7 +388,6 @@ export function ImportPage() {
                 formatDateTime={formatDateTime}
             />
 
-            {/* Create Import Dialog */}
             <ImportFormDialog
                 isOpen={isCreateDialogOpen}
                 onOpenChange={setIsCreateDialogOpen}
@@ -229,10 +396,9 @@ export function ImportPage() {
                 formData={formData}
                 setFormData={setFormData}
                 onSubmit={handleCreateImport}
-                submitLabel="Tạo phiếu nhập"
+                submitLabel={isLoading ? 'Đang xử lý...' : 'Tạo phiếu nhập'}
             />
 
-            {/* Edit Import Dialog */}
             <ImportFormDialog
                 isOpen={isEditDialogOpen}
                 onOpenChange={setIsEditDialogOpen}
@@ -241,11 +407,10 @@ export function ImportPage() {
                 formData={formData}
                 setFormData={setFormData}
                 onSubmit={handleEditImport}
-                submitLabel="Cập nhật"
+                submitLabel={isLoading ? 'Đang cập nhật...' : 'Cập nhật'}
                 isEdit={true}
             />
 
-            {/* View Import Dialog */}
             <ImportViewDialog
                 isOpen={isViewDialogOpen}
                 onOpenChange={setIsViewDialogOpen}
@@ -253,7 +418,6 @@ export function ImportPage() {
                 formatDateTime={formatDateTime}
             />
 
-            {/* Delete Import Dialog */}
             <ImportDeleteDialog
                 isOpen={isDeleteDialogOpen}
                 onOpenChange={setIsDeleteDialogOpen}

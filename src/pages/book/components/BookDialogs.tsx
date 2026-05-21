@@ -26,6 +26,7 @@ import {
 import { BOOK_CATEGORIES_LABEL } from '../../../bases/constants/book.constants';
 import { BookService } from '../../../services/book.service';
 import { Upload, X } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface BookDialogsProps {
     isAddDialogOpen: boolean;
@@ -66,7 +67,6 @@ export function BookDialogs({
     // State management for images and search results
     const [addCoverImage, setAddCoverImage] = useState<File | null>(null);
     const [addCoverPreview, setAddCoverPreview] = useState<string>('');
-    console.log(addCoverImage , addCoverPreview)
     const [editCoverImage, setEditCoverImage] = useState<File | null>(null);
     const [editCoverPreview, setEditCoverPreview] = useState<string>('');
 
@@ -156,13 +156,13 @@ export function BookDialogs({
         if (file) {
             // Validate file type
             if (!file.type.startsWith('image/')) {
-                alert('Please select a valid image file');
+                toast.error('Định dạng ảnh không phù hợp');
                 return;
             }
 
             // Validate file size (max 5MB)
             if (file.size > 5 * 1024 * 1024) {
-                alert('File size must be less than 5MB');
+                toast.error('Kích thước file phải nhỏ hơn 5MB');
                 return;
             }
 

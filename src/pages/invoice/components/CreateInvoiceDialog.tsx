@@ -17,8 +17,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '../../../components/ui/select';
-import { InvoiceBook, DiscountCode, Invoice } from '../InvoicePage';
-import { Voucher } from '../../../services/invoice.service';
+import { InvoiceBook, Invoice } from '../InvoicePage';
+import { Voucher } from '../../../services/voucher.service';
+
 interface CreateInvoiceDialogProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
@@ -28,18 +29,19 @@ interface CreateInvoiceDialogProps {
         date: string;
         books: InvoiceBook[];
         status: Invoice['status'];
-        voucherId: number | null;
-        discountAmount: number;
         phoneNumber: string;
+        customerId?: string;
+        selectedVoucherId: string;
+        temporaryCost: number;
     };
     setFormData: (data: any) => void;
     newBook: {
+        id: string;
         code: string;
         title: string;
         quantity: number;
         cost: number;
     };
-
     setNewBook: (data: any) => void;
     onAddBook: () => void;
     onRemoveBook: (index: number) => void;
@@ -49,8 +51,9 @@ interface CreateInvoiceDialogProps {
     calculateTotalAmount: () => number;
     calculateDiscountAmount: () => number;
     calculateFinalTotal: () => number;
-    handleVoucherChange: (voucherId: string) => void;
+    calculateDebtAmount: () => number;
     customers: any[];
+    availableBooks: any[];
 }
 
 export function CreateInvoiceDialog({
@@ -68,69 +71,129 @@ export function CreateInvoiceDialog({
     calculateTotalAmount,
     calculateDiscountAmount,
     calculateFinalTotal,
-    handleVoucherChange,
+    calculateDebtAmount,
     customers,
+    availableBooks,
 }: CreateInvoiceDialogProps) {
+    const handleCustomerFound = (
+        phone: string,
+        name: string,
+    ) => {
+        const found = customers?.find(
+            (c: any) =>
+                c.phone.toLowerCase().includes(phone.toLowerCase()) &&
+                c.name?.toLowerCase().includes(name.toLowerCase()),
+        );
+        setFormData({
+            ...formData,
+            phoneNumber: found ? found.phone : phone,
+            customer: found ? found.name : name,
+            customerId: found ? found.id.toString() : '' 
+        });
+        return found;
+    };
+
+    const handleBookSearch = (value: string) => {
+        const normalized = value.trim().toLowerCase();
+        const found = availableBooks?.find(
+            (b: any) =>
+                b.code?.toLowerCase() === normalized ||
+                b.id?.toString() === value,
+        );
+
+        setNewBook({
+            id: found ? found.id.toString() : '',
+            code: found ? found.code : '',
+            title: found ? found.title : '',
+            quantity: newBook.quantity || 1,
+            price: found ? Number(found.price) : 0,
+        });
+    };
+
+    const selectCustomer = customers?.find((c) => c.phone == formData.phoneNumber);
+    const selectVoucher = vouchers?.find(
+        (v) => v.id == Number(formData.selectedVoucherId),
+    );
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Tạo hóa đơn mới</DialogTitle>
                     <DialogDescription>
-                        Nhập thông tin hóa đơn mới
+                        Nhập thông tin hóa đơn mới (Nhập mã để tìm kiếm nhanh)
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-3 py-3">
+                    {/* KHÁCH HÀNG */}
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="phoneNumber" className="text-sm">
-                            Số điện thoại
-                        </Label>
-                        <div className="col-span-3 space-y-1">
-                            <Input
-                                id="phoneNumber"
-                                value={formData.phoneNumber}
-                                onChange={(e) => {
-                                    const phone = e.target.value;
+                        <Label className="text-sm">Tìm khách hàng</Label>
+                        <div className="col-span-3 relative">
+                            <Select
+                                value={formData.phoneNumber || ''}
+                                onValueChange={(value) => {
                                     const found = customers?.find(
-                                        (c: any) => c.phone === phone,
+                                        (c: any) => c.phone === value
                                     );
                                     setFormData({
                                         ...formData,
-                                        phoneNumber: phone,
+                                        phoneNumber: value,
                                         customer: found ? found.name : '',
+                                        customerId: found ? found.id.toString() : '',
                                     });
                                 }}
-                                className="w-full"
-                                placeholder="Nhập số điện thoại khách hàng"
-                            />
-                            {formData.phoneNumber && (
-                                <p
-                                    className={`text-xs font-medium ${
-                                        formData.customer
-                                            ? 'text-green-600'
-                                            : 'text-red-500'
-                                    }`}
-                                >
-                                    {formData.customer
-                                        ? `✔ Khách hàng: ${formData.customer}`
-                                        : '✖ Không tìm thấy khách hàng'}
-                                </p>
-                            )}
+                            >
+                                <SelectTrigger className="w-full cursor-pointer">
+                                    <span>
+                                        {selectCustomer
+                                            ? `${selectCustomer.name} - ${selectCustomer.phone}`
+                                            : 'Chưa tìm thấy khách hàng'}
+                                    </span>
+                                </SelectTrigger>
+                                <SelectContent className="rounded-lg cursor-pointer">
+                                    {customers?.map((customer) => (
+                                        <SelectItem
+                                            key={customer.id}
+                                            value={customer.phone}
+                                            className="py-2 rounded-lg text-base xl:text-lg"
+                                        >
+                                            <div className="w-full flex items-center justify-between">
+                                                <span>{customer.name}</span>
+                                                <span>{customer.phone}</span>
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="customer" className="text-sm">
-                            Khách hàng
-                        </Label>
-                        <Input
-                            id="customer"
-                            value={formData.customer}
-                            readOnly
-                            className="col-span-3 bg-gray-50"
-                            placeholder="Tên khách hàng sẽ tự động hiển thị"
-                        />
+                        <Label className="text-sm">Thông tin KH</Label>
+                        <div className="col-span-3 grid grid-cols-2 gap-2">
+                            <Input
+                                value={formData.phoneNumber}
+                                placeholder="Số điện thoại"
+                                onChange={(e) => {
+                                    const phone = e.target.value;
+
+                                    const found = customers?.find(
+                                        (c: any) =>
+                                            c.phone?.toLowerCase() ===
+                                            phone.toLowerCase(),
+                                    );
+
+                                    setFormData({
+                                        ...formData,
+                                        phoneNumber: phone,
+                                        customer: found ? found.name : '',
+                                        customerId: found
+                                            ? found.id.toString()
+                                            : '',
+                                    });
+                                }}
+                            />
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-4 items-center gap-4">
@@ -151,24 +214,25 @@ export function CreateInvoiceDialog({
                         />
                     </div>
 
+                    {/* GIỎ HÀNG */}
                     <div className="grid grid-cols-4 items-start gap-4">
-                        <Label className="mt-2 text-sm">Danh sách sách</Label>
+                        <Label className="mt-2 text-sm">Giỏ hàng</Label>
                         <div className="col-span-3 border border-gray-200 rounded-lg p-2 bg-gray-50 max-h-32 overflow-y-auto">
                             {formData.books.length === 0 ? (
                                 <p className="text-sm text-gray-500 text-center py-2">
-                                    Chưa có sách nào
+                                    Chưa có sản phẩm
                                 </p>
                             ) : (
                                 <table className="w-full text-sm">
                                     <thead>
-                                        <tr className="border-b border-gray-200">
-                                            <th className="text-left py-1 px-2 text-xs font-medium text-gray-500">
+                                        <tr className="border-b border-gray-200 text-xs text-gray-500 font-medium">
+                                            <th className="text-left py-1 px-2">
                                                 Tên sách
                                             </th>
-                                            <th className="text-left py-1 px-2 text-xs font-medium text-gray-500">
-                                                Số lượng
+                                            <th className="text-left py-1 px-2">
+                                                SL
                                             </th>
-                                            <th className="text-left py-1 px-2 text-xs font-medium text-gray-500">
+                                            <th className="text-left py-1 px-2">
                                                 Giá
                                             </th>
                                             <th></th>
@@ -176,7 +240,10 @@ export function CreateInvoiceDialog({
                                     </thead>
                                     <tbody>
                                         {formData.books.map((book, idx) => (
-                                            <tr key={idx}>
+                                            <tr
+                                                key={idx}
+                                                className="border-b border-gray-100 last:border-0"
+                                            >
                                                 <td className="py-1 px-2">
                                                     {book.title}
                                                 </td>
@@ -189,7 +256,7 @@ export function CreateInvoiceDialog({
                                                     )}
                                                     đ
                                                 </td>
-                                                <td>
+                                                <td className="text-right">
                                                     <Button
                                                         size="sm"
                                                         variant="ghost"
@@ -197,7 +264,7 @@ export function CreateInvoiceDialog({
                                                             onRemoveBook(idx)
                                                         }
                                                     >
-                                                        <Trash2 className="w-3 h-3" />
+                                                        <Trash2 className="w-3 h-3 text-red-500" />
                                                     </Button>
                                                 </td>
                                             </tr>
@@ -208,111 +275,192 @@ export function CreateInvoiceDialog({
                         </div>
                     </div>
 
+                    {/* THÊM SÁCH */}
                     <div className="border-t pt-3">
-                        <p className="text-sm font-medium mb-2">Thêm sách</p>
+                        <p className="text-sm font-medium mb-2 text-orange-600">
+                            Thêm sách vào hóa đơn
+                        </p>
                         <div className="grid grid-cols-12 gap-2">
-                            <Input
-                                placeholder="Nhập mã sách"
-                                value={newBook.code}
-                                onChange={(e) =>
-                                    setNewBook({
-                                        ...newBook,
-                                        code: e.target.value,
-                                    })
-                                }
-                                className="col-span-3"
-                            />
-                            <Input
-                                placeholder="Tên sách"
-                                value={newBook.title}
-                                onChange={(e) =>
-                                    setNewBook({
-                                        ...newBook,
-                                        title: e.target.value,
-                                    })
-                                }
-                                className="col-span-3"
-                            />
+                            <div className="col-span-5">
+                                <Select
+                                    value={newBook.id || ''}
+                                    onValueChange={(value) =>
+                                        handleBookSearch(value)
+                                    }
+                                >
+                                    <SelectTrigger className="cursor-pointer w-full">
+                                        <span>
+                                            {newBook.title || 'Chọn sách'}
+                                        </span>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableBooks.map((book) => {
+                                            return (
+                                                <SelectItem
+                                                    key={book.id}
+                                                    value={book.id.toString()}
+                                                    className="py-2 rounded-lg text-base xl:text-lg"
+                                                >
+                                                    <div className="w-full flex items-center justify-between">
+                                                        <span>
+                                                            {book.title}
+                                                        </span>
+                                                    </div>
+                                                </SelectItem>
+                                            );
+                                        })}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                             <Input
                                 type="number"
+                                min={1}
                                 value={newBook.quantity}
-                                onChange={(e) =>
+                                onChange={(e) => {
+                                    const value = e.target.value;
+
                                     setNewBook({
                                         ...newBook,
-                                        quantity: parseInt(e.target.value) || 1,
-                                    })
-                                }
+                                        quantity:
+                                            value === '' ? '' : Number(value),
+                                    });
+                                }}
                                 className="col-span-2"
                             />
                             <Input
-                                type="number"
-                                value={newBook.cost}
-                                onChange={(e) =>
-                                    setNewBook({
-                                        ...newBook,
-                                        price: parseInt(e.target.value) || 0,
-                                    })
+                                value={
+                                    newBook.title
+                                        ? `${newBook.price.toLocaleString('vi-VN')}đ`
+                                        : ''
                                 }
-                                className="col-span-2"
+                                readOnly
+                                className="col-span-3 bg-gray-50 text-xs"
                             />
                             <Button
                                 onClick={onAddBook}
-                                className="col-span-2 bg-orange-500"
+                                className="col-span-2 bg-orange-500 hover:bg-orange-600"
                             >
                                 <Plus className="w-4 h-4" />
                             </Button>
                         </div>
                     </div>
 
+                    {/* TỔNG KẾT */}
                     <div className="grid grid-cols-4 gap-4 border-t pt-3">
-                        <Label>Số mặt hàng</Label>
+                        <Label>Tạm tính ({calculateTotalItems()} món)</Label>
                         <Input
-                            value={calculateTotalItems()}
+                            value={
+                                calculateTotalAmount().toLocaleString('vi-VN') +
+                                ' đ'
+                            }
                             readOnly
-                            className="col-span-3"
+                            className="col-span-3 bg-gray-50"
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 items-center gap-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
                         <Label className="text-sm">Mã giảm giá</Label>
-                        <Select
-                            value={formData.voucherId?.toString() || ''}
-                            onValueChange={handleVoucherChange}
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Chọn mã giảm giá" />
-                            </SelectTrigger>
-                            <SelectContent className="p-4 ml-3 mr-3">
-                                <SelectItem value="">
-                                    Không áp dụng
-                                </SelectItem>
-                                {vouchers.map((v) => (
-                                    <SelectItem key={v.id} value={v.id.toString()}>
-                                        {v.name}
+                        <div className="col-span-3">
+                            <Select
+                                value={formData.selectedVoucherId}
+                                onValueChange={(value) =>
+                                    setFormData({
+                                        ...formData,
+                                        selectedVoucherId: value,
+                                    })
+                                }
+                            >
+                                <SelectTrigger>
+                                    {selectVoucher
+                                        ? `${selectVoucher.code} - ${selectVoucher.eventName}`
+                                        : 'Chưa áp dụng'}
+                                    
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="0">
+                                        Không áp dụng
                                     </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                                    {vouchers?.map((v) => (
+                                        <SelectItem
+                                            key={v.id}
+                                            value={v.id.toString()}
+                                        >
+                                            {v.code} - {v.name} (Giảm {v.sale}
+                                            {v.type === 'PERCENT' ? '%' : 'đ'})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    {formData.selectedVoucherId !== '0' && (
+                        <div className="grid grid-cols-4 gap-4">
+                            <Label>Giảm giá</Label>
+                            <Input
+                                value={
+                                    '- ' +
+                                    calculateDiscountAmount().toLocaleString(
+                                        'vi-VN',
+                                    ) +
+                                    ' đ'
+                                }
+                                readOnly
+                                className="col-span-3 text-orange-600 font-medium"
+                            />
+                        </div>
+                    )}
+
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label className="font-bold">Tổng tiền phải trả</Label>
+                        <Input
+                            value={
+                                calculateFinalTotal().toLocaleString('vi-VN') +
+                                ' VND'
+                            }
+                            readOnly
+                            className="col-span-3 font-bold text-lg"
+                        />
                     </div>
 
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label>Tổng tiền</Label>
+                        <Label className="">Số tiền KH trả</Label>
+                        <Input
+                            type="number"
+                            min={0}
+                            placeholder="Nhập số tiền khách trả..."
+                            value={formData.temporaryCost || ''}
+                            onChange={(e) => {
+                                const val = Number(e.target.value);
+                                const finalTotal = calculateFinalTotal();
+
+                                setFormData({
+                                    ...formData,
+                                    temporaryCost: val,
+                                    status:
+                                        val >= finalTotal
+                                            ? 'Đã thanh toán'
+                                            : 'Chưa thanh toán',
+                                });
+                            }}
+                            className="col-span-3 font-bold text-base"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label className="font-bold">Số tiền nợ</Label>
                         <Input
                             value={
-                                calculateFinalTotal()
-                                    ? calculateFinalTotal().toLocaleString(
-                                          'vi-VN',
-                                      ) + ' VND'
-                                    : '0 VND'
+                                calculateDebtAmount().toLocaleString('vi-VN') +
+                                ' VND'
                             }
                             readOnly
-                            className="col-span-3 bg-gray-100 cursor-not-allowed"
+                            className="col-span-3 bg-orange-50 font-bold text-lg text-orange-700"
                         />
                     </div>
 
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label>Trạng thái</Label>
-
                         <div className="col-span-3">
                             <Select
                                 value={formData.status}
@@ -323,19 +471,15 @@ export function CreateInvoiceDialog({
                                     })
                                 }
                             >
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
-
                                 <SelectContent>
                                     <SelectItem value="COMPLETE">
                                         Đã thanh toán
                                     </SelectItem>
                                     <SelectItem value="NOT_STARTED">
                                         Chưa thanh toán
-                                    </SelectItem>
-                                    <SelectItem value="OVERDUE">
-                                        Quá hạn
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
@@ -350,8 +494,11 @@ export function CreateInvoiceDialog({
                     >
                         Hủy
                     </Button>
-                    <Button onClick={onSave} className="bg-orange-500">
-                        Tạo hóa đơn
+                    <Button
+                        onClick={onSave}
+                        className="bg-orange-500 hover:bg-orange-600 text-white"
+                    >
+                        Xác nhận tạo hóa đơn
                     </Button>
                 </DialogFooter>
             </DialogContent>

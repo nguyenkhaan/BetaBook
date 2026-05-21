@@ -2,6 +2,7 @@ import axios from 'axios';
 import { CookiesService } from '../services/cookies.service';
 import { TokenType } from '../bases/enums/jwt.enum';
 import toast from 'react-hot-toast'
+import { LocalStorageService } from '../services/local-store.service';
 const publicApi = axios.create({
     baseURL: 'http://localhost:4000/api',
     timeout: 10000,
@@ -25,7 +26,8 @@ publicApi.interceptors.response.use(
 privateApi.interceptors.request.use(
     (config) => {
         const token = CookiesService.getToken(TokenType.ACCESS_TOKEN);
-        if (token && config['headers']) {
+        if (token && config['headers'])
+             {
             {
                 config.headers['Authorization'] = `Bearer ${token}`;
             }
@@ -39,7 +41,11 @@ privateApi.interceptors.response.use(
     (error) => {
         const status = error.response.status;
         if (status === 401) {
-            toast.error("Invalid session. Please login again")
+            toast.error("Đã hết phiên đăng nhập. hãy đăng nhập lại") 
+            CookiesService.removeCookie('ACCESS_TOKEN') 
+            CookiesService.removeCookie('REFRESH_TOKEN') 
+            LocalStorageService.removeValue('me') 
+            window.location.href = '/'
         }
 		const data = error.response?.data;
         console.log("API error" , data) 

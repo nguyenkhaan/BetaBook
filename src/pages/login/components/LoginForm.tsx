@@ -100,17 +100,17 @@ export function LoginForm({
                 {isLoading ? (
                     <div className="flex items-center gap-2">
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Signing In...</span>
+                        <span>Đang xử lý</span>
                     </div>
                 ) : (
                     <div className="flex items-center gap-2">
                         <LogIn className="w-5 h-5" />
-                        <span>Sign In</span>
+                        <span>Đăng nhập</span>
                     </div>
                 )}
             </Button>
 
-            <SampleAccountInfo />
+            {/* <SampleAccountInfo /> */}
         </form>
     );
 }

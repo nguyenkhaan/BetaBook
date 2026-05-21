@@ -14,6 +14,7 @@ import { ProfileCard } from './components/ProfileCard';
 import { InfoSection } from './components/InfoSection';
 import { ChangePasswordDialog } from './components/ChangePasswordDialog';
 import { EmployeesService } from '../../services/employees.service';
+import { AuthService } from '../../services/auth.service';
 
 export function EmployeeProfile() {
     const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
@@ -33,8 +34,7 @@ export function EmployeeProfile() {
             setLoading(true);
             try {
                 const employeeProfile =
-                    (await EmployeesService.getMyProfile()) as any;
-                console.log(employeeProfile);
+                    (await AuthService.getMyProfile()) as any;
                 const workInfo = [
                     {
                         icon: Building,
@@ -119,6 +119,7 @@ export function EmployeeProfile() {
     // Mock employee data - in real app, this would come from context/props
 
     const handleChangePassword = () => {
+
         if (passwordData.newPassword !== passwordData.confirmPassword) {
             toast.error('Mật khẩu mới không khớp!');
             return;

@@ -1,7 +1,8 @@
 import { privateApi } from '../api/api';
 
 export interface BillDetail {
-    bookId: string;
+    bookId: number;
+    bookCode: string;
     quantity: number;
 }
 
@@ -18,12 +19,13 @@ export interface Voucher {
 }
  
 export interface CreateInvoiceDto {
-    code: string;
-    customerId: number;
+    customerId?: number;
+    customerPhone: string;
     status: string;
-    cost?: number; 
-    billDetail: BillDetail[];
-    voucherUsage?: VoucherUsage[];
+    temporaryCost?: number;
+    cost?: number;
+    billDetails: BillDetail[];
+    vouchers?: VoucherUsage[];
 }
 
 export interface UpdateInvoiceDto extends Partial<CreateInvoiceDto> {}
@@ -32,7 +34,7 @@ export interface Invoice {
     id: number;
     code: string;
     customerId: number;
-    cost: number;
+    cost?: number;
     status: string;
     createdAt: string;
     billDetail?: any[];
@@ -47,12 +49,8 @@ export class InvoiceService {
         const response = await privateApi.get(this.BASE_URL);
         return response.data;
     }
-    static async update(billId : number , data : any) {
-        const response = await privateApi.put(`/bill/${billId}` , data)
-        return response.data 
-        
-    }
-    static async create(dto: CreateInvoiceDto): Promise<{ bill: Invoice }> {
+
+    static async create(dto: CreateInvoiceDto) {
         const response = await privateApi.post(this.BASE_URL, dto);
         return response.data;
     }

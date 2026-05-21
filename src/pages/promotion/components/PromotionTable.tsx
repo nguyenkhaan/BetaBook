@@ -2,6 +2,7 @@ import React from 'react';
 import { Eye, Edit, Trash2, Download } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Promotion } from '../PromotionsPage';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface PromotionTableProps {
     promotions: Promotion[];
@@ -22,6 +23,8 @@ export function PromotionTable({
     formatDate,
     getStatusColor,
 }: PromotionTableProps) {
+    const { isAdmin } = useAuth();
+
     return (
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <table className="w-full">
@@ -60,7 +63,7 @@ export function PromotionTable({
                                 {promo.name}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                {promo.type === 'Phần trăm'
+                                {promo.type === 'PERCENT'
                                     ? `${promo.sale}%`
                                     : `${promo.sale.toLocaleString('vi-VN')}đ`}
                             </td>
@@ -93,27 +96,20 @@ export function PromotionTable({
                                     >
                                         <Eye className="w-4 h-4" />
                                     </Button>
-                                    <Button
+                                    {isAdmin && <Button
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => onEdit(promo)}
                                     >
                                         <Edit className="w-4 h-4" />
-                                    </Button>
-                                    <Button
+                                    </Button>} 
+                                    {isAdmin && <Button
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => onDelete(promo)}
                                     >
                                         <Trash2 className="w-4 h-4 text-red-500" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => onDownload(promo)}
-                                    >
-                                        <Download className="w-4 h-4 text-blue-500" />
-                                    </Button>
+                                    </Button>} 
                                 </div>
                             </td>
                         </tr>

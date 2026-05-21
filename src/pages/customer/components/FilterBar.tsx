@@ -8,7 +8,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '../../../components/ui/select';
-
+import { MemberGradeLabel } from '../../../utilis/label_mapper';
 interface FilterBarProps {
     searchTerm: string;
     setSearchTerm: (value: string) => void;
@@ -41,17 +41,19 @@ export function FilterBar({
                 />
             </div>
 
-            <div className="w-44">
+            <div className="w-60">
                 <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-                    <SelectTrigger className="h-10 border-gray-200 text-sm">
-                        <SelectValue placeholder="Hạng" />
+                    <SelectTrigger className="h-10 border-gray-200 w-60 text-sm">
+                        {/* <SelectValue placeholder="Hạng" /> */}
+                        {!(selectedLevel === 'Tất cả') ? MemberGradeLabel[selectedLevel] : 'Tất cả'}
+                        {}
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="Tất cả">Tất cả hạng</SelectItem>
-                        <SelectItem value="Đồng">Đồng</SelectItem>
-                        <SelectItem value="Bạc">Bạc</SelectItem>
-                        <SelectItem value="Vàng">Vàng</SelectItem>
-                        <SelectItem value="Kim cương">Kim cương</SelectItem>
+                        <SelectItem value="Tất cả">Tất cả</SelectItem>
+                        <SelectItem value="BRONZE">Đồng</SelectItem>
+                        <SelectItem value="SILVER">Bạc</SelectItem>
+                        <SelectItem value="GOLD">Vàng</SelectItem>
+                        <SelectItem value="DIAMOND">Kim cương</SelectItem>
                     </SelectContent>
                 </Select>
             </div>

@@ -7,7 +7,8 @@ interface CustomerTableBodyProps {
     onView: (customer: Customer) => void;
     onEdit: (customer: Customer) => void;
     onDelete: (customer: Customer) => void;
-    getLevelColor: (level: Customer['level']) => string;
+    getLevelColor: (grade: Customer['grade']) => string;
+    onResetPassword : (customer : Customer) => void 
 }
 
 export function CustomerTableBody({
@@ -16,6 +17,7 @@ export function CustomerTableBody({
     onEdit,
     onDelete,
     getLevelColor,
+    onResetPassword
 }: CustomerTableBodyProps) {
     return (
         <tbody className="divide-y divide-gray-200">
@@ -27,6 +29,7 @@ export function CustomerTableBody({
                     onEdit={onEdit}
                     onDelete={onDelete}
                     getLevelColor={getLevelColor}
+                    onResetPassword={onResetPassword}
                 />
             ))}
         </tbody>

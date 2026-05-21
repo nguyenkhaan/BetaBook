@@ -6,25 +6,37 @@ import { Statistic } from './components/Statistic';
 import { FilterBar } from './components/FilterBar';
 import { CustomerTable } from './components/CustomerTable';
 import { CustomerDialogs } from './components/CustomerDialogs';
-import { CustomerService } from '../../services/customer.service';
-import { mockCustomers } from '../customer/CustomerData';
+import {
+    CustomerPayload,
+    CustomerService,
+} from '../../services/customer.service';
+import { AdminService } from '../../services/admin.service';
 export interface Customer {
     id: number;
-    customerCode: string;
+    code : string; 
     name: string;
     email: string;
     phone: string;
+    password : string; 
     totalOrders: number;
     totalSpent: number;
     joinDate: string;
-    level: 'Đồng' | 'Bạc' | 'Vàng' | 'Kim cương';
+    grade: 'BRONZE' | 'SILVER' | 'GOLD' | 'DIAMOND';
 }
 
 export function CustomersPage() {
+    const defaultFormData: CustomerPayload = {
+        name: '',
+        password: '',
+        email: '',
+        phone: '',
+        grade: 'BRONZE',
+    };
+
     // khởi tạo một state rỗng
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedLevel, setSelectedLevel] = useState<string>('Tất cả');
+    const [selectedGrade, setSelectedGrade] = useState<string>('Tất cả');
     const [selectedDate, setSelectedDate] = useState<string>('');
     // UI state
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -33,19 +45,10 @@ export function CustomersPage() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    const [formData, setFormData] = useState({
-        customerCode: '',
-        name: '',
-        email: '',
-        phone: '',
-        joinDate: new Date().toISOString().split('T')[0],
-        totalOrders: 0,
-        totalSpent: 0,
-        level: 'Đồng' as Customer['level'],
-    });
+    const [formData, setFormData] = useState<CustomerPayload>(defaultFormData);
 
     // hàm lấy dữ liệu từ be
-
+    
     const fetchData = async () => {
         setIsLoading(true);
         try {
@@ -76,6 +79,7 @@ export function CustomersPage() {
             await CustomerService.createCustomer(formData);
             toast.success('Thêm khách hàng mới thành công');
             setIsCreateDialogOpen(false);
+            setFormData(defaultFormData);
             fetchData();
         } catch (err: any) {
             toast.error(
@@ -83,21 +87,41 @@ export function CustomersPage() {
             );
         }
     };
-
+    const onResetPassword = async (customer : Customer) => { 
+        setIsLoading(true) 
+        try {
+            const result = await AdminService.resetCustomerPassword(customer.id) 
+            if (result.message) 
+                toast.success(result.message) 
+            else toast.error("Yêu cầu đặt mật khẩu thất bại")
+        } 
+        catch (err) {
+            toast.error("Lỗi khi đặt lại mật khẩu")
+        } 
+        finally {
+            setIsLoading(false) 
+        }
+    }
     const handleEditCustomer = async () => {
         
         if (selectedCustomer) {
             try {
                 await CustomerService.updateCustomer(
                     selectedCustomer.id,
-                    formData,
+                    {
+                        name: formData.name,
+                        email: formData.email,
+                        phone: formData.phone,
+                        grade: formData.grade,
+                    },
                 );
                 toast.success('Cập nhật thông tin khách hàng thành công');
                 setIsEditDialogOpen(false);
+                setFormData(defaultFormData);
                 fetchData();
             } catch (err: any) {
                 toast.error(
-                    err.response?.data.message ||
+                    err.response?.data?.message ||
                         'Không thể cập nhật thông tin khách hàng',
                 );
             }
@@ -109,7 +133,8 @@ export function CustomersPage() {
             try {
                 await CustomerService.deleteCustomer(selectedCustomer.id);
                 toast.success('Xoá thông tin khách hàng thành công');
-                setIsEditDialogOpen(false);
+                setIsDeleteDialogOpen(false);
+                setSelectedCustomer(null);
                 fetchData();
             } catch (err: any) {
                 toast.error(
@@ -122,7 +147,7 @@ export function CustomersPage() {
 
     const handleResetFilters = () => {
         setSearchTerm('');
-        setSelectedLevel('Tất cả');
+        setSelectedGrade('Tất cả');
         setSelectedDate('');
     };
 
@@ -132,16 +157,16 @@ export function CustomersPage() {
             customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
             customer.phone.includes(searchTerm);
         const matchesLevel =
-            selectedLevel === 'Tất cả' || customer.level === selectedLevel;
+            selectedGrade === 'Tất cả' || customer.grade === selectedGrade;
         const matchesDate = !selectedDate || customer.joinDate === selectedDate;
         return matchesSearch && matchesLevel && matchesDate;
     });
 
-    const calculateLevel = (totalSpent: number): Customer['level'] => {
-        if (totalSpent >= 5000000) return 'Kim cương';
-        if (totalSpent >= 2500000) return 'Vàng';
-        if (totalSpent >= 1000000) return 'Bạc';
-        return 'Đồng';
+    const calculateLevel = (totalSpent: number): Customer['grade'] => {
+        if (totalSpent >= 5000000) return 'DIAMOND';
+        if (totalSpent >= 2500000) return 'GOLD';
+        if (totalSpent >= 1000000) return 'SILVER';
+        return 'BRONZE';
     };
 
     const isNewCustomer = (joinDate: string): boolean => {
@@ -151,14 +176,18 @@ export function CustomersPage() {
         return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) <= 30;
     };
 
-    const getLevelColor = (level: Customer['level']) => {
-        switch (level) {
-            case 'Vàng':
+    const getLevelColor = (grade: Customer['grade']) => {
+        switch (grade) {
+            case 'GOLD':
                 return 'bg-yellow-100 text-yellow-800';
-            case 'Kim cương':
+            case 'DIAMOND':
                 return 'bg-blue-100 text-blue-800';
+            case 'SILVER': 
+                return 'bg-gray-100 text-gray-800' 
+            case 'BRONZE': 
+                return 'bg-orange-100 text-orange-800'
             default:
-                return 'bg-gray-100 text-gray-800';
+                return 'text-black';
         }
     };
 
@@ -169,7 +198,13 @@ export function CustomersPage() {
 
     const handleEditAction = (customer: Customer) => {
         setSelectedCustomer(customer);
-        setFormData({ ...customer });
+        setFormData({
+            name: customer.name,
+            password: '',
+            email: customer.email,
+            phone: customer.phone,
+            grade: customer.grade,
+        });
         setIsEditDialogOpen(true);
     };
 
@@ -189,18 +224,21 @@ export function CustomersPage() {
                         Quản lý thông tin khách hàng của Beta Book
                     </p>
                 </div>
-                {/* <Button
+                <Button
                     className="bg-orange-500 hover:bg-orange-600"
-                    onClick={() => setIsCreateDialogOpen(true)}
+                    onClick={() => {
+                        setFormData(defaultFormData);
+                        setIsCreateDialogOpen(true);
+                    }}
                 >
                     <Plus className="w-4 h-4" /> Thêm khách hàng
-                </Button> */}
+                </Button>
             </div>
 
             <Statistic
                 totalCustomers={customers.length}
                 vipCustomers={
-                    customers.filter((c) => c.level === 'Kim cương').length
+                    customers.filter((c) => c.grade === 'DIAMOND').length
                 }
                 totalRevenue={customers.reduce(
                     (sum, c) => sum + c.totalSpent,
@@ -214,8 +252,8 @@ export function CustomersPage() {
             <FilterBar
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
-                selectedLevel={selectedLevel}
-                setSelectedLevel={setSelectedLevel}
+                selectedLevel={selectedGrade}
+                setSelectedLevel={setSelectedGrade}
                 selectedDate={selectedDate}
                 setSelectedDate={setSelectedDate}
                 handleResetFilters={handleResetFilters}
@@ -227,6 +265,7 @@ export function CustomersPage() {
                 onEdit={handleEditAction}
                 onDelete={handleDeleteAction}
                 getLevelColor={getLevelColor}
+                onResetPassword={onResetPassword}
             />
 
             <CustomerDialogs
@@ -234,6 +273,8 @@ export function CustomersPage() {
                 setIsCreateDialogOpen={setIsCreateDialogOpen}
                 isEditDialogOpen={isEditDialogOpen}
                 setIsEditDialogOpen={setIsEditDialogOpen}
+                isViewDialogOpen={isViewDialogOpen}
+                setIsViewDialogOpen={setIsViewDialogOpen}
                 isDeleteDialogOpen={isDeleteDialogOpen}
                 setIsDeleteDialogOpen={setIsDeleteDialogOpen}
                 selectedCustomer={selectedCustomer}

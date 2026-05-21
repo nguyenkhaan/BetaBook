@@ -1,6 +1,7 @@
-import { Edit, Trash2, ShoppingCart } from 'lucide-react';
+import { Edit, Trash2, ShoppingCart , Eye } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Invoice } from '../InvoicePage';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface InvoiceTableRowProps {
     invoice: Invoice;
@@ -17,6 +18,8 @@ export function InvoiceTableRow({
     onViewBooks,
     getStatusColor,
 }: InvoiceTableRowProps) {
+    const { isAdmin } = useAuth();
+
     return (
         <tr className="hover:bg-gray-50">
             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -70,27 +73,27 @@ export function InvoiceTableRow({
                     <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => onViewBooks(invoice)}
+                        title="Xem danh sách sách"
+                    >
+                        <Eye className="w-4 h-4" />
+                    </Button>
+                    {isAdmin && <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => onEdit(invoice)}
                         title="Chỉnh sửa"
                     >
                         <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
+                    </Button>} 
+                    {isAdmin && <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => onDelete(invoice)}
                         title="Xóa"
                     >
                         <Trash2 className="w-4 h-4" />
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onViewBooks(invoice)}
-                        title="Xem danh sách sách"
-                    >
-                        <ShoppingCart className="w-4 h-4" />
-                    </Button>
+                    </Button>} 
                 </div>
             </td>
         </tr>

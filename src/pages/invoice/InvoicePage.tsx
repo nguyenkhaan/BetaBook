@@ -11,6 +11,7 @@ import { DeleteInvoiceDialog } from './components/DeleteInvoiceDialog';
 import {
     InvoiceService,
     CreateInvoiceDto,
+    Voucher,
 } from '../../services/invoice.service';
 import { CustomerService } from '../../services/customer.service';
 import { BookService } from '../../services/book.service';
@@ -65,6 +66,7 @@ export function InvoicePage() {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(
         null,
     );
@@ -99,7 +101,14 @@ export function InvoicePage() {
         code: '',
         title: '',
         quantity: 1,
-        price: 0,
+        cost: 0,
+    });
+    const [editNewBook, setEditNewBook] = useState({
+        bookId: '',
+        code: '',
+        title: '',
+        quantity: 1,
+        cost: 0,
     });
 
     const mockDiscountCodes: DiscountCode[] = [

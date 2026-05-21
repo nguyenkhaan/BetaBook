@@ -1,3 +1,4 @@
+import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import {
     Dialog,
@@ -54,6 +55,12 @@ export function EditInvoiceDialog({
     selectedInvoice,
     formData,
     setFormData,
+    customers,
+    books,
+    editNewBook,
+    setEditNewBook,
+    onAddBook,
+    onRemoveBook,
     onSave,
     vouchers,
     calculateEditSubtotal,

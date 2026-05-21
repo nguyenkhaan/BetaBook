@@ -6,10 +6,18 @@ export interface BillDetail {
     quantity: number;
 }
 
-export interface VoucherUsage {
-    voucherId: number;
+export interface Voucher {
+    id: number;
+    code: string;
+    name: string;
+    description: string;
+    type: 'PERCENT' | 'VND';
+    sale: number; // value
+    status: string;
+    quantity: number;
+    expiresAt: string;
 }
-
+ 
 export interface CreateInvoiceDto {
     customerId?: number;
     customerPhone: string;
@@ -47,8 +55,8 @@ export class InvoiceService {
         return response.data;
     }
 
-    static async update(id: number, dto: UpdateInvoiceDto): Promise<Invoice> {
-        const response = await privateApi.put(`${this.BASE_URL}/${id}`, dto);
+    static async getVouchers(): Promise<Voucher[]> {
+        const response = await privateApi.get('/voucher/use');
         return response.data;
     }
 

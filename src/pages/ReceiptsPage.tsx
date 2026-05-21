@@ -128,6 +128,32 @@ export function ReceiptsPage() {
                 .toLowerCase()
                 .includes(searchTerm.toLowerCase()),
     );
+    const fetchAllReceipts = async () => {
+        try 
+        {
+            const receipts = await IncomeService.getAll() 
+            setReceipts(receipts)
+        } 
+        catch (err) 
+        {
+            toast.error("Không thể tải phiếu nhập")
+        }
+    }
+
+    const handleBillCodeChange = (billCode: string) => {
+        setFormData((currentFormData) => ({
+            ...currentFormData,
+            bill: {
+                billCode,
+                billId: null,
+            },
+            customer: {
+                customerId: null,
+                customerName: '',
+            },
+        }));
+        setBillLookupError('');
+    };
 
     const fetchAllReceipts = async () => {
         try {

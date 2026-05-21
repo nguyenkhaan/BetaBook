@@ -60,15 +60,7 @@ export function DeleteInvoiceDialog({
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label>Ngày</Label>
                         <Input
-                            value={selectedInvoice.date}
-                            readOnly
-                            className="col-span-3"
-                        />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label>Số mặt hàng</Label>
-                        <Input
-                            value={selectedInvoice.items.toString()}
+                            value={new Date(selectedInvoice.updatedAt).toISOString().substring(0, 10)}
                             readOnly
                             className="col-span-3"
                         />
@@ -76,7 +68,7 @@ export function DeleteInvoiceDialog({
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label>Tổng tiền</Label>
                         <Input
-                            value={`${selectedInvoice.cost.toLocaleString('vi-VN')}đ`}
+                            value={`${selectedInvoice.cost}`}
                             readOnly
                             className="col-span-3"
                         />

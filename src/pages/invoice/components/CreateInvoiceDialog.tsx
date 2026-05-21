@@ -40,7 +40,7 @@ interface CreateInvoiceDialogProps {
         code: string;
         title: string;
         quantity: number;
-        price: number;
+        cost: number;
     };
     setNewBook: (data: any) => void;
     onAddBook: () => void;
@@ -251,7 +251,7 @@ export function CreateInvoiceDialog({
                                                     {book.quantity}
                                                 </td>
                                                 <td className="py-1 px-2">
-                                                    {book.price.toLocaleString(
+                                                    {book.cost.toLocaleString(
                                                         'vi-VN',
                                                     )}
                                                     đ
@@ -475,10 +475,10 @@ export function CreateInvoiceDialog({
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Đã thanh toán">
+                                    <SelectItem value="COMPLETE">
                                         Đã thanh toán
                                     </SelectItem>
-                                    <SelectItem value="Chưa thanh toán">
+                                    <SelectItem value="NOT_STARTED">
                                         Chưa thanh toán
                                     </SelectItem>
                                 </SelectContent>

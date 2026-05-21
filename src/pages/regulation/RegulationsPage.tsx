@@ -19,7 +19,11 @@ import {
 } from '../../components/ui/dialog';
 import { toast } from 'sonner';
 import { Toaster } from '../../components/ui/sonner';
-import { RegulationService, Rule, RuleStatistic } from '../../services/regulation.service';
+import {
+    RegulationService,
+    Rule,
+    RuleStatistic,
+} from '../../services/regulation.service';
 import {
     SettingsService,
     SystemSetting,
@@ -194,9 +198,32 @@ export function RegulationsPage() {
         }
     };
 
+    const translateType = (type: string) => {
+        switch (type.toUpperCase()) {
+            case 'HUMAN':
+                return 'Nhân sự';
+            case 'BOOK':
+                return 'Sách & Kho';
+            case 'CUSTOMER':
+                return 'Khách hàng';
+            case 'BILL':
+                return 'Hóa đơn';
+            case 'REPORT':
+                return 'Báo cáo';
+            case 'VOUCHER':
+                return 'Ưu đãi';
+            default:
+                return type;
+        }
+    };
+
     const filterOptions = [
         { id: 'all', label: 'Tất cả', type: 'all' },
-        ...ruleTypes.map((type) => ({ id: type, label: type, type })),
+        ...ruleTypes.map((type) => ({
+            id: type,
+            label: translateType(type),
+            type,
+        })),
     ];
 
     const filteredRegulations = regulations.filter((reg) => {
@@ -205,7 +232,8 @@ export function RegulationsPage() {
             reg.shortDescription
                 ?.toLowerCase()
                 .includes(searchQuery.toLowerCase());
-        const matchesFilter = activeFilter === 'all' || reg.type === activeFilter;
+        const matchesFilter =
+            activeFilter === 'all' || reg.type === activeFilter;
         return matchesSearch && matchesFilter;
     });
 
@@ -304,9 +332,9 @@ export function RegulationsPage() {
                                             onClick={() =>
                                                 setActiveFilter(opt.id)
                                             }
-                                            className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all ${
+                                            className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
                                                 activeFilter === opt.id
-                                                    ? 'bg-orange-500 p-2 text-white'
+                                                    ? 'bg-orange-500 text-white shadow-sm'
                                                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                             }`}
                                         >
@@ -401,13 +429,13 @@ export function RegulationsPage() {
                                         <thead className="bg-gray-50">
                                             <tr className="border-b border-gray-200 text-left">
                                                 <th className="px-4 py-3 text-sm font-semibold text-gray-600">
-                                                    Key
+                                                    Khóa (Key)
                                                 </th>
                                                 <th className="px-4 py-3 text-sm font-semibold text-gray-600">
-                                                    Description
+                                                    Mô tả (Description)
                                                 </th>
                                                 <th className="px-4 py-3 text-sm font-semibold text-gray-600">
-                                                    Value
+                                                    Giá trị (Value)
                                                 </th>
                                             </tr>
                                         </thead>
@@ -419,9 +447,7 @@ export function RegulationsPage() {
                                                 >
                                                     <td className="px-4 py-3">
                                                         <Input
-                                                            value={
-                                                                setting.key
-                                                            }
+                                                            value={setting.key}
                                                             readOnly
                                                             className="bg-gray-50 font-medium text-gray-700"
                                                         />
@@ -474,7 +500,7 @@ export function RegulationsPage() {
                                 onClick={() => setSettingsDialogOpen(false)}
                                 disabled={isSavingSettings}
                             >
-                                Cancel
+                                Hủy bỏ
                             </Button>
                             <Button
                                 type="button"
@@ -486,7 +512,9 @@ export function RegulationsPage() {
                                     settings.length === 0
                                 }
                             >
-                                {isSavingSettings ? 'Saving...' : 'Save'}
+                                {isSavingSettings
+                                    ? 'Đang lưu...'
+                                    : 'Lưu thay đổi'}
                             </Button>
                         </DialogFooter>
                     </DialogContent>

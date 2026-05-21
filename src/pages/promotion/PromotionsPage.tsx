@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useCallback } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '../../components/ui/button';
@@ -11,23 +13,41 @@ import {
     Voucher,
     VoucherData,
 } from '../../services/voucher.service';
+
+export type VoucherStatus = 'APPLYING' | 'UPCOMING' | 'ENDED';
+export type VoucherType = 'PERCENT' | 'VND';
+
+export const VoucherStatusLabel: Record<VoucherStatus, string> = {
+    APPLYING: 'Đang áp dụng',
+    UPCOMING: 'Sắp diễn ra',
+    ENDED: 'Đã kết thúc',
+};
+
+export const VoucherTypeLabel: Record<VoucherType, string> = {
+    VND: 'Tiền mặt',
+    PERCENT: 'Phần trăm',
+};
+
 export interface Promotion {
-    description: string; 
-    code : string; 
-    name: string; 
-    eventName: string; 
-    sale: string | number; 
-    type : 'PERCENT' | 'VND', 
-    usedNumber : number; 
-    quantity: number; 
-    status: 'APPLYING' | 'UPCOMING' | 'ENDED' 
-    startDate: string; 
-    endDate : string; 
-    expiresAt: string; 
-    id : number | string; 
+    description: string;
+    code: string;
+    name: string;
+    eventName: string;
+    sale: string | number;
+    type: string;
+    originalType?: VoucherType;
+    usedNumber: number;
+    quantity: number;
+    status: string;
+    originalStatus?: VoucherStatus;
+    startDate: string;
+    endDate: string;
+    expiresAt: string;
+    id: number | string;
 }
+
 export function PromotionsPage() {
-    const [vouchers, setVouchers] = useState<Voucher[]>([]);
+    const [vouchers, setVouchers] = useState<Promotion[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -35,7 +55,7 @@ export function PromotionsPage() {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(
+    const [selectedVoucher, setSelectedVoucher] = useState<Promotion | null>(
         null,
     );
 
@@ -59,7 +79,17 @@ export function PromotionsPage() {
         try {
             setLoading(true);
             const data = await VoucherService.getAllVoucher();
-            setVouchers(data);
+
+            const normalizedVouchers = data.map((v: any) => ({
+                ...v,
+                originalStatus: v.status,
+                originalType: v.type,
+                status:
+                    VoucherStatusLabel[v.status as VoucherStatus] || v.status,
+                type: VoucherTypeLabel[v.type as VoucherType] || v.type,
+            }));
+
+            setVouchers(normalizedVouchers);
         } catch (error) {
             toast.error('Không thể tải danh sách khuyến mãi');
         } finally {
@@ -79,16 +109,16 @@ export function PromotionsPage() {
     );
 
     const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'APPLYING':
-                return 'bg-green-100 text-green-800';
-            case 'UPCOMING':
-                return 'bg-blue-100 text-blue-800';
-            case 'ENDED':
-                return 'bg-red-100 text-red-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
+        if (status === 'APPLYING' || status === VoucherStatusLabel.APPLYING) {
+            return 'bg-green-100 text-green-800';
         }
+        if (status === 'UPCOMING' || status === VoucherStatusLabel.UPCOMING) {
+            return 'bg-blue-100 text-blue-800';
+        }
+        if (status === 'ENDED' || status === VoucherStatusLabel.ENDED) {
+            return 'bg-red-100 text-red-800';
+        }
+        return 'bg-gray-100 text-gray-800';
     };
 
     const handleCreatePromotion = async () => {
@@ -174,7 +204,7 @@ export function PromotionsPage() {
             eventName: promo.eventName || '',
             description: promo.description || '',
             sale: promo.sale || 0,
-            type: promo.type || 'PERCENT',
+            type: promo.originalType || promo.type || 'PERCENT',
             quantity: promo.quantity || 0,
             usedNumber: promo.usedNumber || 0,
             startDate: promo.startDate
@@ -183,7 +213,7 @@ export function PromotionsPage() {
             expiresAt: promo.expiresAt
                 ? new Date(promo.expiresAt).toISOString().split('T')[0]
                 : '',
-            status: promo.status || 'APPLYING',
+            status: promo.originalStatus || promo.status || 'APPLYING',
         });
         setIsEditDialogOpen(true);
     };

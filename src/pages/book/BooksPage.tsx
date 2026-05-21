@@ -1,19 +1,31 @@
+'use client';
+
 import { useState, useEffect } from 'react';
-import { Plus, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { toast } from 'sonner';
 import { Statistic } from './components/Statistic';
 import { FilterBar } from './components/FilterBar';
 import { BookTable } from './components/BookTable';
 import { BookDialogs } from './components/BookDialogs';
-import { ExcelImportDialog } from './components/ExcelImportDialog';
 import { BookService } from '../../services/book.service';
+import { exportToPDF } from './components/ExportToExcel';
+
+export const BookCategoryLabel: Record<string, string> = {
+    VAN_HOC: 'Văn học',
+    TRINH_THAM: 'Trinh thám',
+    THIEU_NHI: 'Thiếu nhi',
+    GIAO_DUC: 'Giáo dục',
+    KINH_TE: 'Kinh tế',
+    KY_NANG_SONG: 'Kỹ năng sống',
+};
 
 export interface BookItem {
     id: number;
     code: string;
     title: string;
-    category: string;
+    category: any;
+    categoryName?: string;
     cost: number;
     coverImage?: string;
     publishers?: any[];
@@ -23,6 +35,81 @@ export interface BookItem {
     author?: string;
     publisher?: string;
 }
+
+const formatNames = (data: any): string => {
+    if (!data) return '';
+
+    if (typeof data === 'string') {
+        try {
+            const parsed = JSON.parse(data);
+            if (Array.isArray(parsed)) {
+                return parsed
+                    .map(
+                        (item: any) =>
+                            item?.name ||
+                            item?.fullName ||
+                            item?.authorName ||
+                            item?.publisherName ||
+                            '',
+                    )
+                    .filter(Boolean)
+                    .join(', ');
+            }
+        } catch (e) {
+            return data;
+        }
+        return data;
+    }
+
+    if (Array.isArray(data)) {
+        return data
+            .map((item: any) => {
+                if (!item) return '';
+                if (typeof item === 'string') return item;
+                return (
+                    item.name ||
+                    item.fullName ||
+                    item.authorName ||
+                    item.publisherName ||
+                    item.author?.name ||
+                    item.author?.fullName ||
+                    item.publisher?.name ||
+                    item.publisher?.fullName ||
+                    ''
+                );
+            })
+            .filter(Boolean)
+            .join(', ');
+    }
+
+    if (typeof data === 'object') {
+        return (
+            data.name ||
+            data.fullName ||
+            data.authorName ||
+            data.publisherName ||
+            ''
+        );
+    }
+
+    return String(data);
+};
+
+const resolveAuthor = (book: BookItem): string => {
+    const fromArray = formatNames(book.authors);
+    if (fromArray) return fromArray;
+    const fromField = formatNames(book.author);
+    if (fromField) return fromField;
+    return 'N/A';
+};
+
+const resolvePublisher = (book: BookItem): string => {
+    const fromArray = formatNames(book.publishers);
+    if (fromArray) return fromArray;
+    const fromField = formatNames(book.publisher);
+    if (fromField) return fromField;
+    return 'N/A';
+};
 
 export function BooksPage() {
     const [books, setBooks] = useState<BookItem[]>([]);
@@ -35,8 +122,6 @@ export function BooksPage() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [selectedBook, setSelectedBook] = useState<BookItem | null>(null);
-    const [isExcelDialogOpen, setIsExcelDialogOpen] = useState(false);
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     const [selectedCategory, setSelectedCategory] = useState('');
     const [selectedAuthor, setSelectedAuthor] = useState('');
@@ -66,19 +151,28 @@ export function BooksPage() {
                 BookService.getAllBook(),
                 BookService.getStatistics(),
             ]);
-            const normalizedBooks = booksData.map((book: any) => ({
-                ...book,
-                author:
-                    book.author ||
-                    book.authors?.[0]?.name ||
-                    book.authors?.[0]?.authorName ||
-                    book.authors?.[0]?.fullName,
-                publisher:
-                    book.publisher ||
-                    book.publishers?.[0]?.name ||
-                    book.publishers?.[0]?.publisherName ||
-                    book.publishers?.[0]?.fullName,
-            }));
+
+            const normalizedBooks = booksData.map((book: any) => {
+                const categoryCode =
+                    typeof book.category === 'string'
+                        ? book.category.toUpperCase()
+                        : book.category?.code || '';
+
+                const mappedAuthor =
+                    formatNames(book.authors) || formatNames(book.author);
+                const mappedPublisher =
+                    formatNames(book.publishers) || formatNames(book.publisher);
+
+                return {
+                    ...book,
+                    category: book.category,
+                    categoryName:
+                        BookCategoryLabel[categoryCode] || categoryCode,
+                    author: mappedAuthor,
+                    publisher: mappedPublisher,
+                };
+            });
+
             setBooks(normalizedBooks);
             setStatistics(statsData);
         } catch (error: any) {
@@ -113,7 +207,7 @@ export function BooksPage() {
         fetchFilterData();
     }, []);
 
-    const filteredBooks = books.filter((book) => {
+const filteredBooks = books.filter((book) => {
         const matchesSearch =
             book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             book.code.toLowerCase().includes(searchTerm.toLowerCase());
@@ -121,30 +215,29 @@ export function BooksPage() {
         const matchesCategory =
             !selectedCategory ||
             selectedCategory === 'Tất cả' ||
-            book.category === selectedCategory;
+            book.categoryName === selectedCategory ||
+            (typeof book.category === 'string' &&
+                book.category === selectedCategory) ||
+            (typeof book.category === 'object' &&
+                book.category !== null &&
+                ((book.category as any).code === selectedCategory ||
+                    (book.category as any).name === selectedCategory));
 
         const matchesAuthor =
             !selectedAuthor ||
             selectedAuthor === 'Tất cả' ||
-            book.author === selectedAuthor ||
-            !!book.authors?.some(
-                (author: any) =>
-                    author.name === selectedAuthor ||
-                    author.authorName === selectedAuthor ||
-                    author.fullName === selectedAuthor,
+            (book.author?.toLowerCase() || '').includes(
+                selectedAuthor.toLowerCase(),
             );
 
         const matchesPublisher =
             !selectedPublisher ||
             selectedPublisher === 'Tất cả' ||
-            book.publisher === selectedPublisher ||
-            !!book.publishers?.some(
-                (publisher: any) =>
-                    publisher.name === selectedPublisher ||
-                    publisher.publisherName === selectedPublisher ||
-                    publisher.fullName === selectedPublisher,
+            (book.publisher?.toLowerCase() || '').includes(
+                selectedPublisher.toLowerCase(),
             );
 
+        // SỬA TẠI ĐÂY: Khớp hoàn toàn với value "0-100000", "100000-200000",... từ FilterBar
         let matchesPrice = true;
         if (selectedPriceRange === '0-100000') {
             matchesPrice = book.cost < 100000;
@@ -156,13 +249,16 @@ export function BooksPage() {
             matchesPrice = book.cost > 500000;
         }
 
+        // SỬA TẠI ĐÂY: Khớp hoàn toàn với value "Dưới 30", "30 - 100", "100-200", "Trên 200" từ FilterBar
         let matchesStock = true;
         if (selectedStockStatus === 'Dưới 30') {
             matchesStock = book.stock < 30;
         } else if (selectedStockStatus === '30 - 100') {
             matchesStock = book.stock >= 30 && book.stock <= 100;
-        } else if (selectedStockStatus === 'Trên 100') {
-            matchesStock = book.stock > 100;
+        } else if (selectedStockStatus === '100-200') {
+            matchesStock = book.stock > 100 && book.stock <= 200;
+        } else if (selectedStockStatus === 'Trên 200') {
+            matchesStock = book.stock > 200;
         }
 
         return (
@@ -182,14 +278,6 @@ export function BooksPage() {
         setSelectedPublisher('');
         setSelectedPriceRange('');
         setSelectedStockStatus('');
-    };
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setSelectedFile(file);
-            toast.success(`Đã chọn file: ${file.name}`);
-        }
     };
 
     const handleAddBook = async (file?: File) => {
@@ -269,32 +357,60 @@ export function BooksPage() {
         }
     };
 
-    const handleImportExcel = async () => {
-        if (!selectedFile) return;
+    const exportBooksToPDF = async () => {
         try {
-            await BookService.importExcel(selectedFile);
-            toast.success('Thêm danh sách bằng file excel thành công');
-            setIsExcelDialogOpen(false);
-            fetchData();
-        } catch (error: any) {
-            toast.error(
-                'Lỗi khi thêm danh sách bằng file excel: ' + error.message,
+            if (filteredBooks.length === 0) {
+                toast.error('Không có dữ liệu để xuất!');
+                return;
+            }
+
+            const exportData = filteredBooks.map((book) => ({
+                'Mã sách': book.code,
+                'Tên sách': book.title,
+                'Thể loại': book.categoryName || book.category || 'N/A',
+                'Tác giả': resolveAuthor(book),
+                'Nhà xuất bản': resolvePublisher(book),
+                'Năm xuất bản': book.year || 'N/A',
+                'Giá bán (VNĐ)': book.cost || 0,
+                'Tồn kho': book.stock || 0,
+            }));
+
+            const currentDate = new Date().toISOString().split('T')[0];
+            const fileName = `Danh_sach_sach_${currentDate}.pdf`;
+
+            await exportToPDF(exportData, fileName, 'DANH SÁCH QUẢN LÝ SÁCH');
+
+            toast.success(
+                `Đã xuất ${filteredBooks.length} quyển sách ra file PDF!`,
             );
+        } catch (error: any) {
+            console.error('Error exporting to PDF:', error);
+            toast.error('Có lỗi xảy ra khi xuất file PDF');
         }
     };
 
     const openEditDialog = (book: BookItem) => {
         setSelectedBook(book);
+
+        const categoryValue =
+            typeof book.category === 'string'
+                ? book.category
+                : (book.category as any)?.code || '';
+
         setFormData({
             code: book.code,
             title: book.title,
-            category: book.category,
+            category: categoryValue,
             cost: book.cost.toString(),
             stock: (book.stock || 0).toString(),
             year: book.year.toString(),
-            authorIds: book.authors?.map((a) => a.id || a.authorId) || [],
+            authorIds:
+                book.authors?.map((a) => a.id || a.authorId || a.author?.id) ||
+                [],
             publisherIds:
-                book.publishers?.map((p) => p.id || p.publisherId) || [],
+                book.publishers?.map(
+                    (p) => p.id || p.publisherId || p.publisher?.id,
+                ) || [],
         });
         setIsEditDialogOpen(true);
     };
@@ -327,10 +443,10 @@ export function BooksPage() {
                     <Button
                         variant="outline"
                         className="border-orange-500 text-orange-600 hover:bg-orange-50"
-                        onClick={() => setIsExcelDialogOpen(true)}
+                        onClick={exportBooksToPDF}
                     >
                         <FileText className="w-4 cursor-pointer h-4 mr-2" />
-                        Xuất danh sách sách
+                        Xuất PDF
                     </Button>
                 </div>
             </div>
@@ -388,15 +504,6 @@ export function BooksPage() {
                 handleAddBook={handleAddBook}
                 handleEditBook={handleEditBook}
                 handleDeleteBook={handleDeleteBook}
-            />
-
-            <ExcelImportDialog
-                isExcelDialogOpen={isExcelDialogOpen}
-                setIsExcelDialogOpen={setIsExcelDialogOpen}
-                selectedFile={selectedFile}
-                setSelectedFile={setSelectedFile}
-                handleFileChange={handleFileChange}
-                onImport={handleImportExcel}
             />
         </div>
     );

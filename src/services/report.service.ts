@@ -14,17 +14,31 @@ export interface ChartData {
     revenue: number;
 }
 
+export interface RevenueChartData {
+    month: string;
+    totalRevenue: number;
+    actualReceived: number;
+    debtAdded: number;
+}
+
 export interface TopBook {
-    id: number;
-    code: string;
+    bookId: number;
+    bookCode: string;
     title: string;
-    sum: number;
+    totalSold: number;
 }
 
 export interface InventoryByCategory {
-    category: string;
-    count: number;
-    totalValue: number;
+    categoryCode: string;
+    categoryName: string;
+    value: number;
+}
+
+// NEW: inventory flow (import vs export per month)
+export interface InventoryFlowData {
+    month: string;
+    importQuantity: number;
+    exportQuantity: number;
 }
 
 export interface CustomerGrade {
@@ -46,47 +60,82 @@ export interface DebtSummary {
     totalEndingDebt: number;
 }
 
+interface RawDebtItem {
+    date: string;
+    customer: { id: number; name: string };
+    openingDebt: number;
+    generatedDebt: number;
+    closingDebt: number;
+}
+
 const parseDate = (monthStr: string) => {
     const [year, month] = monthStr.split('-').map(Number);
     return { month, year };
 };
 
 export const ReportService = {
-    // 1. Thống kê tổng quan (Tháng hiện tại)
     getGeneralRevenue: async (): Promise<GeneralRevenue> => {
         const response = await privateApi.get('/statistic/revenue');
         return response.data;
     },
 
-    // 2. Biểu đồ doanh thu 6 tháng (Truyền đúng param vào URL)
-    getRevenueChart: async (months: number = 6): Promise<ChartData[]> => {
-        const response = await privateApi.get(
-            `/statistic/revenue/month/${months}`,
-        );
+    getRevenueChart: async (
+        months: number = 6,
+    ): Promise<RevenueChartData[]> => {
+        const response = await privateApi.get('/statistic/revenue/chart', {
+            params: { month: months },
+        });
         return response.data.map((item: any) => ({
             month: item.month,
-            revenue: Number(item.revenue) || 0, // Đảm bảo luôn là kiểu number
+            totalRevenue: Number(item.totalRevenue) || 0,
+            actualReceived: Number(item.actualReceived) || 0,
+            debtAdded: Number(item.debtAdded) || 0,
         }));
     },
-    // 3. Biểu đồ đơn hàng 6 tháng
+
     getOrdersChart: async (months: number = 6): Promise<ChartData[]> => {
         const response = await privateApi.get(
             `/statistic/revenue/bill/${months}`,
         );
         return response.data.map((item: any) => ({
             month: item.month,
-            revenue: Number(item.revenue), // BE dùng Alias 'revenue' trong queryRaw
+            revenue: Number(item.bill_count) || 0,
         }));
     },
 
-    getTopBooks: async (): Promise<TopBook[]> => {
-        const response = await privateApi.get('/statistic/top-books');
-        return response.data;
+    getTopBooks: async (limit: number = 5): Promise<TopBook[]> => {
+        const response = await privateApi.get('/statistic/top-books', {
+            params: { limit },
+        });
+        return response.data.map((item: any) => ({
+            bookId: item.bookId,
+            bookCode: item.bookCode,
+            title: item.title,
+            totalSold: Number(item.totalSold) || 0,
+        }));
     },
 
     getInventoryByCategory: async (): Promise<InventoryByCategory[]> => {
         const response = await privateApi.get('/statistic/inventory');
-        return response.data;
+        return response.data.map((item: any) => ({
+            categoryCode: item.categoryCode,
+            categoryName: item.categoryName,
+            value: Number(item.value) || 0,
+        }));
+    },
+
+    // NEW: fetches monthly import vs export quantities
+    getInventoryFlow: async (
+        months: number = 6,
+    ): Promise<InventoryFlowData[]> => {
+        const response = await privateApi.get('/statistic/inventory-flow', {
+            params: { limit: months },
+        });
+        return response.data.map((item: any) => ({
+            month: item.month,
+            importQuantity: Number(item.importQuantity) || 0,
+            exportQuantity: Number(item.exportQuantity) || 0,
+        }));
     },
 
     getCustomersByGrade: async (): Promise<CustomerGrade[]> => {
@@ -94,29 +143,40 @@ export const ReportService = {
         return response.data;
     },
 
-    // 4. Báo cáo công nợ (Đã sửa lại để đồng bộ Backend query)
+    // Internal: returns the raw server response for debt progression (all months)
+    getRawDebt: async () => {
+        const response = await privateApi.get('/statistic/customer/debit');
+        return response.data ?? [];
+    },
+
     getDebtData: async (
         monthStr: string,
     ): Promise<{ list: DebtItem[]; summary: DebtSummary }> => {
-        const { month, year } = parseDate(monthStr);
-        // Lưu ý: Endpoint này bạn cần tạo thêm ở Backend hoặc dùng /statistic/:month hiện có
-        const response = await privateApi.get(`/statistic/debt`, {
-            params: { month, year },
-        });
+        const response = await privateApi.get('/statistic/customer/debit');
+        const allRows: RawDebtItem[] = response.data || [];
 
-        return {
-            list: response.data?.list || [],
-            summary: response.data?.summary || {
-                totalBeginningDebt: 0,
-                totalTransactions: 0,
-                totalEndingDebt: 0,
-            },
+        const filtered = allRows.filter((row) => row.date === monthStr);
+
+        const list: DebtItem[] = filtered.map((row) => ({
+            id: row.customer.id,
+            customerName: row.customer.name,
+            beginningDebt: Number(row.openingDebt) || 0,
+            transactions: Number(row.generatedDebt) || 0,
+            endingDebt: Number(row.closingDebt) || 0,
+        }));
+
+        const summary: DebtSummary = {
+            totalBeginningDebt: list.reduce((s, r) => s + r.beginningDebt, 0),
+            totalTransactions: list.reduce((s, r) => s + r.transactions, 0),
+            totalEndingDebt: list.reduce((s, r) => s + r.endingDebt, 0),
         };
+
+        return { list, summary };
     },
 
     exportReport: async (type: string, monthStr: string) => {
         const { month, year } = parseDate(monthStr);
-        const response = await privateApi.get(`/statistic/export`, {
+        const response = await privateApi.get('/statistic/export', {
             params: { type, month, year },
             responseType: 'blob',
         });

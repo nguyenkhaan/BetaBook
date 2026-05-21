@@ -1,5 +1,5 @@
-import { Button } from "../../../components/ui/button";
-import { Search } from "lucide-react";
+import { Button } from '../../../components/ui/button';
+import { Search } from 'lucide-react';
 
 interface FilterBarProps {
     searchTerm: string;
@@ -9,10 +9,17 @@ interface FilterBarProps {
     setSelectedCategory: (category: string) => void;
 }
 
-const FilterBar = ({ searchTerm, setSearchTerm, categories, selectedCategory, setSelectedCategory }: FilterBarProps) => {
+const FilterBar = ({
+    searchTerm,
+    setSearchTerm,
+    categories,
+    selectedCategory,
+    setSelectedCategory,
+}: FilterBarProps) => {
     return (
-        <div className="bg-white p-4 rounded-lg shadow-sm space-y-4">
-            <div className="relative">
+        <div className="bg-white p-4 rounded-lg shadow-sm flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+            {/* Khu vực tìm kiếm */}
+            <div className="relative w-full md:w-80 shrink-0">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                     type="text"
@@ -22,7 +29,9 @@ const FilterBar = ({ searchTerm, setSearchTerm, categories, selectedCategory, se
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
-            <div className="flex gap-2 flex-wrap">
+
+            {/* Khu vực nút lọc danh mục */}
+            <div className="flex gap-2 md:gap-3 flex-wrap items-center w-full md:w-auto">
                 {categories.map((category) => (
                     <Button
                         key={category}

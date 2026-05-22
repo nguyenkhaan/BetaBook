@@ -28,7 +28,7 @@ export const DashboardLayout = ({ children }: Props) => {
             {
                 CookiesService.removeCookie('ACCESS_TOKEN') 
                 CookiesService.removeCookie('REFRESH_TOKEN') 
-            
+                localStorage.removeItem('me') 
                 navigate('/') 
             }
         } 

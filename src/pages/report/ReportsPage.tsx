@@ -35,9 +35,25 @@ import {
 } from '../../services/report.service';
 import { toast } from 'sonner';
 
-// Import thư viện xuất PDF dạng bảng
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+
+export const BookCategoryLabel: Record<string, string> = {
+    VAN_HOC: 'Văn học',
+    TRINH_THAM: 'Trinh thám',
+    THIEU_NHI: 'Thiếu nhi',
+    GIAO_DUC: 'Giáo dục',
+    KINH_TE: 'Kinh tế',
+    KY_NANG_SONG: 'Kỹ năng sống',
+};
+
+export const CustomerGradeLabel: Record<string, string> = {
+    BRONZE: 'Đồng',
+    SILVER: 'Bạc',
+    GOLD: 'Vàng',
+    PLATINUM: 'Bạch Kim',
+    DIAMOND: 'Kim cương',
+};
 
 const getCurrentMonth = () => {
     const now = new Date();
@@ -162,6 +178,11 @@ export function ReportsPage() {
             ]);
             setGeneralRevenue(genRev);
             setCustomerData(cust);
+            const mappedCustomerData = cust.map((c) => ({
+                ...c,
+                grade: CustomerGradeLabel[c.grade] || c.grade, 
+            }));
+            setCustomerData(mappedCustomerData);
 
             if (reportType === 'revenue') {
                 const [revChart, ordChart, books] = await Promise.all([
@@ -177,7 +198,14 @@ export function ReportsPage() {
                     ReportService.getInventoryByCategory(params),
                     ReportService.getInventoryFlow(6, params),
                 ]);
-                setInventoryData(inv);
+                const mappedInventory = inv.map((item) => ({
+                    ...item,
+                    categoryName:
+                        BookCategoryLabel[item.categoryName] ||
+                        item.categoryName,
+                }));
+
+                setInventoryData(mappedInventory);
                 setInventoryFlow(flow);
             } else if (reportType === 'debt') {
                 const rawRows = await ReportService.getRawDebt(params);
@@ -210,7 +238,6 @@ export function ReportsPage() {
         setTimeout(() => loadReportData(), 0);
     };
 
-    // Hàm xuất PDF dạng bảng tùy biến theo từng Tab dữ liệu chọn
     const handleExportPDF = () => {
         try {
             const doc = new jsPDF({
@@ -245,11 +272,9 @@ export function ReportsPage() {
                 14,
                 44,
             );
-            doc.line(14, 48, 196, 48); // Thanh kẻ ngang phân cách
+            doc.line(14, 48, 196, 48); 
 
-            // Phân loại logic sinh bảng theo Tab được chọn
             if (reportType === 'revenue') {
-                // 1. Báo cáo doanh thu & top sách chạy
                 doc.setFont('Helvetica', 'bold');
                 doc.text('1. TOP 5 SACH BAN CHAY NHAT', 14, 56);
 
@@ -269,10 +294,10 @@ export function ReportsPage() {
                     startY: 60,
                     theme: 'striped',
                     styles: { font: 'Helvetica' },
-                    headStyles: { fillColor: [249, 115, 22] }, // Màu cam đặc trưng thương hiệu
+                    headStyles: { fillColor: [249, 115, 22] }, 
                 });
 
-                // Thêm bảng tổng hợp số liệu doanh thu biểu đồ
+             
                 const lastY = (doc as any).lastAutoTable.finalY || 60;
                 doc.text('2. DOANH THU & CONG NO THEO THANG', 14, lastY + 15);
 
@@ -358,7 +383,6 @@ export function ReportsPage() {
                     `${item.endingDebt.toLocaleString('vi-VN')}d`,
                 ]);
 
-                // Hàng tổng cộng lũy kế cuối trang
                 if (debtList.length > 0 && debtSum) {
                     body.push([
                         '',
@@ -375,7 +399,7 @@ export function ReportsPage() {
                     startY: 60,
                     theme: 'grid',
                     styles: { font: 'Helvetica' },
-                    headStyles: { fillColor: [220, 38, 38] }, // Màu đỏ cho công nợ tài chính
+                    headStyles: { fillColor: [220, 38, 38] }, 
                     didParseCell: (data) => {
                         // Bôi đậm dòng tổng cộng cuối cùng
                         if (data.row.index === body.length - 1) {
@@ -384,8 +408,6 @@ export function ReportsPage() {
                     },
                 });
             }
-
-            // Tiến hành tải xuống file PDF trực tiếp
             doc.save(
                 `BetaBook_BaoCao_${reportType}_${new Date().getTime()}.pdf`,
             );
@@ -997,7 +1019,6 @@ export function ReportsPage() {
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 border-b pb-6">
                         <div className="flex items-center gap-3">
                             <span className="px-3 py-1 bg-gray-900 text-white text-xs font-mono rounded-md shadow-sm">
-                                BM5.2
                             </span>
                             <h2 className="text-xl font-bold text-gray-900">
                                 Báo Cáo Công Nợ

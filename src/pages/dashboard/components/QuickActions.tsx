@@ -66,7 +66,7 @@ interface QuickActionsProps {
     onCustomer: () => void;
     onReceipt: () => void;
     onPromotion: () => void;
-    onNavigate: (page: string) => void;
+    onReport: () => void;
 }
 
 export const QuickActions: React.FC<QuickActionsProps> = ({
@@ -75,7 +75,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
     onCustomer,
     onReceipt,
     onPromotion,
-    onNavigate,
+    onReport,
 }) => {
     return (
         <Card className="border-0 shadow-md">
@@ -126,7 +126,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
                         icon={BarChart3}
                         label="Báo cáo"
                         subLabel="Thống kê"
-                        onClick={() => onNavigate('reports')}
+                        onClick={onReport}
                         colorScheme="indigo"
                     />
                 </div>

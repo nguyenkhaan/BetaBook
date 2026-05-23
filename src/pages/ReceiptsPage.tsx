@@ -35,6 +35,7 @@ import {
     IncomeService,
     IncomeStatus,
 } from '../services/income.service';
+import { useAuth } from '../contexts/AuthContext';
 
 type Receipt = IncomeReceipt;
 
@@ -98,6 +99,7 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 };
 
 export function ReceiptsPage() {
+    const { isAdmin } = useAuth();
     const [receipts, setReceipts] = useState<Receipt[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -641,7 +643,7 @@ export function ReceiptsPage() {
                                         >
                                             <Eye className="w-4 h-4" />
                                         </Button>
-                                        <Button
+                                        {isAdmin && <Button
                                             variant="ghost"
                                             size="sm"
                                             onClick={() =>
@@ -649,8 +651,8 @@ export function ReceiptsPage() {
                                             }
                                         >
                                             <Edit className="w-4 h-4" />
-                                        </Button>
-                                        <Button
+                                        </Button>} 
+                                        {isAdmin && <Button
                                             variant="ghost"
                                             size="sm"
                                             onClick={() =>
@@ -658,7 +660,7 @@ export function ReceiptsPage() {
                                             }
                                         >
                                             <Trash2 className="w-4 h-4 text-red-500" />
-                                        </Button>
+                                        </Button>} 
                                         <Button
                                             variant="ghost"
                                             size="sm"

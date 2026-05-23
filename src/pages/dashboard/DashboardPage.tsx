@@ -1,20 +1,78 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DollarSign, ShoppingCart, Users, BookOpen } from 'lucide-react';
+import {
+    DollarSign,
+    ShoppingCart,
+    Users,
+    BookOpen,
+    LucideIcon,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { StatsCard } from './components/StatsCard';
 import { QuickActions } from './components/QuickActions';
 import { RecentOrders } from './components/RecentOrders';
 import { TopBooks } from './components/TopBooks';
-import { DashboardService } from '../../services/dashboard.service';
+import {
+    DashboardService,
+    GeneralStatistic,
+    RecentOrder,
+    TopBook,
+} from '../../services/dashboard.service';
+
+interface StatItem {
+    title: string;
+    value: string;
+    change: string;
+    icon: LucideIcon;
+    color: string;
+    bgColor: string;
+}
+
+function buildStats(data: GeneralStatistic): StatItem[] {
+    return [
+        {
+            title: 'Tổng doanh thu',
+            value: `${data.totalRevenue.toLocaleString('vi-VN')}đ`,
+            change: '0%',
+            icon: DollarSign,
+            color: 'text-green-600',
+            bgColor: 'bg-green-100',
+        },
+        {
+            title: 'Đơn hàng',
+            value: data.totalBills.toLocaleString('vi-VN'),
+            change: '0%',
+            icon: ShoppingCart,
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-100',
+        },
+        {
+            title: 'Khách hàng',
+            value: data.totalCustomers.toLocaleString('vi-VN'),
+            change: '0%',
+            icon: Users,
+            color: 'text-purple-600',
+            bgColor: 'bg-purple-100',
+        },
+        {
+            title: 'Sách đã bán',
+            value: data.totalBooks.toLocaleString('vi-VN'),
+            change: '0%',
+            icon: BookOpen,
+            color: 'text-orange-600',
+            bgColor: 'bg-orange-100',
+        },
+    ];
+}
 
 export function DashboardPage() {
     const navigate = useNavigate();
 
-    const [stats, setStats] = useState<any[]>([]);
-    const [recentOrders, setRecentOrders] = useState<any[]>([]);
-    const [topBooks, setTopBooks] = useState<any[]>([]);
+    const [stats, setStats] = useState<StatItem[]>([]);
+    const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+    const [topBooks, setTopBooks] = useState<TopBook[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         fetchDashboardData();
@@ -23,62 +81,21 @@ export function DashboardPage() {
     const fetchDashboardData = async () => {
         try {
             setIsLoading(true);
-            const [generalStats, ordersData, booksData] = await Promise.all([
-                DashboardService.getDashboardGeneralStatistic(),
+            setError(null);
+
+            const [general, orders, books] = await Promise.all([
+                DashboardService.getGeneralStatistic(),
                 DashboardService.getRecentOrders(5),
                 DashboardService.getTopBooks(4),
             ]);
 
-            setStats([
-                {
-                    title: 'Tổng doanh thu',
-                    value: generalStats?.totalRevenue
-                        ? `${generalStats.totalRevenue.toLocaleString('vi-VN')}đ`
-                        : '0đ',
-                    change: generalStats?.revenueChange || '0%',
-                    icon: DollarSign,
-                    color: 'text-green-600',
-                    bgColor: 'bg-green-100',
-                },
-                {
-                    title: 'Đơn hàng',
-                    value: generalStats?.totalOrders
-                        ? generalStats.totalOrders.toLocaleString('vi-VN')
-                        : '0',
-                    change: generalStats?.ordersChange || '0%',
-                    icon: ShoppingCart,
-                    color: 'text-blue-600',
-                    bgColor: 'bg-blue-100',
-                },
-                {
-                    title: 'Khách hàng',
-                    value: generalStats?.totalCustomers
-                        ? generalStats.totalCustomers.toLocaleString('vi-VN')
-                        : '0',
-                    change: generalStats?.customersChange || '0%',
-                    icon: Users,
-                    color: 'text-purple-600',
-                    bgColor: 'bg-purple-100',
-                },
-                {
-                    title: 'Sách bán chạy',
-                    value: generalStats?.totalBooksSold
-                        ? generalStats.totalBooksSold.toLocaleString('vi-VN')
-                        : '0',
-                    change: generalStats?.booksChange || '0%',
-                    icon: BookOpen,
-                    color: 'text-orange-600',
-                    bgColor: 'bg-orange-100',
-                },
-            ]);
-
-            setRecentOrders(ordersData || []);
-            setTopBooks(booksData || []);
-        } catch (error: any) {
-            toast.error(
-                'Không thể tải dữ liệu bảng điều khiển: ' +
-                    (error.message || 'Lỗi hệ thống'),
-            );
+            setStats(buildStats(general));
+            setRecentOrders(orders);
+            setTopBooks(books);
+        } catch (err: any) {
+            const message = err.message || 'Lỗi hệ thống';
+            setError(message);
+            toast.error('Không thể tải dữ liệu bảng điều khiển: ' + message);
         } finally {
             setIsLoading(false);
         }
@@ -87,7 +104,21 @@ export function DashboardPage() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-full min-h-[400px]">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-4">
+                <p className="text-red-500 text-sm">{error}</p>
+                <button
+                    onClick={fetchDashboardData}
+                    className="text-sm text-orange-500 underline"
+                >
+                    Thử lại
+                </button>
             </div>
         );
     }
@@ -109,7 +140,7 @@ export function DashboardPage() {
                 onCustomer={() => navigate('/customers')}
                 onReceipt={() => navigate('/receipts')}
                 onPromotion={() => navigate('/promotions')}
-                onNavigate={(path: string) => navigate(path)}
+                onReport={() => navigate('/reports')}
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

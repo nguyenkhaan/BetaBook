@@ -1,5 +1,12 @@
 import { privateApi } from '../api/api';
 
+export interface GeneralStatistic {
+    totalRevenue: number;
+    totalCustomers: number;
+    totalBills: number;
+    totalBooks: number;
+}
+
 export interface GeneralRevenue {
     monthRevenue: number;
     revenueProportionRate: number;
@@ -21,11 +28,25 @@ export interface RevenueChartData {
     debtAdded: number;
 }
 
+export interface DynamicReportData {
+    date: string;
+    totalRevenue: number;
+    actualReceived: number;
+    debtAdded: number;
+}
+
 export interface TopBook {
     bookId: number;
     bookCode: string;
     title: string;
     totalSold: number;
+}
+
+export interface BestSellingBook {
+    bookId: number;
+    bookCode: string;
+    title: string;
+    quantitySold: number;
 }
 
 export interface InventoryByCategory {
@@ -34,7 +55,6 @@ export interface InventoryByCategory {
     value: number;
 }
 
-// NEW: inventory flow (import vs export per month)
 export interface InventoryFlowData {
     month: string;
     importQuantity: number;
@@ -44,6 +64,24 @@ export interface InventoryFlowData {
 export interface CustomerGrade {
     grade: string;
     total: number;
+}
+
+export interface TopCustomer {
+    customerId: number;
+    customerCode: string;
+    customerName: string;
+    email: string;
+    phone: string;
+    grade: string;
+    totalPaid: number;
+}
+
+export interface RecentOrder {
+    id: number;
+    code: string;
+    amount: number;
+    status: string;
+    date: string;
 }
 
 export interface DebtItem {
@@ -68,12 +106,12 @@ interface RawDebtItem {
     closingDebt: number;
 }
 
-const parseDate = (monthStr: string) => {
-    const [year, month] = monthStr.split('-').map(Number);
-    return { month, year };
-};
-
 export const ReportService = {
+    getGeneralStatistic: async (): Promise<GeneralStatistic> => {
+        const response = await privateApi.get('/statistic/general');
+        return response.data;
+    },
+
     getGeneralRevenue: async (): Promise<GeneralRevenue> => {
         const response = await privateApi.get('/statistic/revenue');
         return response.data;
@@ -93,13 +131,69 @@ export const ReportService = {
         }));
     },
 
-    getOrdersChart: async (months: number = 6): Promise<ChartData[]> => {
+    getRevenueInMonths: async (months: number): Promise<ChartData[]> => {
+        const response = await privateApi.get(
+            `/statistic/revenue/month/${months}`,
+        );
+        return response.data.map((item: any) => ({
+            month: item.month,
+            revenue: Number(item.revenue) || 0,
+        }));
+    },
+
+    getBillCountChart: async (months: number = 6): Promise<ChartData[]> => {
         const response = await privateApi.get(
             `/statistic/revenue/bill/${months}`,
         );
         return response.data.map((item: any) => ({
             month: item.month,
             revenue: Number(item.bill_count) || 0,
+        }));
+    },
+
+    getDynamicReport: async (
+        startDate: string,
+        endDate: string,
+    ): Promise<DynamicReportData[]> => {
+        const response = await privateApi.get(
+            '/statistic/revenue/dynamic-report',
+            {
+                params: { startDate, endDate },
+            },
+        );
+        return response.data.map((item: any) => ({
+            date: item.date,
+            totalRevenue: Number(item.totalRevenue) || 0,
+            actualReceived: Number(item.actualReceived) || 0,
+            debtAdded: Number(item.debtAdded) || 0,
+        }));
+    },
+
+    getTopCustomers: async (limit: number = 10): Promise<TopCustomer[]> => {
+        const response = await privateApi.get('/statistic/top-customer', {
+            params: { limit },
+        });
+        return response.data.map((item: any) => ({
+            customerId: item.customerId,
+            customerCode: item.customerCode,
+            customerName: item.customerName,
+            email: item.email,
+            phone: item.phone,
+            grade: item.grade,
+            totalPaid: Number(item.totalPaid) || 0,
+        }));
+    },
+
+    getRecentOrders: async (limit: number = 10): Promise<RecentOrder[]> => {
+        const response = await privateApi.get('/statistic/recent-orders', {
+            params: { limit },
+        });
+        return response.data.map((item: any) => ({
+            id: item.id,
+            code: item.code,
+            amount: Number(item.amount) || 0,
+            status: item.status,
+            date: item.date,
         }));
     },
 
@@ -115,6 +209,18 @@ export const ReportService = {
         }));
     },
 
+    getTop5BestSellingBooks: async (): Promise<BestSellingBook[]> => {
+        const response = await privateApi.get(
+            '/statistic/top-books/best-selling',
+        );
+        return response.data.map((item: any) => ({
+            bookId: item.bookId,
+            bookCode: item.bookCode,
+            title: item.title,
+            quantitySold: Number(item.quantitySold) || 0,
+        }));
+    },
+
     getInventoryByCategory: async (): Promise<InventoryByCategory[]> => {
         const response = await privateApi.get('/statistic/inventory');
         return response.data.map((item: any) => ({
@@ -124,7 +230,6 @@ export const ReportService = {
         }));
     },
 
-    // NEW: fetches monthly import vs export quantities
     getInventoryFlow: async (
         months: number = 6,
     ): Promise<InventoryFlowData[]> => {
@@ -138,13 +243,34 @@ export const ReportService = {
         }));
     },
 
+    getTotalBooksImportedInMonth: async (): Promise<{
+        totalBooksImported: number;
+    }> => {
+        const response = await privateApi.get(
+            '/statistic/inventory/imported-month',
+        );
+        return {
+            totalBooksImported: Number(response.data.totalBooksImported) || 0,
+        };
+    },
+
     getCustomersByGrade: async (): Promise<CustomerGrade[]> => {
         const response = await privateApi.get('/statistic/customers');
         return response.data;
     },
 
-    // Internal: returns the raw server response for debt progression (all months)
-    getRawDebt: async () => {
+    getTotalOrdersInCurrentMonth: async (): Promise<{
+        totalOrdersInMonth: number;
+    }> => {
+        const response = await privateApi.get(
+            '/statistic/orders/current-month',
+        );
+        return {
+            totalOrdersInMonth: Number(response.data.totalOrdersInMonth) || 0,
+        };
+    },
+
+    getRawDebt: async (): Promise<RawDebtItem[]> => {
         const response = await privateApi.get('/statistic/customer/debit');
         return response.data ?? [];
     },
@@ -172,25 +298,5 @@ export const ReportService = {
         };
 
         return { list, summary };
-    },
-
-    exportReport: async (type: string, monthStr: string) => {
-        const { month, year } = parseDate(monthStr);
-        const response = await privateApi.get('/statistic/export', {
-            params: { type, month, year },
-            responseType: 'blob',
-        });
-
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute(
-            'download',
-            `Bao-cao-${type}-thang-${month}-${year}.xlsx`,
-        );
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
     },
 };

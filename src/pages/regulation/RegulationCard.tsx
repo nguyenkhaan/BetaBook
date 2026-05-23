@@ -1,5 +1,6 @@
 import { Settings, Eye, Pencil, Trash2, Power } from 'lucide-react';
 import { Badge } from '../../components/ui/badge';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface RegulationCardProps {
     id : number; 
@@ -28,6 +29,7 @@ export function RegulationCard({
     onDelete,
     onView,
 }: RegulationCardProps) {
+    const {isAdmin} = useAuth() 
     const statusConfig = {
         APPLYING: {
             label: 'Đang áp dụng',
@@ -68,20 +70,20 @@ export function RegulationCard({
                     <p className="text-gray-600 text-sm">{description}</p>
                 </div>
                 <div className="flex gap-2">
-                    <button
+                    {isAdmin && <button
                         onClick={onEdit}
                         className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                         title="Chỉnh sửa"
                     >
                         <Pencil className="w-4 h-4 text-gray-600" />
-                    </button>
-                    <button
+                    </button>} 
+                    {isAdmin && <button
                         onClick={onDelete}
                         className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                         title="Xóa"
                     >
                         <Trash2 className="w-4 h-4 text-red-600" />
-                    </button>
+                    </button>} 
                     <button
                         onClick={onView}
                         className="p-2 hover:bg-gray-100 rounded-lg transition-colors"

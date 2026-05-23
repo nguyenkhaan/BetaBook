@@ -6,7 +6,7 @@ export function LoginHeader() {
         <CardHeader className="space-y-6 pb-8">
             <div className="flex items-center justify-center mb-4">
                 <span className="text-orange-500 text-3xl font-bold">
-                    Beta Book
+                    Utahime Book
                 </span>
             </div>
 

@@ -34,6 +34,7 @@ export interface InventoryByCategory {
     value: number;
 }
 
+// NEW: inventory flow (import vs export per month)
 export interface InventoryFlowData {
     month: string;
     importQuantity: number;
@@ -65,21 +66,6 @@ interface RawDebtItem {
     openingDebt: number;
     generatedDebt: number;
     closingDebt: number;
-}
-
-export interface OrdersInMonth {
-    totalOrdersInMonth: number;
-}
-
-export interface BooksImportedInMonth {
-    totalBooksImported: number;
-}
-
-export interface DynamicRevenueReport {
-    date: string;
-    totalRevenue: number;
-    actualReceived: number;
-    debtAdded: number;
 }
 
 const parseDate = (monthStr: string) => {
@@ -138,6 +124,7 @@ export const ReportService = {
         }));
     },
 
+    // NEW: fetches monthly import vs export quantities
     getInventoryFlow: async (
         months: number = 6,
     ): Promise<InventoryFlowData[]> => {
@@ -156,6 +143,7 @@ export const ReportService = {
         return response.data;
     },
 
+    // Internal: returns the raw server response for debt progression (all months)
     getRawDebt: async () => {
         const response = await privateApi.get('/statistic/customer/debit');
         return response.data ?? [];
@@ -204,49 +192,5 @@ export const ReportService = {
         link.click();
         link.remove();
         window.URL.revokeObjectURL(url);
-    },
-
-    getTotalOrdersInCurrentMonth: async (): Promise<OrdersInMonth> => {
-        const response = await privateApi.get(
-            '/statistic/orders/current-month',
-        );
-        return response.data;
-    },
-
-    getTop5BestSellingBooks: async (): Promise<TopBook[]> => {
-        const response = await privateApi.get(
-            '/statistic/top-books/best-selling',
-        );
-        return response.data.map((item: any) => ({
-            bookId: item.bookId,
-            bookCode: item.bookCode,
-            title: item.title,
-            totalSold: Number(item.quantitySold) || 0,
-        }));
-    },
-
-    getTotalBooksImportedInMonth: async (): Promise<BooksImportedInMonth> => {
-        const response = await privateApi.get(
-            '/statistic/inventory/imported-month',
-        );
-        return response.data;
-    },
-
-    getDynamicRangeReport: async (
-        startDate: string,
-        endDate: string,
-    ): Promise<DynamicRevenueReport[]> => {
-        const response = await privateApi.get(
-            '/statistic/revenue/dynamic-report',
-            {
-                params: { startDate, endDate },
-            },
-        );
-        return response.data.map((item: any) => ({
-            date: item.date,
-            totalRevenue: Number(item.totalRevenue) || 0,
-            actualReceived: Number(item.actualReceived) || 0,
-            debtAdded: Number(item.debtAdded) || 0,
-        }));
     },
 };

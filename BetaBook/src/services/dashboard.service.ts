@@ -3,11 +3,7 @@ import { privateApi } from '../api/api';
 export class DashboardService {
     static async getDashboardGeneralStatistic() {
         const response = await privateApi.get('/statistic/general');
-        return {
-            ...response.data,
-            totalOrders: response.data.totalBills || 0,
-            totalBooksSold: response.data.totalBooks || 0,
-        };
+        return response.data;
     }
 
     static async getRecentOrders(limit: number = 5) {
@@ -21,9 +17,6 @@ export class DashboardService {
         const response = await privateApi.get('/statistic/top-books', {
             params: { limit },
         });
-        return response.data.map((book: any) => ({
-            ...book,
-            quantity: book.totalSold || book.quantitySold || 0,
-        }));
+        return response.data;
     }
 }

@@ -47,7 +47,7 @@ export function Statistic({
                     <div>
                         <p className="text-gray-600 text-sm">Giá trị kho</p>
                         <p className="text-2xl font-bold text-gray-900 mt-1">
-                            {(inventoryValue / 1000000).toFixed(1)}M
+                            {(inventoryValue / 1000000).toFixed(2)}M
                         </p>
                     </div>
                     <Book className="w-10 h-10 text-green-500" />

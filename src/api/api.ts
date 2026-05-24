@@ -58,7 +58,6 @@ privateApi.interceptors.response.use(
             data?.message ||
             data?.error ||
             'Có lỗi xảy ra trong quá trình xử lý';
-        console.log("Toast: " , message) 
         toast.error(message);
 
         if (status === 401) {

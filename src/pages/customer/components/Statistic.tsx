@@ -36,7 +36,7 @@ export function Statistic({
                 <div>
                     <p className="text-gray-600 text-sm">Tổng doanh thu</p>
                     <p className="text-2xl font-bold">
-                        {(totalRevenue / 1000000).toFixed(1)}M
+                        {(totalRevenue / 1000000).toFixed(2)}M
                     </p>
                 </div>
                 <Users className="w-10 h-10 text-green-500" />

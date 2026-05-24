@@ -43,7 +43,7 @@ export function PromotionTable({
                             Thời gian
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Đã dùng / Tối đa
+                            Đã dùng / Còn lại
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Trạng thái

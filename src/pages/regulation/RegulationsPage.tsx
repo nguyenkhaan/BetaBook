@@ -332,7 +332,7 @@ export function RegulationsPage() {
                                             onClick={() =>
                                                 setActiveFilter(opt.id)
                                             }
-                                            className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+                                            className={`px-4 block py-3 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
                                                 activeFilter === opt.id
                                                     ? 'bg-orange-500 text-white shadow-sm'
                                                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'

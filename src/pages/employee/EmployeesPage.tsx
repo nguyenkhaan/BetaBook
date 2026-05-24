@@ -151,7 +151,7 @@ export function EmployeesPage() {
             }));
             setEmployees(mappedData);
         } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Không thể tải dữ liệu');
+            console.log("Lỗi khi tải danh sách nhân viên: " , err.message)  
         } finally {
             setIsLoading(false);
         }
@@ -942,7 +942,7 @@ export function EmployeesPage() {
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>Chỉnh sửa thông tin nhân viên</DialogTitle>
+                        <DialogTitle>Cập nhật thông tin nhân viên</DialogTitle>
                         <DialogDescription>
                             Cập nhật thông tin nhân viên
                         </DialogDescription>
@@ -1339,7 +1339,7 @@ export function EmployeesPage() {
                                 <span
                                     className={`px-3 py-1 rounded-full text-xs font-medium ${selectedEmployee && getStatusColor(selectedEmployee.status)}`}
                                 >
-                                    {selectedEmployee?.status}
+                                    {EmployeeStatusLabel[selectedEmployee?.status || 'WORKING']}
                                 </span>
                             </div>
                         </div>

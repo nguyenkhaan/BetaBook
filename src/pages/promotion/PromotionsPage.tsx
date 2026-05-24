@@ -90,8 +90,8 @@ export function PromotionsPage() {
             }));
 
             setVouchers(normalizedVouchers);
-        } catch (error) {
-            toast.error('Không thể tải danh sách khuyến mãi');
+        } catch (error : any) {
+            console.log("Lỗi khi tải danh sách mã khuyến mãi: " , error.message) 
         } finally {
             setLoading(false);
         }

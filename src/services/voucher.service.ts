@@ -82,14 +82,14 @@ export class VoucherService {
     }
 
     static async updateVoucher(
-        id: number,
+        id: number | string,
         data: Partial<VoucherData>,
     ): Promise<Voucher> {
         const response = await privateApi.put(`${this.BASE_URL}/${id}`, data);
         return response.data;
     }
 
-    static async deleteVoucher(id: number): Promise<Voucher> {
+    static async deleteVoucher(id: number | string): Promise<Voucher> {
         const response = await privateApi.delete(`${this.BASE_URL}/${id}`);
         return response.data;
     }

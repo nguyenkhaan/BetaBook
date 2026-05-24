@@ -24,9 +24,13 @@ export interface TopBook {
 }
 
 export class DashboardService {
-    static async getGeneralStatistic(): Promise<GeneralStatistic> {
-        const res = await privateApi.get('/statistic/general');
-        return res.data;
+    static async getDashboardGeneralStatistic() {
+        const response = await privateApi.get('/statistic/general');
+        return {
+            ...response.data,
+            totalOrders: response.data.totalBills || 0,
+            totalBooksSold: response.data.totalBooks || 0,
+        };
     }
 
     static async getRecentOrders(limit: number = 5): Promise<RecentOrder[]> {

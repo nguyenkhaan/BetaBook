@@ -532,7 +532,7 @@ export function ReceiptsPage() {
                                 {receipts
                                     .filter((r) => r.status === 'COMPLETE')
                                     .reduce((sum, r) => sum + Number(r.cost), 0)
-                                    .toLocaleString()}
+                                    .toLocaleString('vi-VN')}
                                 đ
                             </p>
                         </div>
@@ -976,7 +976,7 @@ export function ReceiptsPage() {
                                     }
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Chọn hình thức" />
+                                        {formData.paymentMethod? ReceiptPaymentTypeLabel[formData.paymentMethod] : 'Chọn phương thức thanh toán'}
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="CASH">

@@ -123,13 +123,6 @@ export const ImportTable: React.FC<ImportTableProps> = ({
                                     >
                                         <Trash2 className="w-4 h-4 text-red-500" />
                                     </Button>} 
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => onDownload(imp)}
-                                    >
-                                        <Download className="w-4 h-4 text-blue-500" />
-                                    </Button>
                                 </div>
                             </td>
                         </tr>

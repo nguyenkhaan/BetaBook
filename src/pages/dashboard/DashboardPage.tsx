@@ -22,7 +22,6 @@ import {
 interface StatItem {
     title: string;
     value: string;
-    change: string;
     icon: LucideIcon;
     color: string;
     bgColor: string;
@@ -32,32 +31,28 @@ function buildStats(data: GeneralStatistic): StatItem[] {
     return [
         {
             title: 'Tổng doanh thu',
-            value: `${data.totalRevenue.toLocaleString('vi-VN')}đ`,
-            change: '0%',
+            value: `${Number(data.totalRevenue || 0).toLocaleString('vi-VN')}đ`,
             icon: DollarSign,
             color: 'text-green-600',
             bgColor: 'bg-green-100',
         },
         {
             title: 'Đơn hàng',
-            value: data.totalBills.toLocaleString('vi-VN'),
-            change: '0%',
+            value: Number(data.totalBills || 0).toLocaleString('vi-VN'),
             icon: ShoppingCart,
             color: 'text-blue-600',
             bgColor: 'bg-blue-100',
         },
         {
             title: 'Khách hàng',
-            value: data.totalCustomers.toLocaleString('vi-VN'),
-            change: '0%',
+            value: Number(data.totalCustomers || 0).toLocaleString('vi-VN'),
             icon: Users,
             color: 'text-purple-600',
             bgColor: 'bg-purple-100',
         },
         {
             title: 'Sách đã bán',
-            value: data.totalBooks.toLocaleString('vi-VN'),
-            change: '0%',
+            value: Number(data.totalBooks || 0).toLocaleString('vi-VN'),
             icon: BookOpen,
             color: 'text-orange-600',
             bgColor: 'bg-orange-100',
@@ -84,7 +79,7 @@ export function DashboardPage() {
             setError(null);
 
             const [general, orders, books] = await Promise.all([
-                DashboardService.getGeneralStatistic(),
+                DashboardService.getDashboardGeneralStatistic(),
                 DashboardService.getRecentOrders(5),
                 DashboardService.getTopBooks(4),
             ]);

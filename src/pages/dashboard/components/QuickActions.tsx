@@ -80,10 +80,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
     return (
         <Card className="border-0 shadow-md">
             <CardHeader>
-                <CardTitle className="flex items-center cursor-pointer gap-2">
-                    <TrendingUp className="w-5 h-5 text-orange-500" />
-                    Thao tác nhanh
-                </CardTitle>
+                Thanh điều hướng 
             </CardHeader>
             <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">

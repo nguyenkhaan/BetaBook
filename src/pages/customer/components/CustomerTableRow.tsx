@@ -10,7 +10,7 @@ interface CustomerTableRowProps {
     onEdit: (customer: Customer) => void;
     onDelete: (customer: Customer) => void;
     getLevelColor: (grade: Customer['grade']) => string;
-    onResetPassword : (customer : Customer) => void 
+    onResetPassword: (customer: Customer) => void;
 }
 
 export function CustomerTableRow({
@@ -19,7 +19,7 @@ export function CustomerTableRow({
     onEdit,
     onDelete,
     getLevelColor,
-    onResetPassword
+    onResetPassword,
 }: CustomerTableRowProps) {
     const { isAdmin } = useAuth();
 
@@ -60,13 +60,13 @@ export function CustomerTableRow({
                     onClick={() => onView(customer)}
                 >
                     <Eye className="w-4 h-4" />
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEdit(customer)}
-                    >
-                        <Edit className="w-4 h-4" />
-                    </Button>
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onEdit(customer)}
+                >
+                    <Edit className="w-4 h-4" />
                 </Button>
                 <Button
                     variant="ghost"
@@ -75,13 +75,15 @@ export function CustomerTableRow({
                 >
                     <Key className="w-4 h-4 text-yellow-700" />
                 </Button>
-                {isAdmin && <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDelete(customer)}
-                >
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                </Button>} 
+                {isAdmin && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onDelete(customer)}
+                    >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
+                )}
             </td>
         </tr>
     );

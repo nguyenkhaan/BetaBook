@@ -8,7 +8,7 @@ import {
     Trash2,
     Download,
 } from 'lucide-react';
-import { ReceiptPaymentTypeLabel } from '../utilis/label_mapper';
+import { IncomeStatusLabel, ReceiptPaymentTypeLabel } from '../utilis/label_mapper';
 import { Button } from '../components/ui/button';
 import {
     Dialog,
@@ -661,15 +661,6 @@ export function ReceiptsPage() {
                                         >
                                             <Trash2 className="w-4 h-4 text-red-500" />
                                         </Button>} 
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() =>
-                                                handleDownloadReceipt(receipt)
-                                            }
-                                        >
-                                            <Download className="w-4 h-4 text-blue-500" />
-                                        </Button>
                                     </div>
                                 </td>
                             </tr>
@@ -821,7 +812,7 @@ export function ReceiptsPage() {
                                     }
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Chọn trạng thái" />
+                                        {formData.status? IncomeStatusLabel[formData.status] : 'Chọn trạng thái'}
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="COMPLETE">
@@ -1008,7 +999,7 @@ export function ReceiptsPage() {
                                     }
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Chọn trạng thái" />
+                                        {formData.status? IncomeStatusLabel[formData.status] : 'Chọn trạng thái'}
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="COMPLETE">

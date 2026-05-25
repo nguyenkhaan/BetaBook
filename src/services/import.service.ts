@@ -88,7 +88,9 @@ const mapOutcomeToImportOrder = (outcome: BackendOutcome): ImportOrder => {
 export const ImportService = {
     getAll: async (): Promise<ImportOrder[]> => {
         const response = await privateApi.get('/outcome');
+        console.log(response) 
         const payload = extractPayload<BackendOutcome[]>(response);
+    
         return Array.isArray(payload)
             ? payload.map(mapOutcomeToImportOrder)
             : [];

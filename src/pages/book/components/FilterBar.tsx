@@ -10,7 +10,7 @@ interface Category {
 }
 
 interface FilterBarProps {
-    searchTerm: string;
+    searchTerm: string; 
     setSearchTerm: (value: string) => void;
     selectedCategory: string;
     selectedAuthor?: string;
@@ -51,19 +51,6 @@ export function FilterBar({
     const [localSelectedPublisher, setLocalSelectedPublisher] = useState('');
     const searchRef = useRef<HTMLDivElement>(null);
     const categoryRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const res = await fetch('/api/categories');
-                const data = await res.json();
-                setCategories(data);
-            } catch (err) {
-                console.error(err);
-            }
-        };
-        fetchData();
-    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -154,7 +141,7 @@ export function FilterBar({
         if (setSelectedPublisher) setSelectedPublisher(value);
         else setLocalSelectedPublisher(value);
     };
-
+    
     const handleClearFilters = () => {
         setSearchTerm('');
         setSelectedCategory('');
@@ -244,81 +231,6 @@ export function FilterBar({
                     )}
                 </div>
 
-                <div
-                    className="flex items-center gap-3 w-full lg:w-auto relative z-40"
-                    ref={categoryRef}
-                >
-                    <div className="relative flex-1 lg:flex-none">
-                        <Button
-                            onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                            className={`w-full lg:w-[200px] h-10 px-4 rounded-lg transition-all border flex items-center justify-between ${
-                                selectedCategory
-                                    ? 'bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100'
-                                    : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
-                            }`}
-                        >
-                            <div className="flex items-center overflow-hidden">
-                                <Filter className="w-4 h-4 mr-2 flex-shrink-0" />
-                                <span className="font-medium text-sm truncate">
-                                    {selectedCategory || 'Thể loại'}
-                                </span>
-                            </div>
-                            <ChevronDown
-                                className={`w-4 h-4 ml-2 flex-shrink-0 transition-transform duration-200 ${isCategoryOpen ? 'rotate-180' : ''}`}
-                            />
-                        </Button>
-
-                        {isCategoryOpen && (
-                            <div className="absolute top-[calc(100%+8px)] right-0 lg:right-auto lg:left-0 w-[calc(100vw-32px)] md:w-[600px] max-h-[60vh] overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-2xl p-5 z-[100]">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {Object.keys(grouped).map((group) => (
-                                        <div key={group} className="space-y-3">
-                                            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0"></span>
-                                                {group}
-                                            </h3>
-                                            <div className="flex flex-col gap-1 pl-3 border-l-2 border-gray-100">
-                                                {grouped[group].map(
-                                                    (cat: Category) => (
-                                                        <button
-                                                            key={cat.id}
-                                                            onClick={() => {
-                                                                setSelectedCategory(
-                                                                    cat.name,
-                                                                );
-                                                                setIsCategoryOpen(
-                                                                    false,
-                                                                );
-                                                            }}
-                                                            className={`text-left text-sm py-1.5 px-2 rounded-md transition-colors w-full truncate ${
-                                                                selectedCategory ===
-                                                                cat.name
-                                                                    ? 'bg-orange-50 text-orange-600 font-semibold'
-                                                                    : 'text-gray-600 hover:bg-gray-50 hover:text-orange-500'
-                                                            }`}
-                                                        >
-                                                            {cat.name}
-                                                        </button>
-                                                    ),
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {hasActiveFilters && (
-                        <Button
-                            onClick={handleClearFilters}
-                            variant="ghost"
-                            className="h-10 px-4 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors flex-shrink-0 text-sm font-medium"
-                        >
-                            Xóa lọc
-                        </Button>
-                    )}
-                </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full relative z-30">

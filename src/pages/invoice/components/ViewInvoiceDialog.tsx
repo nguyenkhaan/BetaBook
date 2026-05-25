@@ -9,7 +9,6 @@ import {
 } from '../../../components/ui/dialog';
 import { Invoice, DiscountCode } from '../InvoicePage';
 import jsPDF from 'jspdf';
-import { addingFontToDoc } from '../../../utilis/docfont';
 import autoTable from 'jspdf-autotable';
 
 interface ViewInvoiceDialogProps {
@@ -34,15 +33,12 @@ export function ViewInvoiceDialog({
             format: 'a4',
         });
 
-        // Use a standard web-safe Unicode-compatible core font fallback declaration
-        // to prevent metadata 'widths' crashing while keeping execution fast.
         doc.setFont('Helvetica', 'normal');
 
         let currentY = 20;
         const pageLeftMargin = 20;
         const pageRightMargin = 190;
 
-        // --- HEADER ---
         doc.setFontSize(22);
         doc.text('PAYMENT BILL', 105, currentY, { align: 'center' });
 
@@ -57,7 +53,6 @@ export function ViewInvoiceDialog({
             align: 'center',
         });
 
-        // --- STATUS STICKER ---
         currentY += 12;
         let statusText = selectedInvoice.status; 
         if (statusText == 'Chưa thanh toán') 
@@ -106,10 +101,8 @@ export function ViewInvoiceDialog({
             currentY += 8;
         }
 
-        // --- ITEMS TABLE (via jsPDF-AutoTable) ---
         currentY += 5;
 
-        // Prepare table body rows
         const tableBody = selectedInvoice.books.map((book) => [
             book.title,
             book.quantity.toString(),

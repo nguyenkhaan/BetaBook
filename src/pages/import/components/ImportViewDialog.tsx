@@ -12,6 +12,7 @@ import { Button } from '../../../components/ui/button';
 import { BOOK_CATEGORIES_LABEL } from '../../../bases/constants/book.constants';
 import { ImportBookItem } from '../ImportPage';
 import { BookCategoryLabel } from '../../../utilis/label_mapper';
+import { ImportStatusLabel } from '../../../utilis/label_mapper';
 
 interface ImportOrder {
     importNumber: string;
@@ -87,7 +88,7 @@ export const ImportViewDialog: React.FC<ImportViewDialogProps> = ({
                         </div>
                         <div className="flex justify-between">
                             <span className="text-sm text-gray-500">Trạng thái:</span>
-                            <span className="text-sm font-medium">{selectedImport?.status}</span>
+                            <span className="text-sm font-medium">{ImportStatusLabel[selectedImport?.status || 'PENDING']}</span>
                         </div>
                         <div className="border-t pt-2 mt-2">
                             <p className="text-sm text-gray-500 mb-1">Ghi chú:</p>

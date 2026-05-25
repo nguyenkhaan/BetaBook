@@ -237,7 +237,6 @@ const filteredBooks = books.filter((book) => {
                 selectedPublisher.toLowerCase(),
             );
 
-        // SỬA TẠI ĐÂY: Khớp hoàn toàn với value "0-100000", "100000-200000",... từ FilterBar
         let matchesPrice = true;
         if (selectedPriceRange === '0-100000') {
             matchesPrice = book.cost < 100000;
@@ -249,7 +248,6 @@ const filteredBooks = books.filter((book) => {
             matchesPrice = book.cost > 500000;
         }
 
-        // SỬA TẠI ĐÂY: Khớp hoàn toàn với value "Dưới 30", "30 - 100", "100-200", "Trên 200" từ FilterBar
         let matchesStock = true;
         if (selectedStockStatus === 'Dưới 30') {
             matchesStock = book.stock < 30;

@@ -12,7 +12,8 @@ export class BookService {
 
     static async getAllBook(): Promise<BookItem[]> {
         const responseData = await privateApi.get('/book');
-        return this.extractPayload<BookItem[]>(responseData) || [];
+        // console.log(responseData.data) 
+        return this.extractPayload<BookItem[]>(responseData.data) || [];
     }
 
     static async createBook(data: any, file?: File) {

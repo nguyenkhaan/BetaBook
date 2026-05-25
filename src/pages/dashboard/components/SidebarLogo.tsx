@@ -11,7 +11,7 @@ export const SidebarLogo: React.FC<SidebarLogoProps> = ({ isCollapsed }) => {
             <UserCircle size={42} className="text-orange-500" />
             {!isCollapsed && (
                 <div className="text-orange-500 font-bold text-xl">
-                    Beta Book
+                    Utahime Book
                 </div>
             )}
         </div>

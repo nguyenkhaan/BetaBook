@@ -31,9 +31,24 @@ export class AuthService {
             return true;
         return false;
     }
-    static async logout() 
+    static async getMyProfile() {
+        const response = await privateApi.get('/auth/profile');
+        return response.data;
+    }
+    static async logout() {
+        const responseData = await privateApi.get('auth/logout');
+        return responseData.data;
+    }
+    static async changePassword(currentPassword : string , password : string) 
     {
-        const responseData = await privateApi.get('auth/logout') 
-        return responseData.data 
+        const response = await privateApi.post('auth/reset-password' , {
+            currentPassword, 
+            password
+        } , {
+            headers: {
+                'Content-Type' : 'application/json'
+            }
+        }) 
+        return response.data 
     }
 }

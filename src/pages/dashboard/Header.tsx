@@ -53,7 +53,7 @@ export function Header({
                 {/* Breadcrumb */}
                 <div>
                     <h2 className="text-2xl font-semibold text-gray-700">
-                        Betabook 
+                        Utahime Book 
                     </h2>
                 </div>
 
@@ -82,17 +82,7 @@ export function Header({
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56 py-4 px-2 gap-6 bg-white">
-                            <DropdownMenuLabel className='cursor-pointer'>
-                                Tài khoản của tôi
-                            </DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                                className='cursor-pointer py-2'
-                                onClick={() => navigate('/dashboard')}
-                            >
-                                <UserIcon className="w-4 h-4 mr-2" />
-                                Trang quản trị 
-                            </DropdownMenuItem>
                             <DropdownMenuItem
                                 className='cursor-pointer py-2'
                                 onClick={() => navigate('/eProfile')}

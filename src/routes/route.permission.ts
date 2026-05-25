@@ -11,5 +11,5 @@ export const routePermission: Record<string, Role[]> = {
     reports: ['ADMIN'],
     regulations: ['EMPLOYEE'],
     profile: ['EMPLOYEE'],
-    eProfile: ['ADMIN'],
+    eProfile: ['ADMIN' , 'EMPLOYEE'],
 };

@@ -1,9 +1,9 @@
 // src/components/ProtectedRoute.tsx
 import { Navigate, useNavigate } from 'react-router-dom';
-import { LocalStorageService } from '../services/local-store.service';
 import type { Role } from '../bases/constants/app.constants';
 import { useEffect } from 'react';
 import { AuthService } from '../services/auth.service';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Props {
     children: React.ReactNode;
@@ -12,20 +12,20 @@ interface Props {
 
 export const ProtectedRoute = ({ children, neededRoles }: Props) => {
     const navigate = useNavigate();
+    const { user, roles } = useAuth();
     useEffect(() => {
         const result = AuthService.checkLogin();
         if (!result) navigate('/');
     }, []);
 
-    const me = LocalStorageService.getValue('me');
-    if (!me || !me.roles) {
+    if (!user || roles.length === 0) {
         return <Navigate to="/" replace />;
     }
 
     // Kiểm tra quyền
     if (
         neededRoles &&
-        !me.roles.some((role: Role) => neededRoles.includes(role))
+        !roles.some((role: Role) => neededRoles.includes(role))
     ) {
         return <Navigate to="/dashboard" replace />;
     }

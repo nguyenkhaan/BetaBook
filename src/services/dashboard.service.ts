@@ -1,22 +1,61 @@
 import { privateApi } from '../api/api';
 
+export interface GeneralStatistic {
+    totalRevenue: number;
+    totalCustomers: number;
+    totalBills: number;
+    totalBooks: number;
+}
+
+export interface RecentOrder {
+    id: number;
+    code: string | number;
+    customer: string;
+    amount: string;
+    status: string;
+    date: string;
+}
+
+export interface TopBook {
+    title: string;
+    author: string;
+    sold: number;
+    revenue: string;
+}
+
 export class DashboardService {
     static async getDashboardGeneralStatistic() {
         const response = await privateApi.get('/statistic/general');
-        return response.data;
+        return {
+            ...response.data,
+            totalOrders: response.data.totalBills || 0,
+            totalBooksSold: response.data.totalBooks || 0,
+        };
     }
 
-    static async getRecentOrders(limit: number = 5) {
-        const response = await privateApi.get('/statistic/recent-orders', {
+    static async getRecentOrders(limit: number = 5): Promise<RecentOrder[]> {
+        const res = await privateApi.get('/statistic/recent-orders', {
             params: { limit },
         });
-        return response.data;
+        return (res.data ?? []).map((item: any) => ({
+            id: item.id,
+            code: item.code,
+            customer: item.customer?.name ?? '',
+            amount: `${(Number(item.amount) || 0).toLocaleString('vi-VN')}đ`,
+            status: item.status,
+            date: item.date,
+        }));
     }
 
-    static async getTopBooks(limit: number = 4) {
-        const response = await privateApi.get('/statistic/top-books', {
+    static async getTopBooks(limit: number = 4): Promise<TopBook[]> {
+        const res = await privateApi.get('/statistic/top-books', {
             params: { limit },
         });
-        return response.data;
+        return (res.data ?? []).map((item: any) => ({
+            title: item.title,
+            author: item.bookCode ?? '',
+            sold: Number(item.totalSold) || 0,
+            revenue: '',
+        }));
     }
 }

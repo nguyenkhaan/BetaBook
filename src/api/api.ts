@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { CookiesService } from '../services/cookies.service';
 import { TokenType } from '../bases/enums/jwt.enum';
-import toast from 'react-hot-toast';
+import {toast} from 'sonner'
 // import { LocalStorageService } from '../services/local-store.service';
 
 const BASE_URL = import.meta.env.VITE_BACKEND_URL;
@@ -20,15 +20,22 @@ publicApi.interceptors.response.use(
     (response) => response.data,
     (error) => {
         const status = error.response?.status;
+        const data = error.response?.data;
+
+        const message = data?.message || data?.error || 'Có lỗi xảy ra trong quá trình xử lý';
+
+        toast.error(message);
 
         if (status === 401) {
-            console.log('Invalid session. Please login again');
+            console.log('Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại');
         }
 
-        return Promise.reject(error);
+        return Promise.reject({
+            message,
+            status,
+        });
     },
 );
-
 privateApi.interceptors.request.use(
     (config) => {
         const token = CookiesService.getToken(TokenType.ACCESS_TOKEN);
@@ -41,29 +48,29 @@ privateApi.interceptors.request.use(
     },
     (error) => Promise.reject(error),
 );
-
 privateApi.interceptors.response.use(
     (response) => response.data,
     (error) => {
         const status = error.response?.status;
         const data = error.response?.data;
 
+        const message =
+            data?.message ||
+            data?.error ||
+            'Có lỗi xảy ra trong quá trình xử lý';
+        toast.error(message);
+
         if (status === 401) {
-            // Xóa token
             CookiesService.removeCookie('ACCESS_TOKEN');
             CookiesService.removeCookie('REFRESH_TOKEN');
-            localStorage.removeItem('me') 
-            // Thông báo
-            toast.error('Phiên đăng nhập đã hết hạn');
 
-            // Redirect login
+            localStorage.removeItem('me');
+
             window.location.href = '/';
-        } else {
-            toast.error(data?.message || 'Có lỗi xảy ra');
         }
 
         return Promise.reject({
-            message: data?.message,
+            message,
             status,
         });
     },

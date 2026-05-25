@@ -3,13 +3,14 @@ import { Customer } from '../CustomersPage';
 import { Button } from '../../../components/ui/button';
 import { Mail, Phone, Eye, Edit, Trash2, Key } from 'lucide-react';
 import { MemberGradeLabel } from '../../../utilis/label_mapper';
+import { useAuth } from '../../../contexts/AuthContext';
 interface CustomerTableRowProps {
     customer: Customer;
     onView: (customer: Customer) => void;
     onEdit: (customer: Customer) => void;
     onDelete: (customer: Customer) => void;
     getLevelColor: (grade: Customer['grade']) => string;
-    onResetPassword : (customer : Customer) => void 
+    onResetPassword: (customer: Customer) => void;
 }
 
 export function CustomerTableRow({
@@ -18,8 +19,10 @@ export function CustomerTableRow({
     onEdit,
     onDelete,
     getLevelColor,
-    onResetPassword
+    onResetPassword,
 }: CustomerTableRowProps) {
+    const { isAdmin } = useAuth();
+
     return (
         <tr className="hover:bg-gray-50">
             <td className="px-6 py-4 text-orange-600 font-medium">
@@ -57,28 +60,30 @@ export function CustomerTableRow({
                     onClick={() => onView(customer)}
                 >
                     <Eye className="w-4 h-4" />
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEdit(customer)}
-                    >
-                        <Edit className="w-4 h-4" />
-                    </Button>
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onEdit(customer)}
+                >
+                    <Edit className="w-4 h-4" />
                 </Button>
                 <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => onResetPassword(customer)}
                 >
-                    <Key className="w-4 h-4 text-red-500" />
+                    <Key className="w-4 h-4 text-yellow-700" />
                 </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDelete(customer)}
-                >
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                </Button>
+                {isAdmin && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onDelete(customer)}
+                    >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
+                )}
             </td>
         </tr>
     );

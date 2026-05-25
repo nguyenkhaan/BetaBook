@@ -14,6 +14,7 @@ import { ProfileCard } from './components/ProfileCard';
 import { InfoSection } from './components/InfoSection';
 import { ChangePasswordDialog } from './components/ChangePasswordDialog';
 import { EmployeesService } from '../../services/employees.service';
+import { AuthService } from '../../services/auth.service';
 
 export function EmployeeProfile() {
     const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
@@ -22,9 +23,11 @@ export function EmployeeProfile() {
         newPassword: '',
         confirmPassword: '',
     });
-    const [employee , setEmployee] = useState({
-        name: '', position : '' , status: '' 
-    })
+    const [employee, setEmployee] = useState({
+        name: '',
+        position: '',
+        status: '',
+    });
     const [userProfile, setUserProfile] = useState<any>();
     const [loading, setLoading] = useState(false);
     // const [avatar, setAvatar] = useState('');
@@ -33,7 +36,7 @@ export function EmployeeProfile() {
             setLoading(true);
             try {
                 const employeeProfile =
-                    (await EmployeesService.getMyProfile()) as any;
+                    (await AuthService.getMyProfile()) as any;
                 const workInfo = [
                     {
                         icon: Building,
@@ -83,7 +86,9 @@ export function EmployeeProfile() {
                     {
                         icon: Calendar,
                         label: 'Ngày bắt đầu làm việc',
-                        value: employeeProfile.createdAt,
+                        value: new Date(
+                            employeeProfile.createdAt,
+                        ).toLocaleDateString('vi-VN'),
                         iconBgColor: 'bg-green-100',
                         iconColor: 'text-green-600',
                     },
@@ -96,11 +101,11 @@ export function EmployeeProfile() {
                     },
                 ];
                 setEmployee({
-                    name: employeeProfile.name, 
-                    status: employeeProfile.status, 
-                    position: employeeProfile.position.name 
-                })
-                // setAvatar(employeeProfile.avatar || '')   //-> Hien tai chua co chuc nang update avatar 
+                    name: employeeProfile.name,
+                    status: employeeProfile.status,
+                    position: employeeProfile.position.name,
+                });
+                // setAvatar(employeeProfile.avatar || '')   //-> Hien tai chua co chuc nang update avatar
                 setUserProfile({
                     workInfo,
                     additionalInfo,
@@ -117,7 +122,9 @@ export function EmployeeProfile() {
     }, []);
     // Mock employee data - in real app, this would come from context/props
 
-    const handleChangePassword = () => {
+    const handleChangePassword = async () => {
+        setLoading(true);
+
         if (passwordData.newPassword !== passwordData.confirmPassword) {
             toast.error('Mật khẩu mới không khớp!');
             return;
@@ -126,14 +133,24 @@ export function EmployeeProfile() {
             toast.error('Mật khẩu phải có ít nhất 6 ký tự!');
             return;
         }
+        try {
+            const response = await AuthService.changePassword(passwordData.currentPassword , passwordData.newPassword) 
+            if (response) 
+            {
+                toast.success('Đổi mật khẩu thành công!');
+                setIsChangePasswordOpen(false);
+                setPasswordData({
+                    currentPassword: '',
+                    newPassword: '',
+                    confirmPassword: '',
+                });
+            } 
+            
+        } catch (err: any) {
+        } finally {
+            setLoading(false);
+        }
         // In real app, call API to change password
-        toast.success('Đổi mật khẩu thành công!');
-        setIsChangePasswordOpen(false);
-        setPasswordData({
-            currentPassword: '',
-            newPassword: '',
-            confirmPassword: '',
-        });
     };
     if (loading) {
         return <div>Loading...</div>;

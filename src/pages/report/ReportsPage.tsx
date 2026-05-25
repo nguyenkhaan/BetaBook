@@ -35,9 +35,25 @@ import {
 } from '../../services/report.service';
 import { toast } from 'sonner';
 
-// Import thư viện xuất PDF dạng bảng
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+
+export const BookCategoryLabel: Record<string, string> = {
+    VAN_HOC: 'Văn học',
+    TRINH_THAM: 'Trinh thám',
+    THIEU_NHI: 'Thiếu nhi',
+    GIAO_DUC: 'Giáo dục',
+    KINH_TE: 'Kinh tế',
+    KY_NANG_SONG: 'Kỹ năng sống',
+};
+
+export const CustomerGradeLabel: Record<string, string> = {
+    BRONZE: 'Đồng',
+    SILVER: 'Bạc',
+    GOLD: 'Vàng',
+    PLATINUM: 'Bạch Kim',
+    DIAMOND: 'Kim cương',
+};
 
 const getCurrentMonth = () => {
     const now = new Date();
@@ -162,25 +178,37 @@ export function ReportsPage() {
             ]);
             setGeneralRevenue(genRev);
             setCustomerData(cust);
+            const mappedCustomerData = cust.map((c) => ({
+                ...c,
+                grade: CustomerGradeLabel[c.grade] || c.grade, 
+            }));
+            setCustomerData(mappedCustomerData);
 
             if (reportType === 'revenue') {
                 const [revChart, ordChart, books] = await Promise.all([
-                    ReportService.getRevenueChart(6, params),
+                    ReportService.getRevenueChart(6),
                     ReportService.getOrdersChart(6, params),
-                    ReportService.getTopBooks(5, params),
+                    ReportService.getTopBooks(5),
                 ]);
                 setRevenueChart(revChart);
                 setOrdersChart(ordChart);
                 setTopBooks(books);
             } else if (reportType === 'inventory') {
                 const [inv, flow] = await Promise.all([
-                    ReportService.getInventoryByCategory(params),
-                    ReportService.getInventoryFlow(6, params),
+                    ReportService.getInventoryByCategory(),
+                    ReportService.getInventoryFlow(6, ),
                 ]);
-                setInventoryData(inv);
+                const mappedInventory = inv.map((item) => ({
+                    ...item,
+                    categoryName:
+                        BookCategoryLabel[item.categoryName] ||
+                        item.categoryName,
+                }));
+
+                setInventoryData(mappedInventory);
                 setInventoryFlow(flow);
             } else if (reportType === 'debt') {
-                const rawRows = await ReportService.getRawDebt(params);
+                const rawRows = await ReportService.getRawDebt();
                 setAllDebtRows(rawRows);
 
                 if (endDate) {
@@ -210,7 +238,6 @@ export function ReportsPage() {
         setTimeout(() => loadReportData(), 0);
     };
 
-    // Hàm xuất PDF dạng bảng tùy biến theo từng Tab dữ liệu chọn
     const handleExportPDF = () => {
         try {
             const doc = new jsPDF({
@@ -222,45 +249,43 @@ export function ReportsPage() {
             // Tiêu đề tài liệu và thông tin chu kỳ chung
             doc.setFont('Helvetica', 'bold');
             doc.setFontSize(20);
-            doc.text('BETA BOOK - REPORT SYSTEM', 14, 20);
+            doc.text('UTAHIME BOOK - REPORT SYSTEM', 14, 20);
 
             doc.setFontSize(14);
             const activeTabLabel =
                 REPORT_TABS.find((t) => t.key === reportType)?.label || '';
             doc.text(
-                `Bao Cao Thong Ke: ${activeTabLabel.toUpperCase()}`,
+                `Report Statistic: ${activeTabLabel.toUpperCase()}`,
                 14,
                 30,
             );
 
             doc.setFont('Helvetica', 'normal');
-            doc.setFontSize(10);
+            doc.setFontSize(10); 
             doc.text(
-                `Chu ky loc: Tu ${startDate || 'Dau'} den ${endDate || 'Hien tai'}`,
+                `Reporting Period: from ${startDate || 'start'} to ${endDate || 'current'}`,
                 14,
                 38,
             );
             doc.text(
-                `Ngay xuat ban: ${new Date().toLocaleDateString('vi-VN')}`,
+                `Publication Date: ${new Date().toLocaleDateString('vi-VN')}`,
                 14,
                 44,
             );
-            doc.line(14, 48, 196, 48); // Thanh kẻ ngang phân cách
+            doc.line(14, 48, 196, 48); 
 
-            // Phân loại logic sinh bảng theo Tab được chọn
             if (reportType === 'revenue') {
-                // 1. Báo cáo doanh thu & top sách chạy
                 doc.setFont('Helvetica', 'bold');
-                doc.text('1. TOP 5 SACH BAN CHAY NHAT', 14, 56);
+                doc.text('1. Top 5 Best-Selling Books', 14, 56);
 
                 const headers = [
-                    ['Hang', 'Ma Sach', 'Ten Sach', 'So Luong Da Ban'],
+                    ['Grade', 'Book Code', 'Name', 'Quantity sold'],
                 ];
                 const body = topBooks.map((b, i) => [
                     `#${i + 1}`,
                     b.bookCode,
                     b.title,
-                    `${b.totalSold.toLocaleString('vi-VN')} cuon`,
+                    `${b.totalSold.toLocaleString('vi-VN')}`,
                 ]);
 
                 autoTable(doc, {
@@ -269,15 +294,15 @@ export function ReportsPage() {
                     startY: 60,
                     theme: 'striped',
                     styles: { font: 'Helvetica' },
-                    headStyles: { fillColor: [249, 115, 22] }, // Màu cam đặc trưng thương hiệu
+                    headStyles: { fillColor: [249, 115, 22] }, 
                 });
 
-                // Thêm bảng tổng hợp số liệu doanh thu biểu đồ
+             
                 const lastY = (doc as any).lastAutoTable.finalY || 60;
-                doc.text('2. DOANH THU & CONG NO THEO THANG', 14, lastY + 15);
+                doc.text('2. Monthly Revenue & Debt Report', 14, lastY + 15);
 
                 const revHeaders = [
-                    ['Thang', 'Thuc Thu (VND)', 'No Phat Sinh (VND)'],
+                    ['Month', 'Actual Revenue (VND)', 'Incurred Debt (VND)'],
                 ];
                 const revBody = revenueChart.map((r) => [
                     r.month,
@@ -295,15 +320,15 @@ export function ReportsPage() {
             } else if (reportType === 'inventory') {
                 // 2. Báo cáo tồn kho
                 doc.setFont('Helvetica', 'bold');
-                doc.text('DANH SACH TON KHO THEO DANH MUC THIET YEU', 14, 56);
+                doc.text('Inventory list by category', 14, 56);
 
                 const headers = [
-                    ['STT', 'Ten Danh Muc (The Loai)', 'So Luong Ton Kho'],
+                    ['Index', 'Category name', 'Inventory Quantity'],
                 ];
                 const body = inventoryData.map((item, i) => [
                     i + 1,
                     item.categoryName,
-                    `${item.value.toLocaleString('vi-VN')} cuon`,
+                    `${item.value.toLocaleString('vi-VN')}`,
                 ]);
 
                 autoTable(doc, {
@@ -317,15 +342,15 @@ export function ReportsPage() {
             } else if (reportType === 'customer') {
                 // 3. Báo cáo khách hàng
                 doc.setFont('Helvetica', 'bold');
-                doc.text('THONG KE HANG THANH VIEN KHACH HANG', 14, 56);
+                doc.text('Customer Grade Memeber Statistic', 14, 56);
 
                 const headers = [
-                    ['STT', 'Hang Thanh Vien', 'So Luong Thanh Vien'],
+                    ['Index', 'Member Grade', 'Quantity'],
                 ];
                 const body = customerData.map((c, i) => [
                     i + 1,
                     c.grade,
-                    `${c.total.toLocaleString('vi-VN')} khach hang`,
+                    `${c.total.toLocaleString('vi-VN')} customer`,
                 ]);
 
                 autoTable(doc, {
@@ -339,15 +364,15 @@ export function ReportsPage() {
             } else if (reportType === 'debt') {
                 // 4. Báo cáo công nợ (Mẫu chuẩn BM5.2)
                 doc.setFont('Helvetica', 'bold');
-                doc.text(`BAO CAO CONG NO - THANG ${selectedMonth}`, 14, 56);
+                doc.text(`Debt Report - Month ${selectedMonth}`, 14, 56);
 
                 const headers = [
                     [
                         'STT',
-                        'Khach Hang',
-                        'No Dau Ky',
-                        'No Phat Sinh',
-                        'No Cuoi Ky',
+                        'Customer',
+                        'Opening Debt',
+                        'New Debt',
+                        'Closing Debt',
                     ],
                 ];
                 const body = debtList.map((item, index) => [
@@ -358,7 +383,6 @@ export function ReportsPage() {
                     `${item.endingDebt.toLocaleString('vi-VN')}d`,
                 ]);
 
-                // Hàng tổng cộng lũy kế cuối trang
                 if (debtList.length > 0 && debtSum) {
                     body.push([
                         '',
@@ -375,19 +399,16 @@ export function ReportsPage() {
                     startY: 60,
                     theme: 'grid',
                     styles: { font: 'Helvetica' },
-                    headStyles: { fillColor: [220, 38, 38] }, // Màu đỏ cho công nợ tài chính
+                    headStyles: { fillColor: [220, 38, 38] }, 
                     didParseCell: (data) => {
-                        // Bôi đậm dòng tổng cộng cuối cùng
                         if (data.row.index === body.length - 1) {
                             data.cell.styles.fontStyle = 'bold';
                         }
                     },
                 });
             }
-
-            // Tiến hành tải xuống file PDF trực tiếp
             doc.save(
-                `BetaBook_BaoCao_${reportType}_${new Date().getTime()}.pdf`,
+                `UtahimeBook_BaoCao_${reportType}_${new Date().getTime()}.pdf`,
             );
             toast.success('Xuất file PDF báo cáo thành công!');
         } catch (err) {
@@ -421,7 +442,7 @@ export function ReportsPage() {
                         Báo cáo thống kê
                     </h1>
                     <p className="text-gray-600 mt-1">
-                        Xem các báo cáo và thống kê của Beta Book
+                        Xem các báo cáo và thống kê của Utahime Book
                     </p>
                 </div>
                 <Button
@@ -997,7 +1018,6 @@ export function ReportsPage() {
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 border-b pb-6">
                         <div className="flex items-center gap-3">
                             <span className="px-3 py-1 bg-gray-900 text-white text-xs font-mono rounded-md shadow-sm">
-                                BM5.2
                             </span>
                             <h2 className="text-xl font-bold text-gray-900">
                                 Báo Cáo Công Nợ

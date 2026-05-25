@@ -8,7 +8,7 @@ import {
     Trash2,
     Download,
 } from 'lucide-react';
-import { ReceiptPaymentTypeLabel } from '../utilis/label_mapper';
+import { IncomeStatusLabel, ReceiptPaymentTypeLabel } from '../utilis/label_mapper';
 import { Button } from '../components/ui/button';
 import {
     Dialog,
@@ -35,6 +35,7 @@ import {
     IncomeService,
     IncomeStatus,
 } from '../services/income.service';
+import { useAuth } from '../contexts/AuthContext';
 
 type Receipt = IncomeReceipt;
 
@@ -98,6 +99,7 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 };
 
 export function ReceiptsPage() {
+    const { isAdmin } = useAuth();
     const [receipts, setReceipts] = useState<Receipt[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -530,7 +532,7 @@ export function ReceiptsPage() {
                                 {receipts
                                     .filter((r) => r.status === 'COMPLETE')
                                     .reduce((sum, r) => sum + Number(r.cost), 0)
-                                    .toLocaleString()}
+                                    .toLocaleString('vi-VN')}
                                 đ
                             </p>
                         </div>
@@ -641,7 +643,7 @@ export function ReceiptsPage() {
                                         >
                                             <Eye className="w-4 h-4" />
                                         </Button>
-                                        <Button
+                                        {isAdmin && <Button
                                             variant="ghost"
                                             size="sm"
                                             onClick={() =>
@@ -649,8 +651,8 @@ export function ReceiptsPage() {
                                             }
                                         >
                                             <Edit className="w-4 h-4" />
-                                        </Button>
-                                        <Button
+                                        </Button>} 
+                                        {isAdmin && <Button
                                             variant="ghost"
                                             size="sm"
                                             onClick={() =>
@@ -658,16 +660,7 @@ export function ReceiptsPage() {
                                             }
                                         >
                                             <Trash2 className="w-4 h-4 text-red-500" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() =>
-                                                handleDownloadReceipt(receipt)
-                                            }
-                                        >
-                                            <Download className="w-4 h-4 text-blue-500" />
-                                        </Button>
+                                        </Button>} 
                                     </div>
                                 </td>
                             </tr>
@@ -819,7 +812,7 @@ export function ReceiptsPage() {
                                     }
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Chọn trạng thái" />
+                                        {formData.status? IncomeStatusLabel[formData.status] : 'Chọn trạng thái'}
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="COMPLETE">
@@ -974,7 +967,7 @@ export function ReceiptsPage() {
                                     }
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Chọn hình thức" />
+                                        {formData.paymentMethod? ReceiptPaymentTypeLabel[formData.paymentMethod] : 'Chọn phương thức thanh toán'}
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="CASH">
@@ -1006,7 +999,7 @@ export function ReceiptsPage() {
                                     }
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Chọn trạng thái" />
+                                        {formData.status? IncomeStatusLabel[formData.status] : 'Chọn trạng thái'}
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="COMPLETE">

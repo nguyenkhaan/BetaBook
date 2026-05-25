@@ -65,8 +65,6 @@ export function BookDialogs({
     handleDeleteBook,
 }: BookDialogsProps) {
     // State management for images and search results
-    const [addCoverImage, setAddCoverImage] = useState<File | null>(null);
-    const [addCoverPreview, setAddCoverPreview] = useState<string>('');
     const [editCoverImage, setEditCoverImage] = useState<File | null>(null);
     const [editCoverPreview, setEditCoverPreview] = useState<string>('');
 
@@ -170,8 +168,7 @@ export function BookDialogs({
             reader.onload = (event) => {
                 const preview = event.target?.result as string;
                 if (type === 'add') {
-                    setAddCoverImage(file);
-                    setAddCoverPreview(preview);
+
                 } else {
                     setEditCoverImage(file);
                     setEditCoverPreview(preview);
@@ -183,8 +180,7 @@ export function BookDialogs({
 
     const handleRemoveCoverImage = (type: 'add' | 'edit') => {
         if (type === 'add') {
-            setAddCoverImage(null);
-            setAddCoverPreview('');
+
         } else {
             setEditCoverImage(null);
             setEditCoverPreview('');
@@ -192,8 +188,7 @@ export function BookDialogs({
     };
 
     const resetAddDialog = () => {
-        setAddCoverImage(null);
-        setAddCoverPreview('');
+
         setFormData({
             code: '',
             title: '',
@@ -397,75 +392,6 @@ export function BookDialogs({
                                     .toString()}
                             />
                         </div>
-
-                        {/* Cover Image Upload */}
-                        <div className="grid grid-cols-4 items-start gap-4">
-                            <Label className="mt-2 text-gray-700 font-semibold">
-                                Bìa sách
-                            </Label>
-                            <div className="col-span-3">
-                                {/* The actual input is hidden. We trigger it via the label's htmlFor or a ref */}
-                                <input
-                                    id="editCoverImage"
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden" // Ensure this has no display
-                                    onChange={(e) =>
-                                        handleCoverImageChange(e, 'edit')
-                                    }
-                                />
-
-                                <div className="relative group w-32 h-32">
-                                    <div
-                                        onClick={() =>
-                                            document
-                                                .getElementById(
-                                                    'editCoverImage',
-                                                )
-                                                ?.click()
-                                        }
-                                        className={cn(
-                                            'w-full h-full rounded-xl border-2 border-dashed overflow-hidden cursor-pointer transition-all flex items-center justify-center',
-                                            editCoverPreview
-                                                ? 'border-gray-200 hover:border-orange-400 shadow-sm'
-                                                : 'border-gray-300 hover:border-orange-400 hover:bg-orange-50 bg-gray-50',
-                                        )}
-                                    >
-                                        {editCoverPreview ? (
-                                            <>
-                                                <img
-                                                    src={editCoverPreview}
-                                                    alt="Preview"
-                                                    className="w-full h-full object-cover"
-                                                />
-                                                {/* Overlay: Icon only, no text */}
-                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <Upload className="w-8 h-8 text-white" />
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <div className="flex flex-col items-center">
-                                                <Upload className="w-6 h-6 text-gray-400" />
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Remove button (The small X) */}
-                                    {editCoverPreview && (
-                                        <button
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleRemoveCoverImage('edit');
-                                            }}
-                                            className="absolute -top-2 -right-2 bg-white text-gray-500 p-1 rounded-full shadow-md border border-gray-200 hover:text-red-500 transition-colors z-10"
-                                        >
-                                            <X className="w-3.5 h-3.5" />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <DialogFooter>
@@ -623,75 +549,7 @@ export function BookDialogs({
                                     .toString()}
                             />
                         </div>
-                        {/* Cover Image Upload */}
-                        sách{' '}
-                        <div className="grid grid-cols-4 items-start gap-4">
-                            <Label className="mt-2 text-gray-700 font-semibold">
-                                Bìa sách
-                            </Label>
-                            <div className="col-span-3">
-                                {/* The actual input is hidden. We trigger it via the label's htmlFor or a ref */}
-                                <input
-                                    id="editCoverImage"
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden" // Ensure this has no display
-                                    onChange={(e) =>
-                                        handleCoverImageChange(e, 'edit')
-                                    }
-                                />
 
-                                <div className="relative group w-32 h-32">
-                                    <div
-                                        onClick={() =>
-                                            document
-                                                .getElementById(
-                                                    'editCoverImage',
-                                                )
-                                                ?.click()
-                                        }
-                                        className={cn(
-                                            'w-full h-full rounded-xl border-2 border-dashed overflow-hidden cursor-pointer transition-all flex items-center justify-center',
-                                            editCoverPreview
-                                                ? 'border-gray-200 hover:border-orange-400 shadow-sm'
-                                                : 'border-gray-300 hover:border-orange-400 hover:bg-orange-50 bg-gray-50',
-                                        )}
-                                    >
-                                        {editCoverPreview ? (
-                                            <>
-                                                <img
-                                                    src={editCoverPreview}
-                                                    alt="Preview"
-                                                    className="w-full h-full object-cover"
-                                                />
-                                                {/* Overlay: Icon only, no text */}
-                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <Upload className="w-8 h-8 text-white" />
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <div className="flex flex-col items-center">
-                                                <Upload className="w-6 h-6 text-gray-400" />
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Remove button (The small X) */}
-                                    {editCoverPreview && (
-                                        <button
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleRemoveCoverImage('edit');
-                                            }}
-                                            className="absolute -top-2 -right-2 bg-white text-gray-500 p-1 rounded-full shadow-md border border-gray-200 hover:text-red-500 transition-colors z-10"
-                                        >
-                                            <X className="w-3.5 h-3.5" />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <DialogFooter>
@@ -749,21 +607,6 @@ export function BookDialogs({
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
-                        {/* Cover Image Display */}
-                        <div className="flex justify-center">
-                            <img
-                                src={
-                                    selectedBook?.coverImage ||
-                                    PLACEHOLDER_IMAGE
-                                }
-                                alt={selectedBook?.title || 'Book Cover'}
-                                className="w-32 h-48 object-cover rounded-lg shadow-md"
-                                onError={(e) => {
-                                    (e.target as HTMLImageElement).src =
-                                        PLACEHOLDER_IMAGE;
-                                }}
-                            />
-                        </div>
 
                         {/* Book Code */}
                         <div className="grid grid-cols-4 items-center gap-4">

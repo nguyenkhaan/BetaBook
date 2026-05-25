@@ -300,11 +300,7 @@ export function InvoicePage() {
             resetCreateForm();
             await fetchData();
         } catch (error: any) {
-            const message =
-                error?.response?.data?.message ||
-                error?.message ||
-                'Lỗi hệ thống không xác định';
-            toast.error(Array.isArray(message) ? message[0] : message);
+            console.log("Lỗi hệ thống khi tạo hóa đơn: " , error.message) 
         } finally {
             setIsLoading(false);
         }
@@ -406,14 +402,7 @@ export function InvoicePage() {
             setSelectedInvoice(null);
             await fetchData();
         } catch (error: any) {
-            const errorMessage =
-                error?.response?.data?.message ||
-                error?.response?.data?.error ||
-                error?.message ||
-                'Cập nhật hóa đơn thất bại';
-            toast.error(
-                Array.isArray(errorMessage) ? errorMessage[0] : errorMessage,
-            );
+            console.log("Lỗi hệ thống khi cập nhật hóa đơn: " , error.message) 
         } finally {
             setIsLoading(false);
         }

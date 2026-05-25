@@ -19,6 +19,7 @@ import {
 } from '../../../components/ui/select';
 import { Textarea } from '../../../components/ui/textarea';
 import { RegulationService, RuleOptions } from '../../../services/regulation.service';
+import { RuleStatusLabel } from '../../../utilis/label_mapper';
 
 export interface RegulationFormData {
     id?: number;
@@ -206,7 +207,7 @@ export function EditRegulationDialog({
                                 }
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Chọn trạng thái" />
+                                    {formData.status ? RuleStatusLabel[formData.status] : 'Chọn trạng thái'}
                                 </SelectTrigger>
                                 <SelectContent>
                                     {statusOptions.map((status) => (
@@ -214,8 +215,8 @@ export function EditRegulationDialog({
                                             {status === 'APPLYING'
                                                 ? 'Đang áp dụng'
                                                 : status === 'UPCOMING'
-                                                  ? 'Sắp có hiệu lực'
-                                                  : 'Đã hết hiệu lực'}
+                                                  ? 'Sắp áp dụng'
+                                                  : 'Từ chối'}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>

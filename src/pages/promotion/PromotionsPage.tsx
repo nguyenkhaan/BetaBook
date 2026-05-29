@@ -13,6 +13,7 @@ import {
     Voucher,
     VoucherData,
 } from '../../services/voucher.service';
+import { useAuth } from '../../contexts/AuthContext';
 
 export type VoucherStatus = 'APPLYING' | 'UPCOMING' | 'ENDED';
 export type VoucherType = 'PERCENT' | 'VND';
@@ -58,7 +59,7 @@ export function PromotionsPage() {
     const [selectedVoucher, setSelectedVoucher] = useState<Promotion | null>(
         null,
     );
-
+    const {isAdmin} = useAuth() 
     const initialFormData: VoucherData = {
         name: '',
         code: '',
@@ -241,7 +242,7 @@ export function PromotionsPage() {
                         Hệ thống quản lý Voucher Beta Book
                     </p>
                 </div>
-                <Button
+                {isAdmin && <Button
                     className="bg-orange-500 hover:bg-orange-600 text-white"
                     onClick={() => {
                         resetFormData();
@@ -250,7 +251,7 @@ export function PromotionsPage() {
                 >
                     <Plus className="w-4 h-4 mr-2" />
                     Tạo khuyến mãi
-                </Button>
+                </Button>}
             </div>
 
             <PromotionFilterBar

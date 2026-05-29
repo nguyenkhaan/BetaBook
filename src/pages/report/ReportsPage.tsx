@@ -95,11 +95,11 @@ const getAvailableMonths = (allRows: { date: string }[]): string[] => {
 
 type ReportType = 'revenue' | 'inventory' | 'customer' | 'debt';
 
-const REPORT_TABS: { key: ReportType; label: string }[] = [
-    { key: 'revenue', label: 'Doanh thu' },
-    { key: 'inventory', label: 'Tồn kho' },
-    { key: 'customer', label: 'Khách hàng' },
-    { key: 'debt', label: 'Công nợ' },
+const REPORT_TABS: { key: ReportType; label: string , reportLabel : string }[] = [
+    { key: 'revenue', label: 'Doanh thu', reportLabel: 'Revenue' },
+    { key: 'inventory', label: 'Tồn kho' , reportLabel: 'Warehouse'},
+    { key: 'customer', label: 'Khách hàng', reportLabel: 'Customer' },
+    { key: 'debt', label: 'Công nợ' , reportLabel: 'Debit' },
 ];
 
 const formatVND = (v: number): string => {
@@ -173,21 +173,22 @@ export function ReportsPage() {
             };
 
             const [genRev, cust] = await Promise.all([
-                ReportService.getGeneralRevenue(params),
-                ReportService.getCustomersByGrade(params),
+                ReportService.getGeneralRevenue(),
+                ReportService.getCustomersByGrade(),
             ]);
             setGeneralRevenue(genRev);
             setCustomerData(cust);
             const mappedCustomerData = cust.map((c) => ({
                 ...c,
                 grade: CustomerGradeLabel[c.grade] || c.grade, 
+                originalGrade : c.grade
             }));
             setCustomerData(mappedCustomerData);
 
             if (reportType === 'revenue') {
                 const [revChart, ordChart, books] = await Promise.all([
                     ReportService.getRevenueChart(6),
-                    ReportService.getOrdersChart(6, params),
+                    ReportService.getOrdersChart(6),
                     ReportService.getTopBooks(5),
                 ]);
                 setRevenueChart(revChart);
@@ -203,7 +204,9 @@ export function ReportsPage() {
                     categoryName:
                         BookCategoryLabel[item.categoryName] ||
                         item.categoryName,
+                        originalName : item.categoryName
                 }));
+
 
                 setInventoryData(mappedInventory);
                 setInventoryFlow(flow);
@@ -252,8 +255,8 @@ export function ReportsPage() {
             doc.text('UTAHIME BOOK - REPORT SYSTEM', 14, 20);
 
             doc.setFontSize(14);
-            const activeTabLabel =
-                REPORT_TABS.find((t) => t.key === reportType)?.label || '';
+            let activeTabLabel =
+                REPORT_TABS.find((t) => t.key === reportType)?.reportLabel || '';
             doc.text(
                 `Report Statistic: ${activeTabLabel.toUpperCase()}`,
                 14,
@@ -327,7 +330,7 @@ export function ReportsPage() {
                 ];
                 const body = inventoryData.map((item, i) => [
                     i + 1,
-                    item.categoryName,
+                    item.originalName,
                     `${item.value.toLocaleString('vi-VN')}`,
                 ]);
 
@@ -342,14 +345,14 @@ export function ReportsPage() {
             } else if (reportType === 'customer') {
                 // 3. Báo cáo khách hàng
                 doc.setFont('Helvetica', 'bold');
-                doc.text('Customer Grade Memeber Statistic', 14, 56);
+                doc.text('Customer Grade Member Statistic', 14, 56);
 
                 const headers = [
                     ['Index', 'Member Grade', 'Quantity'],
                 ];
                 const body = customerData.map((c, i) => [
                     i + 1,
-                    c.grade,
+                    c.originalGrade || c.grade, 
                     `${c.total.toLocaleString('vi-VN')} customer`,
                 ]);
 
@@ -386,7 +389,7 @@ export function ReportsPage() {
                 if (debtList.length > 0 && debtSum) {
                     body.push([
                         '',
-                        'TONG CONG LUY KE',
+                        'Total',
                         `${debtSum.totalBeginningDebt.toLocaleString('vi-VN')}d`,
                         `+${debtSum.totalTransactions.toLocaleString('vi-VN')}d`,
                         `${debtSum.totalEndingDebt.toLocaleString('vi-VN')}d`,

@@ -11,6 +11,13 @@ import {
     CreateOutcomePayload,
     ImportService,
 } from '../../services/import.service';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+} from '../../components/ui/select';
+import { ImportStatusLabel } from '../../utilis/label_mapper';
 
 export interface ImportBookItem {
     type: 'existing' | 'new';
@@ -51,6 +58,7 @@ export function ImportPage() {
     const [selectedImport, setSelectedImport] = useState<ImportOrder | null>(
         null,
     );
+    const [filterStatus, setFilterStatus] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -82,11 +90,16 @@ export function ImportPage() {
 
     const filteredImports = imports.filter(
         (imp) =>
-            imp.importNumber
+            imp.status.includes(filterStatus) &&
+            (imp.importNumber
                 ?.toLowerCase()
                 .includes(searchTerm.toLowerCase()) ||
-            imp.supplier?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            imp.createdBy?.toLowerCase().includes(searchTerm.toLowerCase()),
+                imp.supplier
+                    ?.toLowerCase()
+                    .includes(searchTerm.toLowerCase()) ||
+                imp.createdBy
+                    ?.toLowerCase()
+                    .includes(searchTerm.toLowerCase())),
     );
 
     const getStatusColor = (status: ImportOrder['status']) => {
@@ -101,6 +114,7 @@ export function ImportPage() {
                 return 'bg-gray-100 text-gray-800';
         }
     };
+    console.log(imports);
 
     const handleCreateImport = async () => {
         if (!formData.supplierId) {
@@ -351,8 +365,9 @@ export function ImportPage() {
                 </Button>
             </div>
 
-            <div className="bg-white p-4 rounded-lg shadow-sm">
-                <div className="relative">
+            <div className="bg-white w-full flex items-center gap-4 p-4 rounded-lg shadow-sm">
+                {/* Ô Input: Chỉ để flex-[10] (hoặc flex-[20]), XÓA w-full ở đây */}
+                <div className="relative w-full flex-[10]">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <input
                         type="text"
@@ -361,6 +376,25 @@ export function ImportPage() {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
+                </div>
+                <div className="w-400 flex-shrink-0">
+                    <Select
+                        value={filterStatus} 
+                        onValueChange={(e : any) => {
+                            setFilterStatus(e) 
+                        }}
+                    
+                    >
+                        <SelectTrigger className="w-full">
+                            {ImportStatusLabel[filterStatus] || 'Tất cả'}
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="">Tất cả</SelectItem>
+                            <SelectItem value="COMPLETE">Hoàn thành</SelectItem>
+                            <SelectItem value="PENDING">Chờ xử lý</SelectItem>
+                            <SelectItem value="CANCEL">Đã hủy</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
 

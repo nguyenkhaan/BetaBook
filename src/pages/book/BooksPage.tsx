@@ -433,7 +433,7 @@ const filteredBooks = books.filter((book) => {
                         Quản lý sách
                     </h1>
                     <p className="text-gray-600 mt-1">
-                        Quản lý kho sách của Beta Book
+                        Quản lý kho sách của Utahime Book
                     </p>
                 </div>
 
@@ -471,9 +471,6 @@ const filteredBooks = books.filter((book) => {
                 setSelectedStockStatus={setSelectedStockStatus}
                 handleResetFilters={handleResetFilters}
                 allBooks={books}
-                categories={categories}
-                authors={authors}
-                publishers={publishers}
                 onSelectBook={(book) => {
                     openViewDialog(book);
                 }}

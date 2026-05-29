@@ -31,6 +31,7 @@ export interface TopBook {
 export interface InventoryByCategory {
     categoryCode: string;
     categoryName: string;
+    originalName: string; 
     value: number;
 }
 
@@ -43,6 +44,7 @@ export interface InventoryFlowData {
 
 export interface CustomerGrade {
     grade: string;
+    originalGrade : string; 
     total: number;
 }
 

@@ -31,7 +31,7 @@ export function LoginPage() {
         setError('');
         setIsLoading(true);
         if (!email || !password) {
-            setError('Please enter full email and password');
+            setError('Hãy nhập đủ email và password');
             setIsLoading(false);
             return;
         }

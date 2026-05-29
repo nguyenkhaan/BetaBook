@@ -2,7 +2,7 @@ import React from 'react';
 import { Eye, Edit, Trash2, Download } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { useAuth } from '../../../contexts/AuthContext';
-
+import { ImportStatusLabel } from '../../../utilis/label_mapper';
 interface ImportOrder {
     id: number;
     importNumber: string;
@@ -97,7 +97,7 @@ export const ImportTable: React.FC<ImportTableProps> = ({
                                 <span
                                     className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(imp.status)}`}
                                 >
-                                    {imp.status}
+                                    {ImportStatusLabel[imp.status]}
                                 </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm">

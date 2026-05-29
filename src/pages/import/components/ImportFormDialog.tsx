@@ -25,7 +25,7 @@ import {
 } from '../../../components/common/SearchableMultiSelect';
 import { BOOK_CATEGORIES_LABEL } from '../../../bases/constants/book.constants';
 import { Trash2 } from 'lucide-react';
-import { ImportStatusLabel } from '../../../utilis/label_mapper';
+import { BookCategoryLabel, ImportStatusLabel } from '../../../utilis/label_mapper';
 import { toast } from 'sonner';
 
 interface ExistingBookOption {
@@ -593,7 +593,8 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
                                                 }
                                             >
                                                 <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder="Chọn thể loại..." />
+                                                    
+                                                    {bookInput.category? BookCategoryLabel[bookInput.category] : 'Chọn thể lại'}
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {categories.map(
@@ -602,7 +603,7 @@ export const ImportFormDialog: React.FC<ImportFormDialogProps> = ({
                                                                 key={category}
                                                                 value={category}
                                                             >
-                                                                {BOOK_CATEGORIES_LABEL[
+                                                                {BookCategoryLabel[
                                                                     category as keyof typeof BOOK_CATEGORIES_LABEL
                                                                 ] || category}
                                                             </SelectItem>
